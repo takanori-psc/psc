@@ -2,18 +2,16 @@
 
 ## Document Information
 
-Document Name : PSC Address Format 
-Version       : v0.1 
-Project       : PSC / Photon System Controller 
-Layer         : PSC Fabric 
-Document Type : Specification 
-Status        : Draft 
-
-Author        : T. Hirose
-Created       : 2026-03
-Last Updated  : 2026-03
-
-Language      : English
+- Document Name : PSC Address Format
+- Version       : v0.1
+- Project       : PSC / Photon System Controller
+- Layer         : PSC Fabric
+- Document Type : Specification
+- Status        : Draft
+- Author        : T. Hirose
+- Created       : 2026-03
+- Last Updated  : 2026-03
+- Language      : English
 
 ---
 
