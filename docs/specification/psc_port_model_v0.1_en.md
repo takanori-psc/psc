@@ -1,416 +1,296 @@
-PSC Port Model v0.1
+# PSC Port Model v0.1
 
-1. Purpose
+## Document Information
+
+- Document Name: PSC Port Model
+- Version: v0.1
+- Project: PSC / Photon System Controller
+- Layer: PSC Fabric
+- Status: Draft
+- Author: T. Hirose
+- Language: English
+
+---
+
+## 1. Purpose
 
 PSC Port is not defined as a fixed device-specific interface.
-Instead, each port is defined as a role-based communication endpoint whose behavior is determined by policy, trust class, domain, and transfer requirements.
 
-This allows PSC to treat ports as adaptive fabric endpoints rather than static bus attachments.
+Instead, each port is defined as a **role-based communication endpoint**.
 
-2. Design Principle
-Conventional Port Model
+Port behavior is determined by the following factors.
 
-A port is statically assigned to a device category.
+- Policy
+- Trust Class
+- Domain
+- Transfer Requirements
+
+This allows PSC to treat ports not as static bus attachments  
+but as **adaptive fabric endpoints**.
+
+---
+
+## 2. Design Principles
+
+### 2.1 Conventional Port Model
+
+Ports are statically assigned to device categories.
 
 Examples:
 
-GPU Port
+- GPU Port
+- Storage Port
+- Network Port
 
-Storage Port
+### 2.2 PSC Port Model
 
-Network Port
+A PSC port represents a **logical communication role**.
 
-PSC Port Model
+A port primarily represents not:
 
-A port is a logical communication role assigned dynamically by PSC.
+- what device is attached
 
-A port does not primarily represent “what device is attached,” but rather:
+but rather:
 
-what role the endpoint plays
+- role
+- security level
+- communication policy
+- domain
+- transfer characteristics
 
-what security level it has
+---
 
-what policy governs traffic
+## 3. Port Definition
 
-what domain it belongs to
+A PSC Port is a communication endpoint connected to the PSC Fabric.
 
-what transfer behavior is allowed
+Possible connections:
 
-3. Port Definition
+- Local devices
+- Other PSC nodes
+- Fabric links
 
-A PSC Port is a communication endpoint managed by PSC that connects a local device, a remote PSC node, or a fabric path into the PSC Fabric.
+Each port has the following attributes:
 
-Each port has:
+- Port ID
+- Port Role
+- Port Mode
+- Security Class
+- Policy Profile
+- Domain Scope
+- Link State
+- Capability Flags
 
-Port ID
+---
 
-Port Role
-
-Port Mode
-
-Security Class
-
-Policy Profile
-
-Domain Scope
-
-Link State
-
-Capability Flags
-
-4. Port Structure
+## 4. Port Structure
+```
 PSC Port
-├─ Port ID
-├─ Port Role
-├─ Port Mode
-├─ Security Class
-├─ Policy Profile
-├─ Domain Scope
-├─ Link State
-└─ Capability Flags
-5. Port ID
+├ Port ID
+├ Port Role
+├ Port Mode
+├ Security Class
+├ Policy Profile
+├ Domain Scope
+├ Link State
+└ Capability Flags
+```
 
-Port ID is the unique local identifier for a PSC-managed communication endpoint.
+---
 
-Requirements
+## 5. Port ID
 
-Unique within a PSC node
+Port ID is the identifier used to distinguish a communication endpoint within a PSC node.
 
-Used by Resolver / Scheduler / RCU / TMU
+Requirements:
 
-Mapped to routing and policy tables
+- Unique within a PSC node
+- Used by Resolver / Scheduler / RCU / TMU
+- Mapped to routing tables
+- Logical roles may change without modifying physical wiring
 
-Can be rebound to different logical roles without changing physical wiring
+Examples:
 
-Example
-Port 0x01
-Port 0x02
-Port 0x03
-6. Port Role
+- Port 0x01
+- Port 0x02
+- Port 0x03
 
-Port Role represents the current logical role assigned to the port.
+---
 
-This role may change depending on system configuration or PSC control policy.
+## 6. Port Role
 
-Initial Role Categories
-Compute
+The current logical role of the port.
 
-Used for CPU / GPU / accelerator task traffic
+Examples:
 
-Memory
+- Compute
+- Memory
+- Storage
+- Network
+- Fabric
+- Management
 
-Used for memory-oriented transactions and low-latency data access
+---
 
-Storage
+## 7. Port Mode
 
-Used for block/object/file movement and persistence traffic
+Operational mode of the port.
 
-Network
+- Endpoint Mode
+- Fabric Link Mode
+- Relay Mode
+- Isolated Mode
+- Maintenance Mode
 
-Used for external network ingress/egress or gateway behavior
+---
 
-Fabric
+## 8. Security Class
 
-Used for PSC-to-PSC internal fabric links
+Trust level applied to the port.
 
-Management
+- System
+- Trusted
+- User
+- External
+- Quarantined
 
-Used for control, telemetry, diagnostics, maintenance
+---
 
-7. Port Mode
+## 9. Policy Profile
 
-Port Mode defines the operational behavior of the port.
+Defines communication behavior.
 
-Modes
-Endpoint Mode
+- Latency Optimized
+- Throughput Optimized
+- Secure
+- Balanced
+- Resilient
 
-Port is attached to a local endpoint device
+---
 
-Fabric Link Mode
+## 10. Domain Scope
 
-Port connects to another PSC node or switching path
+Defines where the port may communicate.
 
-Relay Mode
+- Local Node
+- Local Fabric
+- Cluster
+- Global Fabric
+- External Boundary
 
-Port can relay traffic between domains or paths under policy control
+---
 
-Isolated Mode
+## 11. Link State
 
-Port is logically attached but restricted from normal traffic
+Link state:
 
-Maintenance Mode
+- DOWN
+- INIT
+- READY
+- DEGRADED
+- RESTRICTED
+- FAULT
 
-Port is reserved for diagnostics / update / recovery
+---
 
-8. Security Class
+## 12. Capability Flags
 
-Security Class defines the trust and enforcement level applied to traffic entering or leaving the port.
+Capabilities supported by the port.
 
-Classes
-System
+Examples:
 
-Core PSC internal traffic only
-Highest trust
-Used for Resolver / control / fault / recovery paths
+- Chunk Transfer Supported
+- Credit Flow Control Supported
+- Secure Tag Enforcement Supported
+- Multi-path Eligible
+- Fabric Relay Allowed
 
-Trusted
+---
 
-Trusted internal devices or validated PSC nodes
+## 13. Dynamic Role Binding
 
-User
+PSC ports are not permanently bound to a single role.
 
-Normal application-facing traffic
+Conditions:
 
-External
+- security constraint
+- topology policy
+- Resolver approval
+- Scheduler / RCU updates
+- active transfer drain
 
-Untrusted or boundary-facing traffic
+---
 
-Quarantined
+## 14. Port Control Ownership
 
-Restricted traffic class for suspicious / degraded / recovery use
+Roles of PSC modules.
 
-9. Policy Profile
+- Resolver
+- Scheduler
+- SPU
+- RCU
+- TMU
+- TEU
+- OMU
+- Telemetry / Fault Monitor
 
-Policy Profile defines the behavioral target of the port.
+---
 
-This affects scheduling, routing preference, buffer policy, and admission behavior.
+## 15. Behavior by Fabric State
 
-Profiles
-Latency Optimized
+- CALM
+- WARM
+- HOT
+- EMERGENCY
 
-Prioritize minimal delay
-Used for memory-like or urgent control traffic
+---
 
-Throughput Optimized
+## 16. Initial Port Policy Rules
 
-Prioritize sustained transfer efficiency
-Used for storage / bulk transfer / streaming
+Rule 1  
+All ports must have exactly one Security Class.
 
-Secure
+Rule 2  
+All ports must have exactly one Policy Profile.
 
-Prioritize inspection, validation, and restricted routing
+Rule 3  
+Port Role may change only under PSC control.
 
-Balanced
+Rule 4  
+External / Quarantined ports cannot directly obtain System privileges.
 
-Default mixed policy
+Rule 5  
+Fabric-role ports require routing validation.
 
-Resilient
+Rule 6  
+Domain expansion must be explicitly authorized.
 
-Prioritize stability and fallback behavior under degraded fabric state
+Rule 7  
+DEGRADED / FAULT states may trigger policy downgrade.
 
-10. Domain Scope
+---
 
-Domain Scope defines where the port is allowed to communicate.
+## 17. Example Port Table
 
-Scopes
-Local Node
+Port ID   Role        Mode            Security   Policy        Domain  
+0x01      Compute     Endpoint        Trusted    Latency       Local Node  
+0x02      Memory      Endpoint        System     Latency       Local Node  
+0x03      Storage     Endpoint        User       Throughput    Cluster  
+0x04      Fabric      Fabric Link     Trusted    Balanced      Cluster  
+0x05      Network     Relay           External   Secure        External Boundary  
+0x06      Management  Maintenance     System     Resilient     Local Node  
 
-Traffic remains inside local PSC node scope
+---
 
-Local Fabric
+## 18. Design Significance
 
-Traffic may traverse nearby PSC fabric segment
+The PSC Port Model provides the following advantages.
 
-Cluster
+1. **Device abstraction**  
+Ports are no longer permanently tied to specific devices.
 
-Traffic may communicate across a trusted cluster
+2. **Policy-native communication**  
+Security and communication policy become part of port definition.
 
-Global Fabric
-
-Traffic may traverse larger PSC-wide fabric
-
-External Boundary
-
-Traffic may cross into non-PSC or external network environment
-
-11. Link State
-
-Link State represents current operational condition.
-
-States
-DOWN
-
-No active link
-
-INIT
-
-Training / negotiation / bring-up in progress
-
-READY
-
-Link established and available
-
-DEGRADED
-
-Link active but performance/reliability reduced
-
-RESTRICTED
-
-Link active with policy-limited operation
-
-FAULT
-
-Link failure or unsafe behavior detected
-
-12. Capability Flags
-
-Capability Flags describe what the port can support.
-
-Examples
-
-Chunk Transfer Supported
-
-Credit Flow Control Supported
-
-Secure Tag Enforcement Supported
-
-Multi-path Eligible
-
-Fabric Relay Allowed
-
-Low-latency Path Eligible
-
-External Boundary Crossing Allowed
-
-Telemetry Priority Enabled
-
-13. Dynamic Role Binding
-
-A key PSC feature is that port meaning is not fixed permanently.
-
-Rule
-
-A physical port may be rebound logically if:
-
-security constraints allow it
-
-topology policy allows it
-
-Resolver approves the change
-
-Scheduler / RCU tables are updated consistently
-
-active transfers are safely drained or migrated
-
-Example
-
-A port connected to an accelerator shelf may operate as:
-
-Compute role during inference workload
-
-Fabric role when used as relay expansion
-
-Isolated mode during validation failure
-
-Maintenance mode during firmware or optical inspection
-
-This is one of the major differences from conventional bus-centric systems.
-
-14. Port Control Ownership
-
-PSC modules interact with the port as follows:
-
-Resolver
-
-Determines high-level role eligibility and policy authority
-
-Scheduler
-
-Applies traffic priority and service profile
-
-SPU
-
-Enforces trust class, domain crossing, and policy restrictions
-
-RCU
-
-Maps port to routing behavior and path selection
-
-TMU
-
-Assigns transfer context and flow-control behavior
-
-TEU
-
-Executes actual transfer issuance through the selected port
-
-OMU
-
-Monitors optical/link condition and health signals
-
-Telemetry / Fault Monitor
-
-Tracks degradation, anomalies, and failure escalation
-
-15. Port Behavior by Fabric State
-
-Port behavior should also depend on global/local fabric condition.
-
-CALM
-
-Normal full-policy operation
-
-WARM
-
-Mild load adaptation, path optimization, soft shaping
-
-HOT
-
-Aggressive prioritization, admission control, rerouting
-
-EMERGENCY
-
-Restricted traffic set, protection-first behavior, quarantine escalation
-
-16. Initial Port Policy Rules
-Rule 1
-
-All ports must have exactly one active Security Class.
-
-Rule 2
-
-All ports must have exactly one active Policy Profile.
-
-Rule 3
-
-Port Role may change, but only through PSC-controlled rebinding.
-
-Rule 4
-
-External or Quarantined ports cannot directly gain System privileges.
-
-Rule 5
-
-Fabric-role ports require routing validation and telemetry monitoring.
-
-Rule 6
-
-Domain expansion must be explicitly authorized by policy.
-
-Rule 7
-
-A DEGRADED or FAULT link may trigger automatic policy downgrade.
-
-17. Example Port Table
-Port ID   Role        Mode            Security   Policy        Domain
-0x01      Compute     Endpoint        Trusted    Latency       Local Node
-0x02      Memory      Endpoint        System     Latency       Local Node
-0x03      Storage     Endpoint        User       Throughput    Cluster
-0x04      Fabric      Fabric Link     Trusted    Balanced      Cluster
-0x05      Network     Relay           External   Secure        External Boundary
-0x06      Management  Maintenance     System     Resilient     Local Node
-18. Design Significance
-
-This model gives PSC three major advantages:
-
-1. Device abstraction
-
-Ports are no longer hardwired to device meaning.
-
-2. Policy-native communication
-
-Security and routing policy become part of port identity.
-
-3. Fabric adaptability
-
-Ports can be repurposed according to topology, workload, and fault conditions.
+3. **Fabric adaptability**  
+Ports can be repurposed depending on topology, workload, and fault conditions.

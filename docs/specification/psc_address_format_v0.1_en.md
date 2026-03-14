@@ -1,8 +1,23 @@
-PSC Address Format v0.1
-Author: T.Hirose
-Status: Draft
+# PSC Address Format v0.1
 
-1. Purpose
+## Document Information
+
+Document Name : PSC Address Format
+Version       : v0.1
+Project       : PSC / Photon System Controller
+Layer         : PSC Fabric
+Document Type : Specification
+Status        : Draft
+
+Author        : T. Hirose
+Created       : 2026-03
+Last Updated  : 2026-03
+
+Language      : English
+
+---
+
+## 1. Purpose
 
 PSC Address Format defines the native address structure used
 inside the PSC Fabric for routing and transfer execution.
@@ -16,47 +31,46 @@ of a communication endpoint within the PSC Fabric.
 
 ---
 
-2. Design Goals
+## 2. Design Goals
 
 The PSC Address Format is designed with the following goals.
 
-Scalability
+- Scalability
 
-The address structure must support PSC deployments ranging
-from small local systems to large distributed infrastructures.
+The address structure must support PSC deployments ranging from small local systems to large distributed infrastructures.
 
-Hierarchical Routing
+- Hierarchical Routing
 
 The address format must reflect the hierarchical topology
 of PSC Fabric including fabrics, clusters, nodes, and ports.
 
-Hardware Efficiency
+- Hardware Efficiency
 
 The format must allow efficient hardware implementation
 inside PSC modules such as RCU, TMU, and TEU.
 
-Deterministic Routing
+- Deterministic Routing
 
 Routing decisions should be derived directly from address
 fields without complex translation overhead.
 
-Future Expandability
+- Future Expandability
 
 The format should allow future PSC extensions such as
 global addressing and logical service identification.
 
 ---
 
-3. Address Format Overview
+## 3. Address Format Overview
 
 PSC uses a fixed-length 64-bit address.
 
 The address is composed of four hierarchical fields.
 
-Fabric ID
-Cluster ID
-Node ID
-Port ID
+- Fabric ID
+- Cluster ID
+- Node ID
+- Port ID
 
 Address Layout
 
@@ -66,24 +80,25 @@ Each field represents a level of the PSC Fabric topology.
 
 ---
 
-4. Bit Allocation
+## 4. Bit Allocation
 
-The PSC native address is allocated as follows.
+The PSC native address is a fixed-length 64-bit structure
+composed of the following four fields.
 
-Fabric ID   : 16 bits
-Cluster ID  : 16 bits
-Node ID     : 24 bits
-Port ID     : 8 bits
-
-Total       : 64 bits
+Address Bit Layout (64-bit)
+```
+| Fabric ID | Cluster ID | Node ID | Port ID |
+|-----------|------------|---------|---------|
+| 16 bits   | 16 bits    | 24 bits | 8 bits  |
+```
 
 This allocation balances scalability and hardware efficiency.
 
 ---
 
-5. Field Definitions
+## 5. Field Definitions
 
-5.1 Fabric ID
+### 5.1 Fabric ID
 
 Fabric ID identifies a PSC Fabric domain.
 
@@ -92,77 +107,63 @@ are interconnected by PSC Fabric links.
 
 Multiple fabrics may exist in large deployments.
 
-Maximum fabrics
+Maximum Fabrics: 65536
 
-65536
-
----
-
-5.2 Cluster ID
+### 5.2 Cluster ID
 
 Cluster ID identifies a logical grouping of nodes
 within a fabric.
 
 Clusters can represent physical or logical groupings such as
 
-Rack groups
-Local compute clusters
-Data center segments
-Edge clusters
+- Rack groups
+- Local compute clusters
+- Data center segments
+- Edge clusters
 
 Cluster-based organization improves routing scalability
 and management.
 
-Maximum clusters per fabric
+Maximum Clusters per Fabric: 65536
 
-65536
-
----
-
-5.3 Node ID
+### 5.3 Node ID
 
 Node ID identifies a PSC node inside a cluster.
 
 A node represents a device or processing element
 connected to the PSC Fabric.
 
-Examples include
+Examples include:
 
-CPU nodes
-GPU nodes
-Memory nodes
-Storage nodes
-Network nodes
-Accelerator nodes
+- CPU nodes
+- GPU nodes
+- Memory nodes
+- Storage nodes
+- Network nodes
+- Accelerator nodes
 
 Node IDs must be unique inside a cluster.
 
-Maximum nodes per cluster
+Maximum Nodes per Cluster: 16777216
 
-16777216
-
----
-
-5.4 Port ID
+### 5.4 Port ID
 
 Port ID identifies a communication endpoint inside a node.
 
 Ports represent PSC communication interfaces or
 internal functional endpoints.
 
-Examples include
+Examples include:
 
-Optical PSC ports
-Internal device interfaces
-Logical communication endpoints
+- Optical PSC ports
+- Internal device interfaces
+- Logical communication endpoints
 
-Maximum ports per node
-
-256
+Maximum Ports per Node: 256
 
 ---
 
-6. Routing Use
+## 6. Routing Use
 
 PSC routing decisions are primarily handled by
 the Routing Control Unit (RCU).
@@ -170,19 +171,19 @@ the Routing Control Unit (RCU).
 The hierarchical address format allows routing
 decisions to be performed using address field analysis.
 
-Routing levels include
+Routing levels include:
 
-Fabric-level routing
-Cluster-level routing
-Node-level routing
-Port-level routing
+- Fabric-level routing
+- Cluster-level routing
+- Node-level routing
+- Port-level routing
 
 This structure enables efficient routing
 in large PSC fabrics.
 
 ---
 
-7. Resolution Layer Relationship
+## 7. Resolution Layer Relationship
 
 The 64-bit PSC address represents the native
 transfer address used inside the PSC Fabric.
@@ -196,20 +197,20 @@ Application-level object identifiers
 
 are resolved by upper layers such as the Resolver.
 
-Example resolution model
-
+Example Resolution Model
+```
 Logical Name
       ↓
 Resolver
       ↓
 PSC Native Address (64-bit)
-
+```
 This separation keeps the PSC Fabric routing
 system simple and efficient.
 
 ---
 
-8. Address Examples
+## 8. Address Examples
 
 Example Address
 
@@ -234,23 +235,23 @@ Destination Address
 
 ---
 
-9. Future Extensions
+## 9. Future Extensions
 
 Future PSC versions may extend the addressing model
 with additional concepts such as
 
-Hierarchical routing domains
-Spine-leaf topology identifiers
-Global PSC addressing
-Logical service addressing
-Function-level addressing
+- Hierarchical routing domains
+- Spine-leaf topology identifiers
+- Global PSC addressing
+- Logical service addressing
+- Function-level addressing
 
 The current 64-bit structure is designed
 to remain compatible with such extensions.
 
 ---
 
-10. Summary
+## 10. Summary
 
 PSC Address Format v0.1 defines a 64-bit hierarchical
 address used inside the PSC Fabric.

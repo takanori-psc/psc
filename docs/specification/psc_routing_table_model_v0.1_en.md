@@ -86,16 +86,24 @@ A route entry may represent:
 
 A PSC route entry may contain the following fields:
 
+Destination fields
+
 - Destination Port ID
 - Destination Node ID
 - Destination Domain ID
 
+Next Hop fields
+
 - Next Hop Port ID
 - Next Hop Node ID
+
+Attribute fields
 
 - Path Class
 - Policy Flags
 - Trust Level
+
+Route state fields
 
 - Route State
 - Priority

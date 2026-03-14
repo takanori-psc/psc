@@ -1,8 +1,23 @@
-PSC Node Addressing Model v0.1
-Author: T.Hirose
-Status: Draft
+# PSC Node Addressing Model v0.1
 
-1. 目的
+## ドキュメント情報
+
+ドキュメント名 : PSC Node Addressing Model
+バージョン     : v0.1
+プロジェクト   : PSC / Photon System Controller
+レイヤ         : PSC Fabric
+ドキュメント種別 : 仕様書
+ステータス     : Draft
+
+作成者         : T. Hirose
+作成日         : 2026-03
+最終更新       : 2026-03
+
+言語           : Japanese
+
+---
+
+## 1. 目的
 
 PSC Node Addressing Model は、
 PSC Fabric 内におけるノード、ポート、および
@@ -20,7 +35,7 @@ PSC Fabric 環境における効率的なルーティング、
 
 ---
 
-2. 設計目標
+## 2. 設計目標
 
 本アドレスモデルは以下の目標を持って設計されている。
 
@@ -46,7 +61,7 @@ Routing Control Unit (RCU) が効率的に
 
 ---
 
-3. アドレスの適用範囲
+## 3. アドレスの適用範囲
 
 PSCアドレスは以下の識別に使用される。
 
@@ -69,36 +84,40 @@ Scheduler
 
 ---
 
-4. Fabric Address Structure
+## 4. Fabric Address Structure
 
-PSC は階層型アドレス構造を採用する。
+PSC は PSC Fabric 内の通信エンドポイントを識別するために
+階層型アドレス構造を採用している。
+
+アドレスは PSC Fabric の物理および論理トポロジーを
+表す4つの階層フィールドで構成される。
 
 基本アドレス形式
 
-Fabric ID : Cluster ID : Node ID : Port ID
+`Fabric ID : Cluster ID : Node ID : Port ID`
 
 各フィールドは
-PSC Fabric トポロジーの階層構造を表す。
+PSC Fabric トポロジーの異なる階層を表す。
 
 例
 
-1 : 2 : 15 : 3
+`1 : 2 : 15 : 3`
 
 Fabric 1  
 Cluster 2  
 Node 15  
-Port 3
+Port 3  
 
-この構造により、
+この階層構造により、
 マルチクラスタPSCファブリックにおいて
 スケーラブルなアドレス管理と
-効率的なルーティングが可能となる。
+効率的なルーティングが可能になる。
 
 ---
 
-5. アドレスフィールド定義
+## 5. アドレスフィールド定義
 
-5.1 Fabric ID
+### 5.1 Fabric ID
 
 Fabric ID は
 PSC Fabric ドメインを識別する。
@@ -114,26 +133,22 @@ Fabric 0
 Fabric 1  
 Fabric 2
 
----
-
-5.2 Cluster ID
+### 5.2 Cluster ID
 
 Cluster ID は
 Fabric 内のノードグループを識別する。
 
 Cluster は以下のような構成単位を表す。
 
-・物理ラック  
-・ローカルネットワークグループ  
-・データセンターセグメント  
-・エッジクラスタ  
+- 物理ラック
+- ローカルネットワークグループ
+- データセンターセグメント
+- エッジクラスタ
 
 クラスタ単位のグループ化により、
 ルーティング効率とスケーラビリティが向上する。
 
----
-
-5.3 Node ID
+### 5.3 Node ID
 
 Node ID は
 Cluster 内のPSCノードを識別する。
@@ -143,19 +158,17 @@ PSC Fabric に接続されたデバイスを表す。
 
 代表的なノードタイプは以下である。
 
-CPUノード  
-GPUノード  
-メモリノード  
-ストレージノード  
-ネットワークノード  
-アクセラレータノード  
+- CPUノード
+- GPUノード
+- メモリノード
+- ストレージノード
+- ネットワークノード
+- アクセラレータノード
 
 Node ID は
 クラスタ内で一意でなければならない。
 
----
-
-5.4 Port ID
+### 5.4 Port ID
 
 Port ID は
 ノード内の通信エンドポイントを識別する。
@@ -164,9 +177,9 @@ Port ID は
 
 例
 
-PSC光ポート  
-内部デバイスインターフェース  
-論理通信エンドポイント  
+- PSC光ポート
+- 内部デバイスインターフェース
+- 論理通信エンドポイント
 
 Port ID により
 PSCノード内部の特定インターフェースへ
@@ -174,7 +187,7 @@ PSCノード内部の特定インターフェースへ
 
 ---
 
-6. ルーティングスコープ
+## 6. ルーティングスコープ
 
 ルーティング判断は主に
 Routing Control Unit (RCU) によって行われる。
@@ -184,10 +197,10 @@ Routing Control Unit (RCU) によって行われる。
 
 ルーティングレベル
 
-Portレベル  
-Nodeレベル  
-Clusterレベル  
-Fabricレベル  
+- Fabricレベル
+- Clusterレベル
+- Nodeレベル
+- Portレベル
 
 階層型ルーティングにより
 大規模PSCファブリックにおいても
@@ -195,7 +208,7 @@ Fabricレベル
 
 ---
 
-7. アドレス解決
+## 7. アドレス解決
 
 アドレス解決は
 論理ノード識別子を
@@ -203,9 +216,9 @@ Fabricレベル
 
 この処理は以下のモジュールで分担される。
 
-Resolver  
-RCU  
-TMU  
+- Resolver
+- RCU
+- TMU
 
 典型的な解決手順は以下である。
 
@@ -213,8 +226,9 @@ TMU
 2. Resolver が要求を検証する  
 3. アドレスがルーティングロジックにより解釈される  
 4. RCU が次ホップを決定する  
-5. TMU が転送をスケジューリングする  
-6. TEU が転送を実行する  
+5. TMU が転送管理を準備する  
+6. Scheduler が転送をスケジューリングする  
+7. TEU が転送を実行する  
 
 このモデルにより、
 中央集権型ボトルネックを作らずに
@@ -222,7 +236,7 @@ TMU
 
 ---
 
-8. アドレス例
+## 8. アドレス例
 
 例 Fabric
 
@@ -251,23 +265,23 @@ Memory Node の Port 2 を示す。
 
 ---
 
-9. 将来拡張
+## 9. 将来拡張
 
 将来のPSCバージョンでは
 以下の拡張が可能である。
 
-・階層ルーティングドメイン  
-・Spine-Leaf トポロジ識別子  
-・グローバルPSCネットワークアドレス  
-・論理サービスアドレス  
-・Functionレベルアドレス  
+- 階層ルーティングドメイン
+- Spine-Leaf トポロジ識別子
+- グローバルPSCネットワークアドレス
+- 論理サービスアドレス
+- Functionレベルアドレス
 
 現在のアドレス構造は
 これらの拡張を考慮して設計されている。
 
 ---
 
-10. まとめ
+## 10. まとめ
 
 PSC Node Addressing Model は、
 PSC Fabric 環境において

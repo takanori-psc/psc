@@ -1,17 +1,18 @@
-PSC Routing Algorithm Specification v0.1
+# PSC Routing Algorithm Specification v0.1
 
-Document Information
-Document Name: PSC Routing Algorithm
-Version: v0.1
-Project: PSC / Photon System Controller
-Layer: PSC Fabric
-Status: Draft
-Author: T. Hirose
-Language: English
+## Document Information
+
+- Document Name: PSC Routing Algorithm
+- Version: v0.1
+- Project: PSC / Photon System Controller
+- Layer: PSC Fabric
+- Status: Draft
+- Author: T. Hirose
+- Language: English
 
 ---
 
-### 1. Purpose
+## 1. Purpose
 
 This document defines the routing algorithm used by the
 RCU (Routing Control Unit) within the PSC Fabric.
@@ -33,7 +34,7 @@ This specification mainly covers the following.
 
 ---
 
-### 2. Scope
+## 2. Scope
 
 This specification defines the route selection logic used for node-to-node transfers within the PSC Fabric.
 
@@ -57,7 +58,7 @@ These are defined in separate specifications.
 
 ---
 
-### 3. Design Philosophy
+## 3. Design Philosophy
 
 The PSC Routing Algorithm is designed as a state-based routing system
 prioritizing stability, continuity, and controllability,
@@ -121,7 +122,7 @@ as a future extension of the PSC Fabric architecture.
 
 ---
 
-### 4. Routing Objectives
+## 4. Routing Objectives
 
 The objectives of the PSC Routing Algorithm are as follows.
 
@@ -135,7 +136,7 @@ The objectives of the PSC Routing Algorithm are as follows.
 
 ---
 
-### 5. Routing Decision Model
+## 5. Routing Decision Model
 
 PSC performs routing decisions
 using the following multi-stage model.
@@ -213,7 +214,7 @@ Route evaluation may be triggered by
 
 ---
 
-### 6. Route Scoring Model
+## 6. Route Scoring Model
 
 Each candidate route receives
 a composite score based on multiple evaluation factors.
@@ -262,7 +263,7 @@ and may depend on implementation.
 
 ---
 
-### 7. Congestion-aware Routing
+## 7. Congestion-aware Routing
 
 ### 7.1 Purpose
 
@@ -301,7 +302,7 @@ The system enters global load suppression behavior.
 
 ---
 
-### 8. Policy-aware Routing
+## 8. Policy-aware Routing
 
 Routes that violate security or operational policies
 must not be selected.
@@ -313,7 +314,7 @@ Exception policies may exist for EMERGENCY mode.
 
 ---
 
-### 9. Trust-aware Routing
+## 9. Trust-aware Routing
 
 PSC evaluates link and node trust levels continuously
 rather than treating them as simple Up/Down states.
@@ -322,7 +323,7 @@ Low-trust routes may be penalized or excluded.
 
 ---
 
-### 10. Failover Decision
+## 10. Failover Decision
 
 When the active route fails or degrades significantly,
 PSC performs failover.
@@ -335,7 +336,7 @@ Emergency Failover
 
 ---
 
-### 11. Adaptive Routing
+## 11. Adaptive Routing
 
 PSC supports adaptive routing based on Fabric conditions.
 
@@ -344,21 +345,21 @@ not aggressive real-time optimization.
 
 ---
 
-### 12. Fabric State Interaction
+## 12. Fabric State Interaction
 
 Routing behavior depends on Fabric state.
 
-CALM  
-WARM  
-HOT  
-EMERGENCY
+- CALM  
+- WARM  
+- HOT  
+- EMERGENCY
 
 Each state adjusts routing priorities
 toward stability and survivability.
 
 ---
 
-### 13. Route Stability Control
+## 13. Route Stability Control
 
 To avoid route oscillation,
 PSC introduces
@@ -371,23 +372,24 @@ PSC introduces
 
 ---
 
-### 14. Interaction with Other Modules
+## 14. Interaction with Other Modules
 
-Resolver  
-Scheduler  
-SPU  
-TMU  
-TEU  
-OMU  
-Telemetry / Fault Monitor
+- Resolver  
+- Scheduler  
+- SPU  
+- TMU  
+- TEU  
+- OMU  
+- Telemetry / Fault Monitor
 
 Each module contributes information
 used by the routing decision process.
 
 ---
 
-### 15. High-level Pseudocode
+## 15. High-level Pseudocode
 
+```text
 function select_route(source, destination, transfer_context):
 
     candidates = discover_routes(source, destination)
@@ -416,10 +418,12 @@ function select_route(source, destination, transfer_context):
         return current_route
     else:
         return best_route
+```
+
 
 ---
 
-### 16. Non-goals
+## 16. Non-goals
 
 The following are not defined in v0.1.
 
@@ -434,7 +438,7 @@ These may be introduced in future versions.
 
 ---
 
-### 17. Future Extensions
+## 17. Future Extensions
 
 Possible future extensions include
 
@@ -448,7 +452,7 @@ Possible future extensions include
 
 ---
 
-### 18. Summary
+## 18. Summary
 
 PSC Routing Algorithm treats routing
 as a control problem integrating
