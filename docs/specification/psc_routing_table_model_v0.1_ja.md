@@ -2,7 +2,7 @@
 
 ## Document Information
 
-* Document Name: PSC Routing Table Model
+- ドキュメント名: PSC Routing Table Model
 - バージョン : v0.1
 - プロジェクト : PSC / Photon System Controller
 - レイヤ : PSC Fabric
