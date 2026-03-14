@@ -2,18 +2,16 @@
 
 ## ドキュメント情報
 
-ドキュメント名 : PSC Address Format
-バージョン     : v0.1
-プロジェクト   : PSC / Photon System Controller
-レイヤ         : PSC Fabric
-ドキュメント種別 : 仕様書
-ステータス     : Draft
-
-作成者         : T. Hirose
-作成日         : 2026-03
-最終更新       : 2026-03
-
-言語           : Japanese
+- ドキュメント名 : PSC Address Format
+- バージョン     : v0.1
+- プロジェクト   : PSC / Photon System Controller
+- レイヤ         : PSC Fabric
+- ドキュメント種別 : 仕様書
+- ステータス     : Draft
+- 作成者         : T. Hirose
+- 作成日         : 2026-03
+- 最終更新       : 2026-03
+- 言語           : Japanese
 
 ---
 
