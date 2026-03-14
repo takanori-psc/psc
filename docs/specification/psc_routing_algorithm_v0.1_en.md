@@ -3,12 +3,15 @@
 ## Document Information
 
 - Document Name: PSC Routing Algorithm
-- Version: v0.1
-- Project: PSC / Photon System Controller
-- Layer: PSC Fabric
-- Status: Draft
-- Author: T. Hirose
-- Language: English
+- Version : v0.1
+- Project : PSC / Photon System Controller
+- Layer : PSC Fabric
+- Document Type : Specification
+- Status : Draft
+- Author : T. Hirose
+- Created : 2026-03
+- Last Updated : 2026-03
+- Language : English
 
 ---
 
