@@ -1,4 +1,4 @@
-# PSC Port Model v0.1
+# PSC ポートモデル v0.1
 
 ## Document Information
 
