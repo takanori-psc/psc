@@ -1,5 +1,20 @@
 # PSC Transfer Flow v0.1
 
+## Document Information
+
+- Document Name: PSC Transfer Flow
+- Version: v0.1
+- Project: PSC / Photon System Controller
+- Layer: PSC Fabric
+- Document Type: Specification
+- Status: Draft
+- Author: T. Hirose
+- Created: 2026-03
+- Last Updated: 2026-03
+- Language: English
+
+---
+
 ## 1. Purpose
 
 PSC Transfer Flow defines the operational behavior of data movement inside the PSC Fabric.
