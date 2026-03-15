@@ -10,6 +10,20 @@ PSC rethinks the traditional CPU-centric system architecture and introduces a fa
 
 ![PSC Architecture Concept](diagrams/concept/psc_concept_architecture_comparison_v0.1.png)
 
+---
+
+## Architecture Diagrams
+
+### PSC Transfer Flow
+
+![PSC Transfer Flow](diagrams/fabric/psc_transfer_flow_v0.1.png)
+
+### PSC Fabric Internal Architecture
+
+![PSC Fabric Internal Architecture](diagrams/fabric/psc_fabric_internal_architecture_v0.1.png)
+
+---
+
 ## Key Concepts
 
 PSC is built around several core ideas:
@@ -62,7 +76,7 @@ Each specification is provided in both Japanese and English.
 
 Current version:
 
-# PSC Fabric Specification v0.1
+## PSC Fabric Specification v0.1
 
 This directory contains the published specification set for PSC Fabric.
 
