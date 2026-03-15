@@ -8,7 +8,7 @@ PSC rethinks the traditional CPU-centric system architecture and introduces a fa
 
 ## PSC Concept
 
-![PSC Architecture Concept](diagrams/concept/psc_architecture_concept_v0.1.png)
+![PSC Architecture Concept](diagrams/concept/psc_concept_architecture_comparison_v0.1.png)
 
 ## Key Concepts
 
