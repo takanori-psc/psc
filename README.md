@@ -61,3 +61,41 @@ Each specification is provided in both Japanese and English.
 ## Project Status
 
 Current version:
+
+# PSC Fabric Specification v0.1
+
+This directory contains the published specification set for PSC Fabric.
+
+## Core Communication Models
+- PSC Address Format
+- PSC Packet Structure
+- PSC Transfer Flow
+- PSC Port Model
+
+## Routing and Fabric Control
+- PSC Routing Model
+- PSC Routing Table Model
+- PSC Routing Algorithm
+- PSC Routing Decision Pipeline
+- PSC Congestion Control Model
+- PSC Fabric State Model
+- PSC Control Plane Model
+
+## Fabric Structure
+- PSC Node Addressing Model
+- PSC Node Type Model
+- PSC Fabric Topology Model
+- PSC Chiplet Architecture Model
+
+## Governance and Observability
+- PSC Policy Model
+- PSC Security Model
+- PSC Telemetry Model
+
+---
+
+## Author
+
+T. Hirose
+
+Independent architecture research project.
