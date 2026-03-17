@@ -1,5 +1,13 @@
 # Photon System Controller (PSC)
 
+## 📄 Article
+
+👉 Read the concept:
+
+**[A Fabric-Centric Computer Architecture: PSC](https://zenn.dev/takanori_psc/articles/73827700dc68a6)**
+
+---
+
 PSC is a **fabric-centric computer architecture** designed for high-performance distributed computing and AI infrastructure.
 
 ---
