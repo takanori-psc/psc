@@ -1,6 +1,6 @@
 # Photon System Controller (PSC)
 
-## 📄 Article
+## 📄 Article（記事）
 
 👉 Read the concept:
 
@@ -8,21 +8,32 @@
 
 ---
 
-PSC is a **fabric-centric computer architecture** designed for high-performance distributed computing and AI infrastructure.
+## What is PSC?（PSCとは何か）
+
+PSC is a fabric-centric computer architecture designed to shift system control and data movement away from traditional CPU-centric designs.  
+（PSCは、従来のCPU中心設計から、ファブリック中心の制御とデータ転送へ移行するコンピュータアーキテクチャです。）
+
+In PSC, the communication fabric itself becomes the core of coordination and data flow.  
+（PSCでは、通信ファブリックそのものがシステムの制御とデータ流通の中心となります。）
+
+In simple terms, PSC shifts the role of system control from the CPU to the communication fabric.  
+（簡単に言うと、PSCはシステム制御の主役をCPUから通信ファブリックへ移す構造です。）
 
 ---
 
-## Architecture Overview
+## Architecture Overview（アーキテクチャ概要）
 
 ![PSC Architecture Concept](diagrams/concept/psc_concept_architecture_comparison_v0.1.png)
 
-PSC replaces traditional CPU-centric communication with a **unified fabric model**, enabling flexible, scalable, and policy-driven data movement.
+PSC replaces traditional CPU-centric communication with a unified fabric model, enabling flexible and scalable data movement.  
+（PSCは従来のCPU中心通信を統一ファブリックモデルに置き換え、柔軟でスケーラブルなデータ転送を実現します。）
 
 ---
 
-## Documentation
+## Documentation（ドキュメント）
 
-Start here to understand PSC:
+Start here to understand PSC:  
+（ここからPSCの理解を開始できます）
 
 * 📘 [Architecture Overview](docs/architecture/psc_architecture_overview_en.md)
 * 🧭 [Architecture Map](docs/architecture/psc_architecture_map_v0.1_en.md)
@@ -30,71 +41,91 @@ Start here to understand PSC:
 
 ---
 
-## Key Concepts
+## Key Concepts（主要コンセプト）
 
-PSC is built around the following principles:
+PSC is built around the following principles:  
+（PSCは以下の原則に基づいています）
 
-* Fabric-driven computer architecture
-* Receiver-driven data transfer
-* Chunk-based transport
-* Congestion-aware routing
-* Policy-aware routing
-* Trust-aware routing
-* Adaptive fabric control
+* Fabric-driven computer architecture  
+  （ファブリック駆動型アーキテクチャ）
+
+* Receiver-driven data transfer  
+  （受信側主導データ転送）
+
+* Chunk-based transport  
+  （チャンク単位転送）
+
+* Congestion-aware routing  
+  （輻輳認識ルーティング：混雑を考慮した経路制御）
+
+* Policy-aware routing  
+  （ポリシー認識ルーティング）
+
+* Trust-aware routing  
+  （信頼性考慮ルーティング）
+
+* Adaptive fabric control  
+  （適応型ファブリック制御）
 
 ---
 
-## Architecture Diagrams
+## Architecture Diagrams（構造図）
 
-### Transfer Flow
+### Transfer Flow（転送フロー）
 
 ![PSC Transfer Flow](diagrams/fabric/psc_transfer_flow_v0.1.png)
 
-### Fabric Internal Architecture
+### Fabric Internal Architecture（ファブリック内部構造）
 
 ![PSC Fabric Internal Architecture](diagrams/fabric/psc_fabric_internal_architecture_v0.1.png)
 
 ---
 
-## System Architecture
+## System Architecture（システム構造）
 
-PSC introduces a communication fabric that connects:
+PSC introduces a communication fabric that connects:  
+（PSCは以下の構成要素をファブリックで接続します）
 
-* CPU
-* GPU
-* Memory
-* Storage
-* Network
-* Accelerators
+* CPU  
+* GPU  
+* Memory（メモリ）  
+* Storage（ストレージ）  
+* Network（ネットワーク）  
+* Accelerators（アクセラレータ）
 
-All communication flows through the **PSC Fabric**.
+All communication flows through the PSC Fabric.  
+（すべての通信はPSCファブリックを通過します。）
 
 ---
 
-## Specification
+## Specification（仕様）
 
-The PSC specification includes:
+The PSC specification includes:  
+（PSC仕様には以下が含まれます）
 
-* Addressing  
-* Communication Protocol  
-* Routing  
-* Fabric Control  
-* Security  
-* Telemetry  
+* Addressing（アドレッシング）  
+* Communication Protocol（通信プロトコル）  
+* Routing（ルーティング）  
+* Fabric Control（ファブリック制御）  
+* Security（セキュリティ）  
+* Telemetry（テレメトリ）
 
 📚 [Browse full specification](docs/specification/)
 
-Each specification is available in both Japanese and English.
+Each specification is available in both Japanese and English.  
+（各仕様は日本語と英語の両方で提供されます）
 
 ---
 
-## Project Status
+## Project Status（開発状況）
 
-PSC Fabric Specification v0.1 is currently under development.
+PSC Fabric Specification v0.1 is currently under development.  
+（PSC Fabric仕様 v0.1 は現在開発中です）
 
 ---
 
-## Author
+## Author（作者）
 
-T. Hirose
-Independent architecture research project
+T. Hirose  
+Independent architecture research project  
+（個人によるアーキテクチャ研究プロジェクト）
