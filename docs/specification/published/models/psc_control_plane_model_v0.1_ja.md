@@ -1,4 +1,4 @@
-PSC Control Plane Model v0.1
+#PSC Control Plane Model v0.1
 
 ## ドキュメント情報
 

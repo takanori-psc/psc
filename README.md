@@ -1,115 +1,92 @@
 # Photon System Controller (PSC)
 
-Photon System Controller (PSC) is a fabric-driven computer architecture designed for high-performance distributed computing and AI infrastructure.
-
-PSC rethinks the traditional CPU-centric system architecture and introduces a fabric-centric communication model where all devices communicate through a unified fabric.
-
----
-
-## PSC Concept
-
-![PSC Architecture Concept](diagrams/concept/psc_concept_architecture_comparison_v0.1.png)
-
----
-
-## Architecture Diagrams
-
-### PSC Transfer Flow
-
-![PSC Transfer Flow](diagrams/fabric/psc_transfer_flow_v0.1.png)
-
-### PSC Fabric Internal Architecture
-
-![PSC Fabric Internal Architecture](diagrams/fabric/psc_fabric_internal_architecture_v0.1.png)
-
----
-
-## Key Concepts
-
-PSC is built around several core ideas:
-
-- Fabric-driven computer architecture
-- Receiver-driven data transfer
-- Chunk-based transport
-- Congestion-aware routing
-- Policy-aware routing
-- Trust-aware routing
-- Adaptive fabric control
-
-The architecture aims to support large-scale distributed AI systems and high-performance computing environments.
+PSC is a **fabric-centric computer architecture** designed for high-performance distributed computing and AI infrastructure.
 
 ---
 
 ## Architecture Overview
 
-PSC introduces a communication fabric that connects all major system components:
+![PSC Architecture Concept](diagrams/concept/psc_concept_architecture_comparison_v0.1.png)
 
-- CPU
-- GPU
-- Memory
-- Storage
-- Network
-- Accelerators
+PSC replaces traditional CPU-centric communication with a **unified fabric model**, enabling flexible, scalable, and policy-driven data movement.
 
-All communication flows through the **PSC Fabric**, enabling flexible routing, monitoring, and policy control.
+---
+
+## Documentation
+
+Start here to understand PSC:
+
+* 📘 [Architecture Overview](docs/architecture/psc_architecture_overview_en.md)
+* 🧭 [Architecture Map](docs/architecture/psc_architecture_map_v0.1_en.md)
+* 📚 [Specification](docs/specification/)
+
+---
+
+## Key Concepts
+
+PSC is built around the following principles:
+
+* Fabric-driven computer architecture
+* Receiver-driven data transfer
+* Chunk-based transport
+* Congestion-aware routing
+* Policy-aware routing
+* Trust-aware routing
+* Adaptive fabric control
+
+---
+
+## Architecture Diagrams
+
+### Transfer Flow
+
+![PSC Transfer Flow](diagrams/fabric/psc_transfer_flow_v0.1.png)
+
+### Fabric Internal Architecture
+
+![PSC Fabric Internal Architecture](diagrams/fabric/psc_fabric_internal_architecture_v0.1.png)
+
+---
+
+## System Architecture
+
+PSC introduces a communication fabric that connects:
+
+* CPU
+* GPU
+* Memory
+* Storage
+* Network
+* Accelerators
+
+All communication flows through the **PSC Fabric**.
 
 ---
 
 ## Specification
 
-Current PSC specifications are available in the repository:
+The PSC specification includes:
 
-- Address Format
-- Node Addressing Model
-- Packet Structure
-- Port Model
-- Transfer Flow
-- Routing Model
-- Routing Table Model
-- Routing Algorithm
+* Addressing  
+* Communication Protocol  
+* Routing  
+* Fabric Control  
+* Security  
+* Telemetry  
 
-Each specification is provided in both Japanese and English.
+📚 [Browse full specification](docs/specification/)
+
+Each specification is available in both Japanese and English.
 
 ---
 
 ## Project Status
 
-Current version:
-
-## PSC Fabric Specification v0.1
-
-This directory contains the published specification set for PSC Fabric.
-
-## Core Communication Models
-- PSC Address Format
-- PSC Packet Structure
-- PSC Transfer Flow
-- PSC Port Model
-
-## Routing and Fabric Control
-- PSC Routing Model
-- PSC Routing Table Model
-- PSC Routing Algorithm
-- PSC Routing Decision Pipeline
-- PSC Congestion Control Model
-- PSC Fabric State Model
-- PSC Control Plane Model
-
-## Fabric Structure
-- PSC Node Addressing Model
-- PSC Node Type Model
-- PSC Fabric Topology Model
-- PSC Chiplet Architecture Model
-
-## Governance and Observability
-- PSC Policy Model
-- PSC Security Model
-- PSC Telemetry Model
+PSC Fabric Specification v0.1 is currently under development.
 
 ---
 
 ## Author
 
 T. Hirose
-
-Independent architecture research project.
+Independent architecture research project
