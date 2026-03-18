@@ -4,6 +4,7 @@ Version: v0.1
 
 This document provides a high-level structural map of the PSC architecture.
 
+```
 GAIOS
 Planet-scale Distributed AI OS
 ────────────────────────
@@ -57,3 +58,4 @@ Photon System Controller
  ├ PSC Nodes
  ├ PSC Blades
  └ PSC Joint Units
+```
