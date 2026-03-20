@@ -2311,4 +2311,807 @@ Policy check: current_cost=8, best_cost=5, margin=0, improvement=3, policy=laten
 
 ---
 
+## v12 - Degraded Mode Policy Refinement
 
+- Algorithm: Cost-based route selection + Hysteresis + Policy + Resolver Escalation + Trust-aware Route Selection + Trust Failure Recovery + Degraded Mode Policy Refinement
+
+- Feature:
+  - `TRUST_MODE = require_trusted` を維持
+  - trusted route 不在時に trust failure を検出
+  - Resolver により degraded fallback を許可
+  - degraded mode 専用の switching margin を導入
+  - untrusted fallback route に penalty を導入
+  - trusted route が一定ステップ連続で復帰した場合、`DEGRADED -> NORMAL` へ戻る recovery 条件を追加
+  - degraded mode 中にも stability / latency とは別の判断境界を持たせる構造を導入
+
+- Result:
+  - 成功:
+    - degraded mode 専用の route switching policy を導入できた
+    - untrusted fallback route に対して penalty を付与する基本構造を実装できた
+    - trusted route 復帰時に `DEGRADED -> NORMAL` へ戻る recovery 制御を実装できた
+    - trust failure / degraded fallback / degraded switching / normal recovery を一連の制御フローとして表現できた
+
+  - 観察:
+    - Step 1 / Step 2 では trusted route `A-B-D-F` が選択され、通常の NORMAL mode routing として動作した
+    - Step 3 では trusted route が失われ、trust failure 検出後に Resolver が override を有効化し、`NORMAL -> DEGRADED` へ遷移した
+    - Step 3 では fallback penalty を含めても improvement が大きく、degraded mode policy により `A-C-E-F` へ `DEGRADED_SWITCH` が発生した
+    - Step 4 では fallback 候補が変化したが improvement が 0 のため KEEP となり、degraded mode 専用の switching 境界が機能した
+    - Step 5 では trusted route が再び利用可能になったが、recovery counter が 1/2 のため即時復帰はせず、degraded mode を維持したまま better route へ切り替えた
+    - Step 6 では trusted route availability が 2 step 連続となり、`DEGRADED -> NORMAL` の recovery が発生した
+    - v11 では degraded mode に入ると fallback reselection が優先されやすかったが、v12 では degraded mode 内にも独立した switching policy と recovery condition を持たせる方向性を確認できた
+
+  - 課題:
+    - fallback penalty は固定値であり、trust severity や node risk に応じた可変化は未実装
+    - recovery 条件は単純な consecutive step 条件であり、安定性評価としてはまだ粗い
+    - degraded mode 中に trusted route が復帰した際の優先順位設計はさらに精密化の余地がある
+    - latency policy 側で degraded switch margin / recovery 条件がどう振る舞うかは未確認
+
+  - 次のステップ:
+    - fallback penalty を trust weight / risk weight に拡張する
+    - degraded recovery 条件を throughput / stability / trust confidence に基づいて高度化する
+    - latency policy でも v12 を実行し、degraded mode 中の挙動差を比較する
+    - degraded mode を単なる例外状態ではなく、制御された運用モードとして定義していく
+
+- 実行結果:
+
+### v12 - Policy: stability / Trust mode: require_trusted (Execution Log)
+
+```text
+=== Policy-aware Routing Simulation v12 ===
+Source: nodeA
+Destination: nodeF
+Policy: stability
+Initial trust mode: require_trusted
+Hysteresis Margin: 3
+Resolver improvement threshold: 2
+Degraded switch margin: 2
+Degraded fallback penalty: 2
+Recovery required steps: 2
+
+Trust table:
+  nodeA: TRUSTED
+  nodeB: TRUSTED
+  nodeC: UNTRUSTED
+  nodeD: TRUSTED
+  nodeE: UNTRUSTED
+  nodeF: TRUSTED
+
+--- Step 1 ---
+Node states:
+  nodeA: NORMAL
+  nodeB: NORMAL
+  nodeC: NORMAL
+  nodeD: NORMAL
+  nodeE: NORMAL
+  nodeF: NORMAL
+
+Primary route search:
+  Mode: TRUSTED_ONLY
+  Result: ROUTE FOUND
+  Route: ['nodeA', 'nodeB', 'nodeD', 'nodeF'] | Cost: 6
+
+Selected route:
+  ['nodeA', 'nodeB', 'nodeD', 'nodeF'] | Cost: 6
+Decision: SELECT
+Policy phase: initial selection
+Resolver phase: not needed
+Final reason: Initial trusted route selected
+
+--- Step 2 ---
+Node states:
+  nodeA: NORMAL
+  nodeB: BUSY
+  nodeC: NORMAL
+  nodeD: NORMAL
+  nodeE: NORMAL
+  nodeF: NORMAL
+
+Primary route search:
+  Mode: TRUSTED_ONLY
+  Result: ROUTE FOUND
+  Route: ['nodeA', 'nodeB', 'nodeD', 'nodeF'] | Cost: 8
+
+Current route re-evaluated:
+  ['nodeA', 'nodeB', 'nodeD', 'nodeF'] | Cost: 8
+
+Selected route:
+  ['nodeA', 'nodeB', 'nodeD', 'nodeF'] | Cost: 8
+Decision: KEEP
+Policy phase: current route is already the best route
+Resolver phase: not needed
+Final reason: Keep current route
+Policy check: current_cost=8, best_cost=8, margin=3, improvement=0, policy=stability, operation_mode=NORMAL
+
+--- Step 3 ---
+Node states:
+  nodeA: NORMAL
+  nodeB: CONGESTED
+  nodeC: NORMAL
+  nodeD: CONGESTED
+  nodeE: NORMAL
+  nodeF: NORMAL
+
+Primary route search:
+  Mode: TRUSTED_ONLY
+  Result: NO ROUTE
+
+Trust phase:
+  require_trusted -> no trusted route available
+
+Trust failure:
+  Detected: YES
+  Reason: no trusted path from nodeA to nodeF
+
+Resolver decision:
+  Override: YES
+  Action: enable untrusted fallback
+  Reason: preserve connectivity
+
+Operation mode:
+  NORMAL -> DEGRADED
+
+Fallback route search:
+  Mode: ALLOW_UNTRUSTED_FALLBACK
+  Result: ROUTE FOUND
+  Route: ['nodeA', 'nodeC', 'nodeE', 'nodeF'] | Cost: 7
+  Penalty applied to untrusted route: 2
+
+Current route re-evaluated:
+  ['nodeA', 'nodeB', 'nodeD', 'nodeF'] | Cost: 16
+
+Selected route:
+  ['nodeA', 'nodeC', 'nodeE', 'nodeF'] | Cost: 7
+Decision: DEGRADED_SWITCH
+Policy phase: improvement=9, degraded_margin=2 -> beyond degraded margin
+Resolver phase: degraded mode policy applied
+Final reason: Switched route under degraded mode policy
+Degraded mode: ACTIVE
+Degraded switch margin: 2
+Fallback penalty: 2
+Policy check: current_cost=16, best_cost=7, margin=3, improvement=9, policy=stability, operation_mode=DEGRADED
+
+--- Step 4 ---
+Node states:
+  nodeA: NORMAL
+  nodeB: NORMAL
+  nodeC: BUSY
+  nodeD: CONGESTED
+  nodeE: NORMAL
+  nodeF: NORMAL
+
+Primary route search:
+  Mode: TRUSTED_ONLY
+  Result: NO ROUTE
+
+Trust phase:
+  require_trusted -> no trusted route available
+
+Trust failure:
+  Detected: YES
+  Reason: no trusted path from nodeA to nodeF
+
+Resolver decision:
+  Override: YES
+  Action: enable untrusted fallback
+  Reason: preserve connectivity
+
+Operation mode:
+  DEGRADED -> DEGRADED
+
+Fallback route search:
+  Mode: ALLOW_UNTRUSTED_FALLBACK
+  Result: ROUTE FOUND
+  Route: ['nodeA', 'nodeB', 'nodeE', 'nodeF'] | Cost: 9
+  Penalty applied to untrusted route: 2
+
+Current route re-evaluated:
+  ['nodeA', 'nodeC', 'nodeE', 'nodeF'] | Cost: 9
+
+Selected route:
+  ['nodeA', 'nodeC', 'nodeE', 'nodeF'] | Cost: 9
+Decision: KEEP
+Policy phase: no improvement
+Resolver phase: degraded mode policy applied
+Final reason: Keep current degraded route
+Degraded mode: ACTIVE
+Degraded switch margin: 2
+Fallback penalty: 2
+Policy check: current_cost=9, best_cost=9, margin=3, improvement=0, policy=stability, operation_mode=DEGRADED
+
+--- Step 5 ---
+Node states:
+  nodeA: NORMAL
+  nodeB: NORMAL
+  nodeC: BUSY
+  nodeD: NORMAL
+  nodeE: NORMAL
+  nodeF: NORMAL
+
+Primary route search:
+  Mode: TRUSTED_ONLY
+  Result: ROUTE FOUND
+  Route: ['nodeA', 'nodeB', 'nodeD', 'nodeF'] | Cost: 6
+
+Recovery check:
+  Trusted route available: YES
+  Recovery counter: 1/2
+  Recovery decision: STAY_DEGRADED
+
+Fallback route search:
+  Mode: ALLOW_UNTRUSTED_FALLBACK
+  Result: ROUTE FOUND
+  Route: ['nodeA', 'nodeB', 'nodeD', 'nodeF'] | Cost: 6
+  Penalty applied to untrusted route: 2
+
+Current route re-evaluated:
+  ['nodeA', 'nodeC', 'nodeE', 'nodeF'] | Cost: 9
+
+Selected route:
+  ['nodeA', 'nodeB', 'nodeD', 'nodeF'] | Cost: 6
+Decision: DEGRADED_SWITCH
+Policy phase: improvement=3, degraded_margin=2 -> beyond degraded margin
+Resolver phase: degraded mode policy applied
+Final reason: Switched route under degraded mode policy
+Degraded mode: ACTIVE
+Degraded switch margin: 2
+Fallback penalty: 2
+Policy check: current_cost=9, best_cost=6, margin=3, improvement=3, policy=stability, operation_mode=DEGRADED
+
+--- Step 6 ---
+Node states:
+  nodeA: NORMAL
+  nodeB: NORMAL
+  nodeC: NORMAL
+  nodeD: NORMAL
+  nodeE: NORMAL
+  nodeF: NORMAL
+
+Primary route search:
+  Mode: TRUSTED_ONLY
+  Result: ROUTE FOUND
+  Route: ['nodeA', 'nodeB', 'nodeD', 'nodeF'] | Cost: 6
+
+Recovery check:
+  Trusted route available: YES
+  Recovery counter: 2/2
+  Recovery decision: RESTORE_NORMAL
+  Operation mode: DEGRADED -> NORMAL
+
+Current route re-evaluated:
+  ['nodeA', 'nodeB', 'nodeD', 'nodeF'] | Cost: 6
+
+Selected route:
+  ['nodeA', 'nodeB', 'nodeD', 'nodeF'] | Cost: 6
+Decision: KEEP
+Policy phase: current route is already the best route
+Resolver phase: not needed
+Final reason: Keep current route
+Policy check: current_cost=6, best_cost=6, margin=3, improvement=0, policy=stability, operation_mode=NORMAL
+```
+- Insight:
+    - v12 では degraded mode が単なる fallback 状態ではなく、
+       専用の switching margin と recovery condition を持つ制御モードとして扱われ始めた
+    - trust failure 時にも到達性を維持しつつ、
+      trusted route 復帰後には normal mode へ戻る運用が可能になった
+    - fallback penalty の導入により、
+      untrusted route を完全禁止ではなく「不利な候補」として扱う方向性が見えた
+    - PSC Routing は route selection / trust control / resolver intervention に加えて、
+      operational mode transition を含む多層制御へ拡張されつつある
+
+---
+
+## v12c - Degraded Mode Policy Boundary Comparison
+
+- Algorithm: Cost-based route selection + Hysteresis + Policy + Resolver Escalation + Trust-aware Route Selection + Trust Failure Recovery + Degraded Mode Boundary Comparison
+
+- Feature:
+  - `TRUST_MODE = require_trusted` を維持
+  - trusted route 不在時に trust failure を検出
+  - Resolver override により degraded fallback を許可
+  - degraded mode 内で policy boundary の差を比較するための境界ケースを導入
+  - Step 4 において improvement = 1 の比較条件を意図的に生成
+  - stability policy と latency policy が degraded mode で異なる判断を示すかを検証
+  - degraded mode 中の route switching と normal recovery の流れを継続して確認
+
+- Result:
+  - 成功:
+    - degraded mode 中の policy boundary 差を明示できた
+    - Step 4 で improvement = 1 の条件を生成できた
+    - stability policy では小さな改善に対して KEEP を維持した
+    - latency policy では同一条件で `DEGRADED_SWITCH` を実行した
+    - degraded mode においても policy の性格差が実際の route switching に反映されることを確認できた
+
+  - 観察:
+    - Step 3 では trust failure 検出後、Resolver override により `NORMAL -> DEGRADED` が発生し、fallback route `A-C-E-F` が選択された
+    - v12c / stability の Step 4 では `current_cost = 9`, `best_cost = 8`, `improvement = 1` となり、`degraded_margin = 2` のため KEEP となった
+    - v12c / latency の Step 4 では同じく `current_cost = 9`, `best_cost = 8`, `improvement = 1` だったが、`degraded_margin = 0` のため `DEGRADED_SWITCH` が発生した
+    - これにより、degraded mode 中でも stability は小幅改善では current route を維持し、latency は小幅改善でも即時に better route へ切り替えることを確認できた
+    - Step 5 / Step 6 では trusted route の復帰と `DEGRADED -> NORMAL` recovery も継続して正常に動作した
+    - v12 で導入した degraded mode が、v12c では単なる fallback 状態ではなく policy-sensitive control mode として扱えることが示された
+
+  - 課題:
+    - fallback penalty は依然として固定値であり、trust severity や route risk に応じた動的重み付けは未実装
+    - recovery 条件は連続ステップ数ベースであり、throughput や trust confidence を考慮した高度化の余地がある
+    - 今回の差分は単一の境界ケースであり、複数の負荷パターンやより複雑な topology での再確認が必要
+    - degraded mode の route comparison に trust weight / risk weight を導入した場合の policy 差は今後の検証対象
+
+  - 次のステップ:
+    - fallback penalty を adaptive trust weight / risk weight に拡張する
+    - degraded recovery 条件を throughput / stability / trust confidence を含む形に高度化する
+    - より複雑なトポロジや複数候補ルート条件で degraded policy boundary を検証する
+    - v13 では trust / risk weighting を導入し、fallback route 評価を固定 penalty から拡張する
+
+- 実行結果:
+
+### v12c - Policy: stability / Trust mode: require_trusted (Execution Log)
+
+```text
+=== Policy-aware Routing Simulation v12c ===
+Source: nodeA
+Destination: nodeF
+Policy: stability
+Initial trust mode: require_trusted
+Hysteresis Margin: 3
+Resolver improvement threshold: 2
+Degraded switch margin: 2
+Degraded fallback penalty: 2
+Recovery required steps: 2
+
+Trust table:
+  nodeA: TRUSTED
+  nodeB: TRUSTED
+  nodeC: UNTRUSTED
+  nodeD: TRUSTED
+  nodeE: UNTRUSTED
+  nodeF: TRUSTED
+
+--- Step 1 ---
+Node states:
+  nodeA: NORMAL
+  nodeB: NORMAL
+  nodeC: NORMAL
+  nodeD: NORMAL
+  nodeE: NORMAL
+  nodeF: NORMAL
+
+Primary route search:
+  Mode: TRUSTED_ONLY
+  Result: ROUTE FOUND
+  Route: ['nodeA', 'nodeB', 'nodeD', 'nodeF'] | Cost: 6
+
+Selected route:
+  ['nodeA', 'nodeB', 'nodeD', 'nodeF'] | Cost: 6
+Decision: SELECT
+Policy phase: initial selection
+Resolver phase: not needed
+Final reason: Initial trusted route selected
+
+--- Step 2 ---
+Node states:
+  nodeA: NORMAL
+  nodeB: BUSY
+  nodeC: NORMAL
+  nodeD: NORMAL
+  nodeE: NORMAL
+  nodeF: NORMAL
+
+Primary route search:
+  Mode: TRUSTED_ONLY
+  Result: ROUTE FOUND
+  Route: ['nodeA', 'nodeB', 'nodeD', 'nodeF'] | Cost: 8
+
+Current route re-evaluated:
+  ['nodeA', 'nodeB', 'nodeD', 'nodeF'] | Cost: 8
+
+Selected route:
+  ['nodeA', 'nodeB', 'nodeD', 'nodeF'] | Cost: 8
+Decision: KEEP
+Policy phase: current route is already the best route
+Resolver phase: not needed
+Final reason: Keep current route
+Policy check: current_cost=8, best_cost=8, margin=3, improvement=0, policy=stability, operation_mode=NORMAL
+
+--- Step 3 ---
+Node states:
+  nodeA: NORMAL
+  nodeB: CONGESTED
+  nodeC: NORMAL
+  nodeD: CONGESTED
+  nodeE: NORMAL
+  nodeF: NORMAL
+
+Primary route search:
+  Mode: TRUSTED_ONLY
+  Result: NO ROUTE
+
+Trust phase:
+  require_trusted -> no trusted route available
+
+Trust failure:
+  Detected: YES
+  Reason: no trusted path from nodeA to nodeF
+
+Resolver decision:
+  Override: YES
+  Reason: preserve connectivity
+
+Operation mode:
+  NORMAL -> DEGRADED
+
+Fallback route search:
+  Mode: ALLOW_UNTRUSTED_FALLBACK
+  Result: ROUTE FOUND
+  Route: ['nodeA', 'nodeC', 'nodeE', 'nodeF'] | Cost: 7
+  Penalty applied to untrusted route: 2
+
+Current route re-evaluated:
+  ['nodeA', 'nodeB', 'nodeD', 'nodeF'] | Cost: 16
+
+Selected route:
+  ['nodeA', 'nodeC', 'nodeE', 'nodeF'] | Cost: 7
+Decision: DEGRADED_SWITCH
+Policy phase: improvement=9, degraded_margin=2 -> beyond degraded margin
+Resolver phase: degraded mode policy applied
+Final reason: Switched route under degraded mode policy
+Degraded mode: ACTIVE
+Degraded switch margin: 2
+Fallback penalty: 2
+Policy check: current_cost=16, best_cost=7, margin=3, improvement=9, policy=stability, operation_mode=DEGRADED
+
+--- Step 4 ---
+Node states:
+  nodeA: NORMAL
+  nodeB: NORMAL
+  nodeC: BUSY
+  nodeD: CONGESTED
+  nodeE: NORMAL
+  nodeF: NORMAL
+
+Primary route search:
+  Mode: TRUSTED_ONLY
+  Result: NO ROUTE
+
+Trust phase:
+  require_trusted -> no trusted route available
+
+Trust failure:
+  Detected: YES
+  Reason: no trusted path from nodeA to nodeF
+
+Resolver decision:
+  Override: YES
+  Reason: preserve connectivity
+
+Operation mode:
+  DEGRADED -> DEGRADED
+
+Fallback route search:
+  Mode: ALLOW_UNTRUSTED_FALLBACK
+  Result: ROUTE FOUND
+  Route: ['nodeA', 'nodeB', 'nodeE', 'nodeF'] | Cost: 8
+  Penalty applied to untrusted route: 2
+
+Current route re-evaluated:
+  ['nodeA', 'nodeC', 'nodeE', 'nodeF'] | Cost: 9
+
+Selected route:
+  ['nodeA', 'nodeC', 'nodeE', 'nodeF'] | Cost: 9
+Decision: KEEP
+Policy phase: improvement=1, degraded_margin=2 -> within degraded margin
+Resolver phase: degraded mode policy applied
+Final reason: Keep current degraded route
+Degraded mode: ACTIVE
+Degraded switch margin: 2
+Fallback penalty: 2
+Policy check: current_cost=9, best_cost=8, margin=3, improvement=1, policy=stability, operation_mode=DEGRADED
+
+--- Step 5 ---
+Node states:
+  nodeA: NORMAL
+  nodeB: NORMAL
+  nodeC: BUSY
+  nodeD: NORMAL
+  nodeE: NORMAL
+  nodeF: NORMAL
+
+Primary route search:
+  Mode: TRUSTED_ONLY
+  Result: ROUTE FOUND
+  Route: ['nodeA', 'nodeB', 'nodeD', 'nodeF'] | Cost: 6
+
+Recovery check:
+  Trusted route available: YES
+  Recovery counter: 1/2
+  Recovery decision: STAY_DEGRADED
+
+Fallback route search:
+  Mode: ALLOW_UNTRUSTED_FALLBACK
+  Result: ROUTE FOUND
+  Route: ['nodeA', 'nodeB', 'nodeD', 'nodeF'] | Cost: 6
+  Penalty applied to untrusted route: 2
+
+Current route re-evaluated:
+  ['nodeA', 'nodeC', 'nodeE', 'nodeF'] | Cost: 9
+
+Selected route:
+  ['nodeA', 'nodeB', 'nodeD', 'nodeF'] | Cost: 6
+Decision: DEGRADED_SWITCH
+Policy phase: improvement=3, degraded_margin=2 -> beyond degraded margin
+Resolver phase: degraded mode policy applied
+Final reason: Switched route under degraded mode policy
+Degraded mode: ACTIVE
+Degraded switch margin: 2
+Fallback penalty: 2
+Policy check: current_cost=9, best_cost=6, margin=3, improvement=3, policy=stability, operation_mode=DEGRADED
+
+--- Step 6 ---
+Node states:
+  nodeA: NORMAL
+  nodeB: NORMAL
+  nodeC: NORMAL
+  nodeD: NORMAL
+  nodeE: NORMAL
+  nodeF: NORMAL
+
+Primary route search:
+  Mode: TRUSTED_ONLY
+  Result: ROUTE FOUND
+  Route: ['nodeA', 'nodeB', 'nodeD', 'nodeF'] | Cost: 6
+
+Recovery check:
+  Trusted route available: YES
+  Recovery counter: 2/2
+  Recovery decision: RESTORE_NORMAL
+  Operation mode: DEGRADED -> NORMAL
+
+Current route re-evaluated:
+  ['nodeA', 'nodeB', 'nodeD', 'nodeF'] | Cost: 6
+
+Selected route:
+  ['nodeA', 'nodeB', 'nodeD', 'nodeF'] | Cost: 6
+Decision: KEEP
+Policy phase: current route is already the best route
+Resolver phase: not needed
+Final reason: Keep current route
+Policy check: current_cost=6, best_cost=6, margin=3, improvement=0, policy=stability, operation_mode=NORMAL
+```
+### v12c - Policy: latency / Trust mode: require_trusted (Execution Log)
+
+```text
+=== Policy-aware Routing Simulation v12c ===
+Source: nodeA
+Destination: nodeF
+Policy: latency
+Initial trust mode: require_trusted
+Hysteresis Margin: 0
+Resolver improvement threshold: 2
+Degraded switch margin: 0
+Degraded fallback penalty: 2
+Recovery required steps: 2
+
+Trust table:
+  nodeA: TRUSTED
+  nodeB: TRUSTED
+  nodeC: UNTRUSTED
+  nodeD: TRUSTED
+  nodeE: UNTRUSTED
+  nodeF: TRUSTED
+
+--- Step 1 ---
+Node states:
+  nodeA: NORMAL
+  nodeB: NORMAL
+  nodeC: NORMAL
+  nodeD: NORMAL
+  nodeE: NORMAL
+  nodeF: NORMAL
+
+Primary route search:
+  Mode: TRUSTED_ONLY
+  Result: ROUTE FOUND
+  Route: ['nodeA', 'nodeB', 'nodeD', 'nodeF'] | Cost: 6
+
+Selected route:
+  ['nodeA', 'nodeB', 'nodeD', 'nodeF'] | Cost: 6
+Decision: SELECT
+Policy phase: initial selection
+Resolver phase: not needed
+Final reason: Initial trusted route selected
+
+--- Step 2 ---
+Node states:
+  nodeA: NORMAL
+  nodeB: BUSY
+  nodeC: NORMAL
+  nodeD: NORMAL
+  nodeE: NORMAL
+  nodeF: NORMAL
+
+Primary route search:
+  Mode: TRUSTED_ONLY
+  Result: ROUTE FOUND
+  Route: ['nodeA', 'nodeB', 'nodeD', 'nodeF'] | Cost: 8
+
+Current route re-evaluated:
+  ['nodeA', 'nodeB', 'nodeD', 'nodeF'] | Cost: 8
+
+Selected route:
+  ['nodeA', 'nodeB', 'nodeD', 'nodeF'] | Cost: 8
+Decision: KEEP
+Policy phase: current route is already the best route
+Resolver phase: not needed
+Final reason: Keep current route
+Policy check: current_cost=8, best_cost=8, margin=0, improvement=0, policy=latency, operation_mode=NORMAL
+
+--- Step 3 ---
+Node states:
+  nodeA: NORMAL
+  nodeB: CONGESTED
+  nodeC: NORMAL
+  nodeD: CONGESTED
+  nodeE: NORMAL
+  nodeF: NORMAL
+
+Primary route search:
+  Mode: TRUSTED_ONLY
+  Result: NO ROUTE
+
+Trust phase:
+  require_trusted -> no trusted route available
+
+Trust failure:
+  Detected: YES
+  Reason: no trusted path from nodeA to nodeF
+
+Resolver decision:
+  Override: YES
+  Reason: preserve connectivity
+
+Operation mode:
+  NORMAL -> DEGRADED
+
+Fallback route search:
+  Mode: ALLOW_UNTRUSTED_FALLBACK
+  Result: ROUTE FOUND
+  Route: ['nodeA', 'nodeC', 'nodeE', 'nodeF'] | Cost: 7
+  Penalty applied to untrusted route: 2
+
+Current route re-evaluated:
+  ['nodeA', 'nodeB', 'nodeD', 'nodeF'] | Cost: 16
+
+Selected route:
+  ['nodeA', 'nodeC', 'nodeE', 'nodeF'] | Cost: 7
+Decision: DEGRADED_SWITCH
+Policy phase: improvement=9, degraded_margin=0 -> switch in degraded latency mode
+Resolver phase: degraded mode policy applied
+Final reason: Switched route under degraded mode policy
+Degraded mode: ACTIVE
+Degraded switch margin: 0
+Fallback penalty: 2
+Policy check: current_cost=16, best_cost=7, margin=0, improvement=9, policy=latency, operation_mode=DEGRADED
+
+--- Step 4 ---
+Node states:
+  nodeA: NORMAL
+  nodeB: NORMAL
+  nodeC: BUSY
+  nodeD: CONGESTED
+  nodeE: NORMAL
+  nodeF: NORMAL
+
+Primary route search:
+  Mode: TRUSTED_ONLY
+  Result: NO ROUTE
+
+Trust phase:
+  require_trusted -> no trusted route available
+
+Trust failure:
+  Detected: YES
+  Reason: no trusted path from nodeA to nodeF
+
+Resolver decision:
+  Override: YES
+  Reason: preserve connectivity
+
+Operation mode:
+  DEGRADED -> DEGRADED
+
+Fallback route search:
+  Mode: ALLOW_UNTRUSTED_FALLBACK
+  Result: ROUTE FOUND
+  Route: ['nodeA', 'nodeB', 'nodeE', 'nodeF'] | Cost: 8
+  Penalty applied to untrusted route: 2
+
+Current route re-evaluated:
+  ['nodeA', 'nodeC', 'nodeE', 'nodeF'] | Cost: 9
+
+Selected route:
+  ['nodeA', 'nodeB', 'nodeE', 'nodeF'] | Cost: 8
+Decision: DEGRADED_SWITCH
+Policy phase: improvement=1, degraded_margin=0 -> switch in degraded latency mode
+Resolver phase: degraded mode policy applied
+Final reason: Switched route under degraded mode policy
+Degraded mode: ACTIVE
+Degraded switch margin: 0
+Fallback penalty: 2
+Policy check: current_cost=9, best_cost=8, margin=0, improvement=1, policy=latency, operation_mode=DEGRADED
+
+--- Step 5 ---
+Node states:
+  nodeA: NORMAL
+  nodeB: NORMAL
+  nodeC: BUSY
+  nodeD: NORMAL
+  nodeE: NORMAL
+  nodeF: NORMAL
+
+Primary route search:
+  Mode: TRUSTED_ONLY
+  Result: ROUTE FOUND
+  Route: ['nodeA', 'nodeB', 'nodeD', 'nodeF'] | Cost: 6
+
+Recovery check:
+  Trusted route available: YES
+  Recovery counter: 1/2
+  Recovery decision: STAY_DEGRADED
+
+Fallback route search:
+  Mode: ALLOW_UNTRUSTED_FALLBACK
+  Result: ROUTE FOUND
+  Route: ['nodeA', 'nodeB', 'nodeD', 'nodeF'] | Cost: 6
+  Penalty applied to untrusted route: 2
+
+Current route re-evaluated:
+  ['nodeA', 'nodeB', 'nodeE', 'nodeF'] | Cost: 8
+
+Selected route:
+  ['nodeA', 'nodeB', 'nodeD', 'nodeF'] | Cost: 6
+Decision: DEGRADED_SWITCH
+Policy phase: improvement=2, degraded_margin=0 -> switch in degraded latency mode
+Resolver phase: degraded mode policy applied
+Final reason: Switched route under degraded mode policy
+Degraded mode: ACTIVE
+Degraded switch margin: 0
+Fallback penalty: 2
+Policy check: current_cost=8, best_cost=6, margin=0, improvement=2, policy=latency, operation_mode=DEGRADED
+
+--- Step 6 ---
+Node states:
+  nodeA: NORMAL
+  nodeB: NORMAL
+  nodeC: NORMAL
+  nodeD: NORMAL
+  nodeE: NORMAL
+  nodeF: NORMAL
+
+Primary route search:
+  Mode: TRUSTED_ONLY
+  Result: ROUTE FOUND
+  Route: ['nodeA', 'nodeB', 'nodeD', 'nodeF'] | Cost: 6
+
+Recovery check:
+  Trusted route available: YES
+  Recovery counter: 2/2
+  Recovery decision: RESTORE_NORMAL
+  Operation mode: DEGRADED -> NORMAL
+
+Current route re-evaluated:
+  ['nodeA', 'nodeB', 'nodeD', 'nodeF'] | Cost: 6
+
+Selected route:
+  ['nodeA', 'nodeB', 'nodeD', 'nodeF'] | Cost: 6
+Decision: KEEP
+Policy phase: current route is already the best route
+Resolver phase: not needed
+Final reason: Keep current route
+Policy check: current_cost=6, best_cost=6, margin=0, improvement=0, policy=latency, operation_mode=NORMAL
+```
+
+- Insight:
+    - v12c では degraded mode 内の policy boundary 差を明示的に確認できた
+    - 同一の improvement = 1 条件において、stability は KEEP、latency は DEGRADED_SWITCH を選択した
+    - これにより、degraded mode が単なる例外状態ではなく、policy-sensitive な運用制御モードとして機能することを確認できた
+    - PSC Routing は trust failure recovery だけでなく、degraded operational policy の差分表現まで扱える段階に進んだ
+
+---
