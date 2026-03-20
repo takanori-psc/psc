@@ -1,5 +1,35 @@
 # Photon System Controller (PSC)
 
+## 🚀 Quick Demo（クイックデモ）
+
+Try PSC behavior in seconds:  
+（数秒でPSCの動作を体験できます）
+
+### Static Demo（静的デモ）
+```bash
+python3 sim/04_demo/run_psc_demo.py
+```
+Basic trust-aware routing decision.
+（信頼性を考慮した基本的なルート選択）
+
+### Dynamic Demo（動的デモ）
+```bash
+python3 sim/04_demo/run_psc_dynamic_demo.py
+```
+Adaptive routing with changing network conditions.
+（ネットワーク状態の変化に応じた適応的ルーティング）
+
+This demo shows how PSC selects routes based on:
+（このデモでは、PSCが以下の要素に基づいて経路選択する様子を確認できます）
+
+- cost（コスト）
+- trust（信頼性）
+- adaptive decision logic（適応的な判断ロジック）
+
+PSC does not always choose the shortest path —
+it prefers stable and trusted routes.
+（PSCは常に最短経路を選ぶわけではなく、安定性と信頼性を優先します）
+
 ## 📄 Article（記事）
 
 👉 Read the concept:
