@@ -2,13 +2,13 @@ import heapq
 import math
 
 # ============================================
-# PSC Routing Simulation v12
-# Degraded Mode Policy Refinement
-# - trust failure detection
-# - resolver-managed degraded fallback
-# - degraded-mode-specific switching policy
-# - fallback penalty
-# - recovery from DEGRADED to NORMAL
+# PSC Routing Simulation v12c
+# Degraded Mode Boundary Comparison Case
+# Goal:
+#   Create an improvement=1 comparison in DEGRADED mode
+#   so that:
+#     - stability keeps current degraded route
+#     - latency switches degraded route
 # ============================================
 
 # --------------------------------------------
@@ -22,20 +22,22 @@ TRUST_MODE = "require_trusted"
 HYSTERESIS_MARGIN = 3 if POLICY == "stability" else 0
 RESOLVER_IMPROVEMENT_THRESHOLD = 2
 
-# v12 additions
 DEGRADED_SWITCH_MARGIN = 2 if POLICY == "stability" else 0
 DEGRADED_FALLBACK_PENALTY = 2
-RECOVERY_REQUIRED_STEPS = 2   # consecutive steps with trusted route available
+RECOVERY_REQUIRED_STEPS = 2
 
 # --------------------------------------------
 # Topology
+# v12c:
+# Step 4 comparison is made easier by making
+# A-B-E-F and A-C-E-F close in total cost.
 # --------------------------------------------
 GRAPH = {
     "nodeA": {"nodeB": 2, "nodeC": 1},
-    "nodeB": {"nodeA": 2, "nodeD": 2, "nodeE": 4},
+    "nodeB": {"nodeA": 2, "nodeD": 2, "nodeE": 3},  # B-E slightly cheaper than before
     "nodeC": {"nodeA": 1, "nodeD": 1, "nodeE": 3},
     "nodeD": {"nodeB": 2, "nodeC": 1, "nodeF": 2},
-    "nodeE": {"nodeB": 4, "nodeC": 3, "nodeF": 1},
+    "nodeE": {"nodeB": 3, "nodeC": 3, "nodeF": 1},
     "nodeF": {"nodeD": 2, "nodeE": 1},
 }
 
@@ -50,9 +52,6 @@ STATE_COST = {
 
 # --------------------------------------------
 # Trust table
-# v12:
-# nodeD becomes trusted again so that
-# trusted route recovery can be observed
 # --------------------------------------------
 TRUST_TABLE = {
     "nodeA": "TRUSTED",
@@ -65,13 +64,16 @@ TRUST_TABLE = {
 
 # --------------------------------------------
 # Step scenarios
-# v12 intentionally creates:
-# - early trust failure (nodeD unavailable as trusted path)
-# - degraded fallback
-# - later trusted recovery
+#
+# Design intent:
+# - Step 3 enters DEGRADED and chooses A-C-E-F
+# - Step 4 creates a close competitor A-B-E-F
+#   with improvement=1 over current route
+# - Step 5 trusted path returns
+# - Step 6 recovers to NORMAL
 # --------------------------------------------
 STEP_NODE_STATES = [
-    # Step 1: trusted route exists
+    # Step 1
     {
         "nodeA": "NORMAL",
         "nodeB": "NORMAL",
@@ -80,7 +82,7 @@ STEP_NODE_STATES = [
         "nodeE": "NORMAL",
         "nodeF": "NORMAL",
     },
-    # Step 2: trusted route becomes worse but still available
+    # Step 2
     {
         "nodeA": "NORMAL",
         "nodeB": "BUSY",
@@ -89,7 +91,7 @@ STEP_NODE_STATES = [
         "nodeE": "NORMAL",
         "nodeF": "NORMAL",
     },
-    # Step 3: simulate trust failure by temporarily forcing trusted path loss
+    # Step 3: force trust failure, degraded route becomes A-C-E-F
     {
         "nodeA": "NORMAL",
         "nodeB": "CONGESTED",
@@ -98,7 +100,8 @@ STEP_NODE_STATES = [
         "nodeE": "NORMAL",
         "nodeF": "NORMAL",
     },
-    # Step 4: degraded continues, fallback candidate changes
+    # Step 4: boundary case
+    # current route A-C-E-F should be only 1 worse than best A-B-E-F
     {
         "nodeA": "NORMAL",
         "nodeB": "NORMAL",
@@ -107,7 +110,7 @@ STEP_NODE_STATES = [
         "nodeE": "NORMAL",
         "nodeF": "NORMAL",
     },
-    # Step 5: trusted route starts recovering
+    # Step 5: trusted path returns but recovery counter still 1/2
     {
         "nodeA": "NORMAL",
         "nodeB": "NORMAL",
@@ -116,7 +119,7 @@ STEP_NODE_STATES = [
         "nodeE": "NORMAL",
         "nodeF": "NORMAL",
     },
-    # Step 6: trusted route stable again
+    # Step 6: trusted path stable again
     {
         "nodeA": "NORMAL",
         "nodeB": "NORMAL",
@@ -127,11 +130,7 @@ STEP_NODE_STATES = [
     },
 ]
 
-# --------------------------------------------
-# v12 trusted-availability override
-# To demonstrate trust failure / recovery clearly,
-# trusted-only search is forced unavailable on steps 3-4.
-# --------------------------------------------
+# Force trusted-only unavailability on steps 3 and 4
 FORCE_TRUST_FAILURE_STEPS = {3, 4}
 
 
@@ -143,17 +142,13 @@ def is_trusted(node: str) -> bool:
     return TRUST_TABLE.get(node) == "TRUSTED"
 
 
-def route_is_trusted(route: list[str] | None) -> bool:
+def route_is_trusted(route):
     if not route:
         return False
     return all(is_trusted(node) for node in route)
 
 
-def calc_route_cost(route: list[str], node_states: dict[str, str], penalty: int = 0) -> int:
-    """
-    Route cost = sum of link costs + sum of intermediate node state costs + optional penalty
-    Source/Destination state cost is ignored for simplicity.
-    """
+def calc_route_cost(route, node_states, penalty=0):
     if not route or len(route) < 2:
         return math.inf
 
@@ -171,7 +166,7 @@ def calc_route_cost(route: list[str], node_states: dict[str, str], penalty: int 
     return total
 
 
-def enumerate_routes(node_states: dict[str, str], allow_untrusted: bool, fallback_penalty: int = 0) -> list[tuple[int, list[str]]]:
+def enumerate_routes(node_states, allow_untrusted, fallback_penalty=0):
     pq = []
     heapq.heappush(pq, (0, [SOURCE]))
     results = []
@@ -207,47 +202,34 @@ def enumerate_routes(node_states: dict[str, str], allow_untrusted: bool, fallbac
     return sorted((cost, list(route)) for route, cost in unique.items())
 
 
-def find_best_route(
-    node_states: dict[str, str],
-    allow_untrusted: bool,
-    fallback_penalty: int = 0,
-    force_no_route: bool = False
-) -> tuple[list[str] | None, int]:
+def find_best_route(node_states, allow_untrusted, fallback_penalty=0, force_no_route=False):
     if force_no_route:
         return None, math.inf
 
-    routes = enumerate_routes(
-        node_states=node_states,
-        allow_untrusted=allow_untrusted,
-        fallback_penalty=fallback_penalty,
-    )
+    routes = enumerate_routes(node_states, allow_untrusted, fallback_penalty)
     if not routes:
         return None, math.inf
     return routes[0][1], routes[0][0]
 
 
-def reevaluate_current_route(
-    current_route: list[str] | None,
-    node_states: dict[str, str],
-    fallback_penalty: int = 0
-) -> int:
+def reevaluate_current_route(current_route, node_states, fallback_penalty=0):
     if current_route is None:
         return math.inf
     penalty = 0 if route_is_trusted(current_route) else fallback_penalty
     return calc_route_cost(current_route, node_states, penalty=penalty)
 
 
-def resolver_should_escalate(improvement: int, threshold: int) -> bool:
+def resolver_should_escalate(improvement, threshold):
     return improvement >= threshold
 
 
-def resolver_allow_degraded_fallback(policy: str) -> tuple[bool, str]:
+def resolver_allow_degraded_fallback(policy):
     if policy in ("stability", "latency"):
         return True, "preserve connectivity"
     return False, "policy does not allow degraded fallback"
 
 
-def degraded_should_switch(policy: str, improvement: int, margin: int) -> tuple[bool, str]:
+def degraded_should_switch(policy, improvement, margin):
     if improvement <= 0:
         return False, "no improvement"
 
@@ -266,7 +248,7 @@ def degraded_should_switch(policy: str, improvement: int, margin: int) -> tuple[
 # Main simulation
 # ============================================
 
-print("=== Policy-aware Routing Simulation v12 ===")
+print("=== Policy-aware Routing Simulation v12c ===")
 print(f"Source: {SOURCE}")
 print(f"Destination: {DESTINATION}")
 print(f"Policy: {POLICY}")
@@ -312,14 +294,9 @@ for step_index, node_states in enumerate(STEP_NODE_STATES, start=1):
         print(f"  Route: {primary_route} | Cost: {primary_cost}")
     print()
 
-    degraded_used = False
-    degraded_reason = None
     best_route = None
     best_cost = math.inf
 
-    # ----------------------------------------
-    # Recovery check when trusted route exists
-    # ----------------------------------------
     if primary_route is not None:
         trusted_recovery_counter += 1
     else:
@@ -327,7 +304,7 @@ for step_index, node_states in enumerate(STEP_NODE_STATES, start=1):
 
     if operation_mode == "DEGRADED" and primary_route is not None:
         print("Recovery check:")
-        print(f"  Trusted route available: YES")
+        print("  Trusted route available: YES")
         print(f"  Recovery counter: {trusted_recovery_counter}/{RECOVERY_REQUIRED_STEPS}")
 
         if trusted_recovery_counter >= RECOVERY_REQUIRED_STEPS:
@@ -341,16 +318,10 @@ for step_index, node_states in enumerate(STEP_NODE_STATES, start=1):
             print("  Recovery decision: STAY_DEGRADED")
         print()
 
-    # ----------------------------------------
-    # Normal mode with trusted route
-    # ----------------------------------------
     if best_route is None and operation_mode == "NORMAL" and primary_route is not None:
         best_route = primary_route
         best_cost = primary_cost
 
-    # ----------------------------------------
-    # Trust failure -> degraded fallback
-    # ----------------------------------------
     if best_route is None and primary_route is None:
         print("Trust phase:")
         print("  require_trusted -> no trusted route available")
@@ -365,18 +336,12 @@ for step_index, node_states in enumerate(STEP_NODE_STATES, start=1):
 
         print("Resolver decision:")
         print(f"  Override: {'YES' if override_enabled else 'NO'}")
-        if override_enabled:
-            print("  Action: enable untrusted fallback")
-        else:
-            print("  Action: no fallback")
         print(f"  Reason: {override_reason}")
         print()
 
         if override_enabled:
             previous_mode = operation_mode
             operation_mode = "DEGRADED"
-            degraded_used = True
-            degraded_reason = override_reason
 
             print("Operation mode:")
             print(f"  {previous_mode} -> {operation_mode}")
@@ -401,13 +366,7 @@ for step_index, node_states in enumerate(STEP_NODE_STATES, start=1):
 
             best_route = fallback_route
             best_cost = fallback_cost
-        else:
-            best_route = None
-            best_cost = math.inf
 
-    # ----------------------------------------
-    # If degraded but not recovering yet, compare fallback routes
-    # ----------------------------------------
     elif best_route is None and operation_mode == "DEGRADED":
         fallback_route, fallback_cost = find_best_route(
             node_states=node_states,
@@ -429,16 +388,10 @@ for step_index, node_states in enumerate(STEP_NODE_STATES, start=1):
         best_route = fallback_route
         best_cost = fallback_cost
 
-    # ----------------------------------------
-    # Final decision
-    # ----------------------------------------
     if best_route is None:
         print("Selected route:")
         print("  None | Cost: None")
         print("Decision: NO_ROUTE")
-        print("Policy phase: no candidate route available")
-        print("Resolver phase: fallback denied or unavailable")
-        print("Final reason: No route available")
         print()
         continue
 
@@ -451,8 +404,6 @@ for step_index, node_states in enumerate(STEP_NODE_STATES, start=1):
             print("Policy phase: initial selection after degraded fallback")
             print("Resolver phase: override enabled")
             print("Final reason: degraded fallback route selected")
-            if degraded_reason:
-                print(f"Fallback reason: {degraded_reason}")
         else:
             print("Policy phase: initial selection")
             print("Resolver phase: not needed")
