@@ -40,6 +40,22 @@ it prefers stable and trusted routes.
 
 ## What is PSC?（PSCとは何か）
 
+### Core Architecture Components
+
+PSC introduces dedicated control modules inside the fabric:
+
+- Resolver (decision-control module)
+- RCU (routing control unit)
+- TMU (transfer management unit)
+- TEU (transfer execution unit)
+- OMU (optical monitoring unit)
+
+Each component has a clearly defined role within the fabric.  
+（各コンポーネントはファブリック内で明確に役割分担されています）
+
+The Resolver acts as the core decision-control module that defines system-wide behavior.  
+（Resolverはシステム全体の挙動を決定する中核制御モジュールです）
+
 PSC is a fabric-centric computer architecture designed to shift system control and data movement away from traditional CPU-centric designs.  
 （PSCは、従来のCPU中心設計から、ファブリック中心の制御とデータ転送へ移行するコンピュータアーキテクチャです。）
 
@@ -129,6 +145,15 @@ All communication flows through the PSC Fabric.
 ---
 
 ## Specification（仕様）
+
+### Core Specifications
+
+- 🧠 Resolver Specification v0.1  
+  → docs/specification/resolver/psc_resolver_spec_v0.1.md
+
+The Resolver defines the decision-control model of PSC,
+including state-based control, authority modes, and constraint-based outputs.  
+（ResolverはPSCの意思決定制御モデルを定義し、状態ベース制御・権限モデル・制約ベース出力を扱います）
 
 The PSC specification includes:  
 （PSC仕様には以下が含まれます）
