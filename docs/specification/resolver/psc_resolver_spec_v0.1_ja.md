@@ -32,6 +32,8 @@ Resolverは最適化装置ではない。
 - 状態ベースの協調を行う
 - ローカル優先の自律性を尊重する
 - 構造的安定性が危険にさらされた場合のみ介入する
+- Resolverは実行主体ではなく、制約と決定を定義する意思決定モジュールである。 
+- Resolverは説明可能かつ再現可能な意思決定を行わなければならない。
 
 ---
 
@@ -51,6 +53,9 @@ Resolverはハイブリッド権限モデルで動作する。
 
 Resolverは経路制御そのものを実行する装置ではなく、
 その説明責任を持つ意思決定主体である。
+Resolverは実行を行わず、システムに対する制約と意思決定を出力する。
+Resolverは常時稼働する制御主体ではなく、必要時にのみ介入する意思決定モジュールである。
+Resolverの出力は実行指示ではなく、実行層に対する制約定義として解釈されなければならない。
 
 ---
 
@@ -76,8 +81,10 @@ Resolverは以下を出力する。
 
 実行層はこれに従わなければならない。
 
-Resolverの決定は監査可能でなければならない。
+Authoritativeモードにおいては、Enforce出力はRecommend出力より常に優先される。
+すべての決定は再現可能かつ決定順序が決定的でなければならない。
 強制モード時、Switching CoreはResolverの指示を必ずログに記録しなければならない。
+Resolverの動作モードは状態機械（Section 3）と連動して決定される。
 
 ---
 
@@ -92,6 +99,10 @@ Resolverの決定は監査可能でなければならない。
 - WARM
 - HOT
 - EMERGENCY
+
+Resolverの出力は状態に依存して変化する。
+CALMでは助言中心、EMERGENCYでは強制中心の出力となる。
+EMERGENCY状態では、Resolverは安全側に倒す操作のみを許可する。
 
 ### 3.1 昇格ルール
 
@@ -648,6 +659,7 @@ Budget制約下では実行層によって制限されてもよい。
 
 本予約モデルは帯域保証を目的とせず、
 過負荷伝播の封じ込めを目的とする。
+TokenおよびBudgetは、実行層に対する制約条件として解釈される。
 
 ### 4.1 Budget（段階ベース）
 
@@ -722,6 +734,7 @@ Gossipの影響は最小化される。
 
 本モデルは数値最適化を回避し、
 辞書順によって安全性を優先する。
+本スコアリングはResolverの意思決定ロジックを置き換えるものではない。
 
 1. SafetyRank
 2. StabilityRank
@@ -742,6 +755,7 @@ SafetyRank の順序を上書きしてはならない。
 ## 7. 強制セット（非常時専用）
 
 強制は必要最小限のスコープで適用される。
+これらの強制操作は、ResolverのAuthoritative決定に基づいて適用される。
 
 - FreezeRoutes(scope, duration)
 - Quarantine(target, mode)
@@ -769,6 +783,34 @@ FailMode の既定値は CLOSED
 - セキュリティ境界の形式化
 
 ---
+
+## 10. 決定保証（Decision Guarantees）
+
+- Resolverは決定論的でなければならない（Deterministic）
+- 同一入力に対して同一出力を保証
+- 決定順序は固定される（Decision Order）
+- 候補が空集合になった場合：
+  - 必ずフォールバック動作を行う
+  - Advisory：Hold
+  - Authoritative：Closed / Enforced
+- 未定義状態は禁止
+
+---
+
+##11. 監査性（Auditability）
+
+- Resolverのすべての決定は追跡可能でなければならない
+- Authoritativeモードではログ必須
+- ログは以下を含む：
+  - 入力状態（State / Telemetry / Policy）
+  - 候補集合
+  - フィルタリング過程
+  - 最終決定
+  - ReasonCodes
+- 決定は再現可能でなければならない（Replay可能）
+
+---
+
 
 v0.1 終了
 

@@ -1445,3 +1445,294 @@ Policy check: current_cost=6, best_cost=6, margin=0, improvement=0, policy=laten
     - PSC Routing has advanced beyond trust-failure recovery to a stage where differences in degraded operational policy can also be expressed
 
 ---
+
+## v13a - Adaptive Trust Weight Introduction
+
+- Algorithm: Cost-based route selection + Hysteresis + Policy + Resolver Escalation + Trust-aware Route Selection + Trust Failure Recovery + Degraded Mode Policy + Adaptive Trust Weight
+
+- Feature:
+  - Maintains `TRUST_MODE = require_trusted`
+  - Represents trust levels in three stages: `TRUSTED / LIMITED / UNTRUSTED`
+  - Introduces adaptive trust weight into route evaluation
+  - Outputs trust summary for degraded fallback routes
+  - Integrates trust weighting while preserving the existing degraded mode / recovery control structure
+  - Makes transit trust weight visible during route selection
+
+- Result:
+  - Success:
+    - Adaptive trust weight was successfully integrated into degraded fallback routing
+    - Trust summary (`levels / transit_trust_weight`) was successfully logged together with route selection
+    - The full control flow of trusted-only failure / degraded fallback / degraded switching / normal recovery was preserved
+    - Trust-aware cost evaluation was introduced without breaking the existing degraded mode control structure
+
+  - Observation:
+    - In Step 1 / Step 2, trusted route `A-B-D-F` was selected and behaved as normal NORMAL mode routing
+    - In Step 3, trusted-only routing failed, and after trust failure detection the system transitioned from `NORMAL -> DEGRADED`
+    - In Step 3, fallback evaluation including adaptive trust weight selected `A-C-D-F`, causing a `DEGRADED_SWITCH`
+    - In Step 4, the same degraded route was maintained and no unnecessary switching occurred
+    - In Step 5, trusted route `A-B-D-F` became favorable again and the route switched back within degraded mode
+    - In Step 6, the recovery counter reached the threshold and `DEGRADED -> NORMAL` recovery occurred
+    - Because transit trust weight is logged, trust penalty visibility improved in addition to route cost visibility
+
+  - Issues:
+    - This version mainly confirms adaptive trust weight integration and does not yet provide a strong trust-boundary comparison case
+    - Trust weight is still a fixed value and does not yet change dynamically according to node risk or fault severity
+    - A stronger comparison case is still needed to clearly show how LIMITED / UNTRUSTED differences affect route choice
+    - Behavior under latency policy with adaptive trust weight has not yet been verified
+
+  - Next Step:
+    - Create a comparison case where trust weight differences clearly change route selection
+    - Design v13b using LIMITED / UNTRUSTED boundary conditions
+    - Apply adaptive trust weight to latency policy and compare behavioral differences
+    - Evolve trust weight from a fixed penalty into a more policy-aware / risk-aware weighting model
+
+- Execution Log:
+
+### v13a - Policy: stability / Trust mode: require_trusted (Execution Log)
+
+```text
+=== Policy-aware Routing Simulation v13a ===
+Source: nodeA
+Destination: nodeF
+Policy: stability
+Initial trust mode: require_trusted
+Hysteresis Margin: 3
+Resolver improvement threshold: 2
+Degraded switch margin: 2
+Recovery required steps: 2
+Adaptive trust weight: ENABLED
+
+Trust table:
+  nodeA: TRUSTED (weight=0)
+  nodeB: TRUSTED (weight=0)
+  nodeC: UNTRUSTED (weight=3)
+  nodeD: TRUSTED (weight=0)
+  nodeE: LIMITED (weight=1)
+  nodeF: TRUSTED (weight=0)
+
+--- Step 1 ---
+Node states:
+  nodeA: NORMAL
+  nodeB: NORMAL
+  nodeC: NORMAL
+  nodeD: NORMAL
+  nodeE: NORMAL
+  nodeF: NORMAL
+
+Primary route search:
+  Mode: TRUSTED_ONLY
+  Result: ROUTE FOUND
+  Route: ['nodeA', 'nodeB', 'nodeD', 'nodeF'] | Cost: 6
+  Trust summary: levels=['TRUSTED', 'TRUSTED', 'TRUSTED', 'TRUSTED'], transit_trust_weight=0
+
+Selected route:
+  ['nodeA', 'nodeB', 'nodeD', 'nodeF'] | Cost: 6
+Decision: SELECT
+Policy phase: initial selection
+Resolver phase: not needed
+Final reason: Initial trusted route selected
+
+--- Step 2 ---
+Node states:
+  nodeA: NORMAL
+  nodeB: BUSY
+  nodeC: NORMAL
+  nodeD: NORMAL
+  nodeE: NORMAL
+  nodeF: NORMAL
+
+Primary route search:
+  Mode: TRUSTED_ONLY
+  Result: ROUTE FOUND
+  Route: ['nodeA', 'nodeB', 'nodeD', 'nodeF'] | Cost: 8
+  Trust summary: levels=['TRUSTED', 'TRUSTED', 'TRUSTED', 'TRUSTED'], transit_trust_weight=0
+
+Current route re-evaluated:
+  ['nodeA', 'nodeB', 'nodeD', 'nodeF'] | Cost: 8
+  Trust summary: levels=['TRUSTED', 'TRUSTED', 'TRUSTED', 'TRUSTED'], transit_trust_weight=0
+
+Selected route:
+  ['nodeA', 'nodeB', 'nodeD', 'nodeF'] | Cost: 8
+  Trust summary: levels=['TRUSTED', 'TRUSTED', 'TRUSTED', 'TRUSTED'], transit_trust_weight=0
+Decision: KEEP
+Policy phase: current route is already the best route
+Resolver phase: not needed
+Final reason: Keep current route
+Policy check: current_cost=8, best_cost=8, margin=3, improvement=0, policy=stability, operation_mode=NORMAL
+
+--- Step 3 ---
+Node states:
+  nodeA: NORMAL
+  nodeB: CONGESTED
+  nodeC: NORMAL
+  nodeD: NORMAL
+  nodeE: NORMAL
+  nodeF: NORMAL
+
+Primary route search:
+  Mode: TRUSTED_ONLY
+  Result: NO ROUTE
+
+Trust phase:
+  require_trusted -> no trusted route available
+
+Trust failure:
+  Detected: YES
+  Reason: no trusted path from nodeA to nodeF
+
+Resolver decision:
+  Override: YES
+  Reason: preserve connectivity
+
+Operation mode:
+  NORMAL -> DEGRADED
+
+Fallback route search:
+  Mode: ALLOW_UNTRUSTED_FALLBACK + ADAPTIVE_TRUST_WEIGHT
+  Result: ROUTE FOUND
+  Route: ['nodeA', 'nodeC', 'nodeD', 'nodeF'] | Cost: 8
+  Trust summary: levels=['TRUSTED', 'UNTRUSTED', 'TRUSTED', 'TRUSTED'], transit_trust_weight=3
+
+Current route re-evaluated:
+  ['nodeA', 'nodeB', 'nodeD', 'nodeF'] | Cost: 11
+  Trust summary: levels=['TRUSTED', 'TRUSTED', 'TRUSTED', 'TRUSTED'], transit_trust_weight=0
+
+Selected route:
+  ['nodeA', 'nodeC', 'nodeD', 'nodeF'] | Cost: 8
+  Trust summary: levels=['TRUSTED', 'UNTRUSTED', 'TRUSTED', 'TRUSTED'], transit_trust_weight=3
+Decision: DEGRADED_SWITCH
+Policy phase: improvement=3, degraded_margin=2 -> beyond degraded margin
+Resolver phase: adaptive trust-weight degraded mode applied
+Final reason: Switched route under degraded mode policy
+Degraded mode: ACTIVE
+Adaptive trust weight: ENABLED
+Policy check: current_cost=11, best_cost=8, margin=3, improvement=3, policy=stability, operation_mode=DEGRADED
+
+--- Step 4 ---
+Node states:
+  nodeA: NORMAL
+  nodeB: CONGESTED
+  nodeC: BUSY
+  nodeD: NORMAL
+  nodeE: NORMAL
+  nodeF: NORMAL
+
+Primary route search:
+  Mode: TRUSTED_ONLY
+  Result: NO ROUTE
+
+Trust phase:
+  require_trusted -> no trusted route available
+
+Trust failure:
+  Detected: YES
+  Reason: no trusted path from nodeA to nodeF
+
+Resolver decision:
+  Override: YES
+  Reason: preserve connectivity
+
+Operation mode:
+  DEGRADED -> DEGRADED
+
+Fallback route search:
+  Mode: ALLOW_UNTRUSTED_FALLBACK + ADAPTIVE_TRUST_WEIGHT
+  Result: ROUTE FOUND
+  Route: ['nodeA', 'nodeC', 'nodeD', 'nodeF'] | Cost: 10
+  Trust summary: levels=['TRUSTED', 'UNTRUSTED', 'TRUSTED', 'TRUSTED'], transit_trust_weight=3
+
+Current route re-evaluated:
+  ['nodeA', 'nodeC', 'nodeD', 'nodeF'] | Cost: 10
+  Trust summary: levels=['TRUSTED', 'UNTRUSTED', 'TRUSTED', 'TRUSTED'], transit_trust_weight=3
+
+Selected route:
+  ['nodeA', 'nodeC', 'nodeD', 'nodeF'] | Cost: 10
+  Trust summary: levels=['TRUSTED', 'UNTRUSTED', 'TRUSTED', 'TRUSTED'], transit_trust_weight=3
+Decision: KEEP
+Policy phase: current route is already the best route
+Resolver phase: not needed
+Final reason: Keep current route
+Degraded mode: ACTIVE
+Adaptive trust weight: ENABLED
+Policy check: current_cost=10, best_cost=10, margin=3, improvement=0, policy=stability, operation_mode=DEGRADED
+
+--- Step 5 ---
+Node states:
+  nodeA: NORMAL
+  nodeB: NORMAL
+  nodeC: BUSY
+  nodeD: NORMAL
+  nodeE: NORMAL
+  nodeF: NORMAL
+
+Primary route search:
+  Mode: TRUSTED_ONLY
+  Result: ROUTE FOUND
+  Route: ['nodeA', 'nodeB', 'nodeD', 'nodeF'] | Cost: 6
+  Trust summary: levels=['TRUSTED', 'TRUSTED', 'TRUSTED', 'TRUSTED'], transit_trust_weight=0
+
+Recovery check:
+  Trusted route available: YES
+  Recovery counter: 1/2
+  Recovery decision: STAY_DEGRADED
+
+Fallback route search:
+  Mode: ALLOW_UNTRUSTED_FALLBACK + ADAPTIVE_TRUST_WEIGHT
+  Result: ROUTE FOUND
+  Route: ['nodeA', 'nodeB', 'nodeD', 'nodeF'] | Cost: 6
+  Trust summary: levels=['TRUSTED', 'TRUSTED', 'TRUSTED', 'TRUSTED'], transit_trust_weight=0
+
+Current route re-evaluated:
+  ['nodeA', 'nodeC', 'nodeD', 'nodeF'] | Cost: 10
+  Trust summary: levels=['TRUSTED', 'UNTRUSTED', 'TRUSTED', 'TRUSTED'], transit_trust_weight=3
+
+Selected route:
+  ['nodeA', 'nodeB', 'nodeD', 'nodeF'] | Cost: 6
+  Trust summary: levels=['TRUSTED', 'TRUSTED', 'TRUSTED', 'TRUSTED'], transit_trust_weight=0
+Decision: DEGRADED_SWITCH
+Policy phase: improvement=4, degraded_margin=2 -> beyond degraded margin
+Resolver phase: adaptive trust-weight degraded mode applied
+Final reason: Switched route under degraded mode policy
+Degraded mode: ACTIVE
+Adaptive trust weight: ENABLED
+Policy check: current_cost=10, best_cost=6, margin=3, improvement=4, policy=stability, operation_mode=DEGRADED
+
+--- Step 6 ---
+Node states:
+  nodeA: NORMAL
+  nodeB: NORMAL
+  nodeC: NORMAL
+  nodeD: NORMAL
+  nodeE: NORMAL
+  nodeF: NORMAL
+
+Primary route search:
+  Mode: TRUSTED_ONLY
+  Result: ROUTE FOUND
+  Route: ['nodeA', 'nodeB', 'nodeD', 'nodeF'] | Cost: 6
+  Trust summary: levels=['TRUSTED', 'TRUSTED', 'TRUSTED', 'TRUSTED'], transit_trust_weight=0
+
+Recovery check:
+  Trusted route available: YES
+  Recovery counter: 2/2
+  Recovery decision: RESTORE_NORMAL
+  Operation mode: DEGRADED -> NORMAL
+
+Current route re-evaluated:
+  ['nodeA', 'nodeB', 'nodeD', 'nodeF'] | Cost: 6
+  Trust summary: levels=['TRUSTED', 'TRUSTED', 'TRUSTED', 'TRUSTED'], transit_trust_weight=0
+
+Selected route:
+  ['nodeA', 'nodeB', 'nodeD', 'nodeF'] | Cost: 6
+  Trust summary: levels=['TRUSTED', 'TRUSTED', 'TRUSTED', 'TRUSTED'], transit_trust_weight=0
+Decision: KEEP
+Policy phase: current route is already the best route
+Resolver phase: not needed
+Final reason: Keep current route
+Policy check: current_cost=6, best_cost=6, margin=3, improvement=0, policy=stability, operation_mode=NORMAL
+```
+- Insight:
+    - In v13a, adaptive trust weight was integrated into degraded fallback routing and trust-aware cost evaluation was introduced
+    - By logging trust summary together with route selection, the influence of transit trust weight became traceable in the execution log
+    - The full control flow from trusted-only failure to degraded fallback and finally recovery back to normal mode was preserved
+    - This version is best positioned as an introduction / integration version of adaptive trust weighting, while full trust-boundary comparison should be handled in the next stage

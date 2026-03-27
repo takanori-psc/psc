@@ -31,6 +31,8 @@ must respect the following principles:
 - State-based coordination
 - Local-first autonomy
 - Intervention only when structural stability is at risk
+- Resolver is not an execution entity; it defines constraints and decisions.
+- Resolver MUST produce decisions that are explainable and reproducible.
 
 ---
 
@@ -50,6 +52,10 @@ Design Principles:
 
 Resolver is not the execution engine of routing,
 but the accountable decision authority.
+Resolver SHALL NOT execute operations.
+It SHALL output constraints and decisions to the system.
+Resolver is not continuously active; it operates as an intervention-based decision module.
+Resolver outputs SHALL be interpreted as constraints, not execution commands.
 
 ---
 
@@ -72,8 +78,10 @@ Resolver outputs:
 - TokenRules override
 
 The execution layer is required to comply.
+Enforce directives MUST take precedence over Recommend outputs.
+Resolver mode SHALL be determined by the state machine (Section 3).
 
-Resolver decisions are accountable and auditable.
+Resolver decisions MUST be accountable, auditable, and reproducible with deterministic ordering.
 Switching Core execution MUST log Resolver directives when in Authoritative mode.
 
 ---
@@ -88,6 +96,10 @@ States:
 - WARM
 - HOT
 - EMERGENCY
+
+Resolver outputs SHALL vary depending on state.
+CALM is advisory-dominant, while EMERGENCY is enforcement-dominant.
+In EMERGENCY, only safety-biased actions are permitted.
 
 ### 3.1 Escalation Rules
 
@@ -630,6 +642,7 @@ Hard rate limiting, if required, SHALL be expressed via Enforcement (e.g., Cap/T
 
 This reservation model is not designed for bandwidth guarantees,
 but for overload propagation containment.
+Token and Budget SHALL be interpreted as constraints by the execution layer.
 
 ### 4.1 Budget (Stage-Based)
 
@@ -699,8 +712,8 @@ Gossip influence is minimized.
 
 ## 6. Scoring Model (Lexicographic)
 
-This model avoids numeric optimization
-and prioritizes safety through lexicographic ordering.
+This model avoids numeric optimization and prioritizes safety through lexicographic ordering.
+This model SHALL NOT replace Resolver decision logic.
 
 1. SafetyRank
 2. StabilityRank
@@ -719,6 +732,7 @@ Sticky preference MUST NOT override SafetyRank ordering.
 ## 7. Enforcement Set (Emergency Only)
 
 Enforcement is applied with minimal necessary scope.
+All enforcement actions are derived from Resolver Authoritative decisions.
 
 - FreezeRoutes(scope, duration)
 - Quarantine(target, mode)
@@ -744,6 +758,72 @@ FailMode default: CLOSED
 - Token TTL optimization
 - Budget mapping calibration
 - Security boundary formalization
+
+---
+
+## 10. Decision Guarantees
+
+Resolver MUST operate under strict deterministic decision principles.
+ - Resolver MUST be deterministic.
+ - The same input conditions MUST always produce the same output.
+ - The decision order MUST be fixed and reproducible.
+ - Resolver MUST NOT produce undefined or ambiguous outcomes.
+
+### 10.1 Fallback Requirement
+
+If the candidate set becomes empty at any stage of decision:
+ - Resolver MUST perform a deterministic fallback action.
+
+Fallback behavior SHALL be defined as:
+ - Advisory mode:
+    - Hold (no new changes applied)
+ - Authoritative mode:
+    - Closed or enforced safe-state operation
+
+Resolver MUST ensure that no decision cycle results in an undefined state.
+
+### 10.2 Deterministic Decision Order
+
+Resolver MUST apply a strictly defined decision order during each decision cycle.
+ - All filtering, constraint application, and selection steps MUST be executed in a predefined sequence.
+ - The order MUST be consistent across all implementations.
+ - Reordering of decision stages MUST NOT change the final outcome.
+
+---
+
+## 11. Auditability
+
+All Resolver decisions MUST be fully auditable and reproducible.
+
+### 11.1 Logging Requirements
+
+Resolver MUST record decision logs for every decision cycle.
+In Authoritative mode, logging is mandatory and MUST NOT be skipped.
+
+Each log entry MUST include:
+ - Input state:
+    - Fabric state
+    - Telemetry data (abstracted form)
+    - Policy constraints
+    - Trust-related inputs (if applicable)
+ - Candidate set before filtering
+ - Filtering and constraint application steps
+ - Final decision output
+ - ReasonCodes associated with the decision
+
+### 11.2 Reproducibility
+
+Resolver decisions MUST be reproducible from logs.
+ - Given the same recorded inputs, the decision process MUST yield the same result.
+ - Logs MUST contain sufficient information to replay the decision process.
+ - Replay MUST follow the same deterministic decision order defined in Section 10.
+
+### 11.3 Accountability
+
+Resolver decisions MUST be accountable.
+ - Each decision MUST be traceable to its input conditions and applied constraints.
+ - The system MUST be able to explain why a specific decision was made.
+ - In Authoritative mode, enforced actions MUST be traceable to Resolver directives.
 
 ---
 
