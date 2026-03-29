@@ -19,7 +19,7 @@
 
 This document defines the **Fabric State Model** used in PSC Fabric.
 
-The Fabric State Model represents the operational condition of PSC Fabric using a **simple and stable state representation**.  
+The Fabric State Model represents the operational condition of PSC Fabric using a **simple and stable state representation**.
 These states serve as a common foundation for several control mechanisms, including:
 
 - routing decisions
@@ -29,7 +29,7 @@ These states serve as a common foundation for several control mechanisms, includ
 - telemetry interpretation
 - optimization interaction
 
-PSC does not rely solely on numerical optimization.  
+PSC does not rely solely on numerical optimization.
 Instead, PSC adopts a **state-based control model**.
 
 This design enables PSC Fabric to achieve:
@@ -53,7 +53,7 @@ Examples include:
 - error rates
 - thermal conditions
 
-However, PSC control decisions do not directly operate on these raw numerical values.  
+However, PSC control decisions do not directly operate on these raw numerical values.
 Instead, they are converted into **Fabric States**.
 
 ```
@@ -232,7 +232,7 @@ Control Nodes monitor Fabric State and use it to make decisions such as:
 - policy adjustment
 - topology management
 
-Control Nodes do not directly modify Fabric State.  
+Control Nodes do not directly modify Fabric State.
 Instead, they influence fabric behavior through policies and configuration.
 
 ---
@@ -257,6 +257,30 @@ This design ensures that PSC:
 
 ---
 
+AI parallel work inside PSC Fabric shall be controlled by the official Fabric State.
+
+General behavior is as follows:
+
+- CALM
+  AI parallel work may be allowed for learning, consultation, and optimization.
+
+- WARM
+  AI parallel work should be limited in scope and reduced in depth.
+
+- HOT
+  Non-essential AI parallel work shall be discarded in order to preserve fabric stability and transfer performance.
+
+Safety-preserving functions such as minimum risk evaluation and protection mechanisms may remain active.
+
+- EMERGENCY
+  AI parallel work shall be disabled except for minimum safety-preserving functions.
+
+AI parallel work must not interfere with the default fast transfer path of PSC Fabric.
+
+Detailed AI behavior, consultation rules, and safety mechanisms should be defined in a separate AI behavior specification.
+
+---
+
 ## 11. Design Principles
 
 The PSC Fabric State Model follows these principles:
@@ -266,5 +290,6 @@ The PSC Fabric State Model follows these principles:
 - human readability
 - AI compatibility
 - implementation simplicity
+- fast-path preservation
 
 Fabric State acts as the **common control language** of PSC Fabric.

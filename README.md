@@ -2,7 +2,7 @@
 
 ## 🚀 Quick Demo（クイックデモ）
 
-Try PSC behavior in seconds:  
+Try PSC behavior in seconds:
 （数秒でPSCの動作を体験できます）
 
 ### Static Demo（静的デモ）
@@ -50,19 +50,19 @@ PSC introduces dedicated control modules inside the fabric:
 - TEU (transfer execution unit)
 - OMU (optical monitoring unit)
 
-Each component has a clearly defined role within the fabric.  
+Each component has a clearly defined role within the fabric.
 （各コンポーネントはファブリック内で明確に役割分担されています）
 
-The Resolver acts as the core decision-control module that defines system-wide behavior.  
+The Resolver acts as the core decision-control module that defines system-wide behavior.
 （Resolverはシステム全体の挙動を決定する中核制御モジュールです）
 
-PSC is a fabric-centric computer architecture designed to shift system control and data movement away from traditional CPU-centric designs.  
+PSC is a fabric-centric computer architecture designed to shift system control and data movement away from traditional CPU-centric designs.
 （PSCは、従来のCPU中心設計から、ファブリック中心の制御とデータ転送へ移行するコンピュータアーキテクチャです。）
 
-In PSC, the communication fabric itself becomes the core of coordination and data flow.  
+In PSC, the communication fabric itself becomes the core of coordination and data flow.
 （PSCでは、通信ファブリックそのものがシステムの制御とデータ流通の中心となります。）
 
-In simple terms, PSC shifts the role of system control from the CPU to the communication fabric.  
+In simple terms, PSC shifts the role of system control from the CPU to the communication fabric.
 （簡単に言うと、PSCはシステム制御の主役をCPUから通信ファブリックへ移す構造です。）
 
 ---
@@ -71,14 +71,14 @@ In simple terms, PSC shifts the role of system control from the CPU to the commu
 
 ![PSC Architecture Concept](diagrams/concept/psc_concept_architecture_comparison_v0.1.png)
 
-PSC replaces traditional CPU-centric communication with a unified fabric model, enabling flexible and scalable data movement.  
+PSC replaces traditional CPU-centric communication with a unified fabric model, enabling flexible and scalable data movement.
 （PSCは従来のCPU中心通信を統一ファブリックモデルに置き換え、柔軟でスケーラブルなデータ転送を実現します。）
 
 ---
 
 ## Documentation（ドキュメント）
 
-Start here to understand PSC:  
+Start here to understand PSC:
 （ここからPSCの理解を開始できます）
 
 * 📘 [Architecture Overview](docs/architecture/psc_architecture_overview_en.md)
@@ -89,28 +89,28 @@ Start here to understand PSC:
 
 ## Key Concepts（主要コンセプト）
 
-PSC is built around the following principles:  
+PSC is built around the following principles:
 （PSCは以下の原則に基づいています）
 
-* Fabric-driven computer architecture  
+* Fabric-driven computer architecture
   （ファブリック駆動型アーキテクチャ）
 
-* Receiver-driven data transfer  
+* Receiver-driven data transfer
   （受信側主導データ転送）
 
-* Chunk-based transport  
+* Chunk-based transport
   （チャンク単位転送）
 
-* Congestion-aware routing  
+* Congestion-aware routing
   （輻輳認識ルーティング：混雑を考慮した経路制御）
 
-* Policy-aware routing  
+* Policy-aware routing
   （ポリシー認識ルーティング）
 
-* Trust-aware routing  
+* Trust-aware routing
   （信頼性考慮ルーティング）
 
-* Adaptive fabric control  
+* Adaptive fabric control
   （適応型ファブリック制御）
 
 ---
@@ -129,58 +129,75 @@ PSC is built around the following principles:
 
 ## System Architecture（システム構造）
 
-PSC introduces a communication fabric that connects:  
+PSC introduces a communication fabric that connects:
 （PSCは以下の構成要素をファブリックで接続します）
 
-* CPU  
-* GPU  
-* Memory（メモリ）  
-* Storage（ストレージ）  
-* Network（ネットワーク）  
+* CPU
+* GPU
+* Memory（メモリ）
+* Storage（ストレージ）
+* Network（ネットワーク）
 * Accelerators（アクセラレータ）
 
-All communication flows through the PSC Fabric.  
+All communication flows through the PSC Fabric.
 （すべての通信はPSCファブリックを通過します。）
 
 ---
 
 ## Specification（仕様）
 
+### Published Documents（公開仕様）
+
+- 🧠 PSC AI Behavior Model v0.1
+  - English: docs/specification/published/psc_ai_behavior_model_v0.1_en.md
+  - Japanese: docs/specification/published/psc_ai_behavior_model_v0.1_ja.md
+
+These documents represent stable and reference-level specifications of PSC.
+（これらはPSCの安定した参照仕様です）
+
+### Draft Documents（開発中仕様）
+
+- Routing Model
+- Congestion Control Model
+
+These documents are under active development and subject to change.
+（これらは開発中であり、変更される可能性があります）
+
 ### Core Specifications
 
-- 🧠 Resolver Specification v0.1  
+- 🧠 Resolver Specification v0.1
   → docs/specification/resolver/psc_resolver_spec_v0.1.md
 
 The Resolver defines the decision-control model of PSC,
-including state-based control, authority modes, and constraint-based outputs.  
+including state-based control, authority modes, and constraint-based outputs.
 （ResolverはPSCの意思決定制御モデルを定義し、状態ベース制御・権限モデル・制約ベース出力を扱います）
 
-The PSC specification includes:  
+The PSC specification includes:
 （PSC仕様には以下が含まれます）
 
-* Addressing（アドレッシング）  
-* Communication Protocol（通信プロトコル）  
-* Routing（ルーティング）  
-* Fabric Control（ファブリック制御）  
-* Security（セキュリティ）  
+* Addressing（アドレッシング）
+* Communication Protocol（通信プロトコル）
+* Routing（ルーティング）
+* Fabric Control（ファブリック制御）
+* Security（セキュリティ）
 * Telemetry（テレメトリ）
 
 📚 [Browse full specification](docs/specification/)
 
-Each specification is available in both Japanese and English.  
+Each specification is available in both Japanese and English.
 （各仕様は日本語と英語の両方で提供されます）
 
 ---
 
 ## Project Status（開発状況）
 
-PSC Fabric Specification v0.1 is currently under development.  
+PSC Fabric Specification v0.1 is currently under development.
 （PSC Fabric仕様 v0.1 は現在開発中です）
 
 ---
 
 ## Author（作者）
 
-T. Hirose  
-Independent architecture research project  
+T. Hirose
+Independent architecture research project
 （個人によるアーキテクチャ研究プロジェクト）
