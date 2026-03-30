@@ -19,12 +19,12 @@
 
 This document defines the **routing table model** used by the RCU (Routing Control Unit) in PSC Fabric.
 
-Unlike traditional next-hop-based routing tables, this model integrates:
+This model integrates:
 
 - multi-path structure
-- policy / trust / congestion awareness
+- policy / trust / congestion
 - path state management (failover / degraded / recovery)
-- explainable routing decisions
+- explainable and reproducible routing decisions
 
 ---
 
@@ -36,7 +36,7 @@ Routing decisions are controlled by the Fabric (RCU), not by the sender.
 
 ### 2.2 Explainable Decision Model
 
-All routing decisions must be explainable and reproducible.
+Routing decisions must be explainable and reproducible.
 
 ### 2.3 Multi-dimensional Evaluation
 
@@ -52,7 +52,7 @@ Routing evaluation integrates:
 
 - Routing Table : data storage
 - RCU : decision making
-- Resolver : exception-level reasoning
+- Resolver : exception handling
 
 ---
 
@@ -111,30 +111,48 @@ A Destination Entry represents aggregated routing information per destination.
 - fallback_path_id
   Failover candidate
 
+### 4.4 policy_profile
+
+Examples:
+
+- latency
+- stability
+- trusted
+- bulk
+
+### 4.5 trust_requirement
+
+Examples:
+
+- off
+- prefer_trusted
+- require_trusted
+
 ---
 
 ## 5. Path Entry
 
 ### 5.1 Overview
 
-A Path Entry represents an individual candidate route to a destination.
+A Path Entry represents an individual candidate route.
 
 ### 5.2 Identification
 
 - path_id
 - destination_id
-- next_hop
+- next_hop_port
+- next_hop_node
 - hop_count
 - hop_list
 
-### 5.3 Cost and Evaluation
+### 5.3 Cost / Evaluation
 
 - base_cost
 - dynamic_cost
 - total_score
 
 Note:
-The evaluation formula is defined in separate specifications
+Evaluation formula is defined in separate specifications
 (Congestion Model / Policy Model / RCU Specification).
 
 ### 5.4 Trust
@@ -142,7 +160,13 @@ The evaluation formula is defined in separate specifications
 - trust_level
 - trust_score
 
-### 5.5 State
+### 5.5 Congestion
+
+- congestion_score
+
+Represents congestion condition derived from telemetry.
+
+### 5.6 State
 
 - health_state
 - availability_state
@@ -156,6 +180,12 @@ The evaluation formula is defined in separate specifications
 - DEGRADED
 - FAILED
 
+#### availability_state
+
+- AVAILABLE
+- LIMITED
+- UNAVAILABLE
+
 #### path_state
 
 - SETUP
@@ -165,13 +195,13 @@ The evaluation formula is defined in separate specifications
 - RECOVERY
 - TEARDOWN
 
-### 5.6 Performance Estimates
+### 5.7 Performance Estimates
 
 - bandwidth_estimate
 - latency_estimate
 - loss_estimate
 
-### 5.7 Policy
+### 5.8 Policy
 
 - policy_flags
 
@@ -183,14 +213,11 @@ Examples:
 - BULK_TRANSFER
 - SECURITY_RESTRICTED
 
-### 5.8 Operational Flags
+### 5.9 Operational Flags
 
 - is_selected
-
 - is_backup
-
 - valid_until
-
 - last_evaluated
 
 ---
@@ -200,32 +227,25 @@ Examples:
 ### 6.1 Route Selection
 
 The routing table does not perform selection.
-
-RCU selects routes based on:
-
-- total_score
-- policy
-- trust
-- congestion
-- path_state
+RCU performs decision making.
 
 ### 6.2 Best vs Selected
 
 - best_path : optimal by evaluation
 - selected_path : currently in use
 
-These must be separated.
-
 ### 6.3 Failover
 
-When the selected path becomes unavailable:
+When selected_path becomes unavailable:
 
-- fallback_path is used
-- or a degraded path is selected
+- fallback_path
+- or a degraded path
+
+is used.
 
 ### 6.4 Degraded Operation
 
-Under certain conditions, the system may allow:
+The system may allow:
 
 - reduced trust
 - reduced bandwidth
@@ -241,10 +261,8 @@ RCU performs:
 
 - path evaluation
 - best path computation
-- selected path maintenance / switching
-- failover / recovery control
-
-Routing Table provides the data for these decisions.
+- selected path control
+- failover / recovery
 
 ---
 
@@ -267,7 +285,7 @@ Resolver intervenes when:
 
 ### Secondary
 
-- next_hop
+- next_hop_port
 - path_state
 - trust_level
 - policy_flags
@@ -276,26 +294,10 @@ Resolver intervenes when:
 
 ## 10. Lifecycle
 
-### Creation
-
-- topology discovery
-- static configuration
-
-### Update
-
-- telemetry input
-- congestion change
-- policy update
-
-### Invalidation
-
-- node failure
-- link failure
-
-### Removal
-
-- TTL expiration
-- policy removal
+- Creation (topology discovery / configuration)
+- Update (telemetry / congestion / policy)
+- Invalidation (failure / restriction)
+- Removal (expiration / cleanup)
 
 ---
 
@@ -303,35 +305,39 @@ Resolver intervenes when:
 
 ### Destination Entry
 
-```
-destination_id: dst_mem_0042
-selected_path_id: path_02
-best_path_id: path_01
-fallback_path_id: path_03
-policy_profile: stability
-trust_requirement: prefer_trusted
+```YAML
+Destination Entry:
+  destination_id: dst_mem_0042
+  selected_path_id: path_02
+  best_path_id: path_01
+  fallback_path_id: path_03
+  policy_profile: stability
+  trust_requirement: prefer_trusted
 ```
 
 ---
 
 ### Path Entry
 
-```
-path_id: path_02
-next_hop: port_3
-hop_count: 4
+```YAML
+Path Entry:
+  path_id: path_02
+  next_hop_port: port_3
+  next_hop_node: node_07
+  hop_count: 4
 
-base_cost: 12
-dynamic_cost: 5
-total_score: 17
+  base_cost: 12
+  dynamic_cost: 5
+  total_score: 17
 
-trust_level: TRUSTED
-congestion_score: 3
+  trust_level: TRUSTED
+  congestion_score: 3
 
-health_state: NORMAL
-path_state: ACTIVE
+  health_state: NORMAL
+  availability_state: AVAILABLE
+  path_state: ACTIVE
 
-is_selected: true
+  is_selected: true
 ```
 
 ---
@@ -344,7 +350,7 @@ Logical routing (Port-based) is separated from physical routing (Node-based).
 
 ### 12.2 Scalability
 
-The Destination / Path separation enables scalable routing table design.
+Destination / Path separation enables scalable routing design.
 
 ### 12.3 Extensibility
 
@@ -363,11 +369,11 @@ Additional evaluation dimensions (AI, telemetry, optical characteristics) can be
 
 ## 14. Summary
 
-PSC Routing Table Model v0.2 defines a routing model that includes:
+PSC Routing Table Model v0.2 defines:
 
 - Destination / Path two-layer structure
 - multi-path routing
 - policy / trust / congestion integration
-- failover / degraded operation
+- failover / degraded handling
 
-This model serves as the foundation for PSC routing behavior and control-plane decision logic.
+This model serves as the core foundation of PSC routing behavior and control-plane decision logic.

@@ -1,5 +1,11 @@
 # PSC Routing Table Model v0.1
 
+## Status
+
+This document is archived.
+Superseded by:
+- PSC Routing Table Model v0.2
+
 ## Document Information
 
 - Document Name: PSC Routing Table Model
@@ -59,10 +65,10 @@ Therefore, PSC routing table entries may contain both:
 
 The PSC routing table model uses a two-layer representation:
 
-- Logical routing layer  
+- Logical routing layer
   Destination Port -> Candidate Next Hop Port
 
-- Physical context layer  
+- Physical context layer
   Destination Node / Next Hop Node / Domain context
 
 This allows PSC to preserve Port-based communication abstraction while still supporting physical topology-aware routing.
@@ -414,16 +420,16 @@ This may be achieved through:
 
 Route entries may be interpreted differently depending on current Fabric State:
 
-- CALM  
+- CALM
   prefer stable primary entries
 
-- WARM  
+- WARM
   allow mild alternate-path preference changes
 
-- HOT  
+- HOT
   prefer congestion relief and load redistribution
 
-- EMERGENCY  
+- EMERGENCY
   prioritize safe continuity, isolation, and survivability
 
 ---

@@ -1,5 +1,11 @@
 # PSC ルーティングテーブルモデル v0.1
 
+## ステータス
+
+本ドキュメントはアーカイブ版である。
+後継:
+- PSC Routing Table Model v0.2
+
 ## Document Information
 
 - ドキュメント名: PSC Routing Table Model
@@ -88,10 +94,10 @@ Node → Node
 
 PSC routing table は二層構造のルート表現を採用する。
 
-- Logical routing layer  
+- Logical routing layer
   Destination Port -> Candidate Next Hop Port
 
-- Physical context layer  
+- Physical context layer
   Destination Node / Next Hop Node / Domain context
 
 これにより PSC は
