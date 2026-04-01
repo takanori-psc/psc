@@ -69,10 +69,32 @@ In simple terms, PSC shifts the role of system control from the CPU to the commu
 
 ## Architecture Overview（アーキテクチャ概要）
 
+### Conceptual Architecture
+
 ![PSC Architecture Concept](diagrams/concept/psc_concept_architecture_comparison_v0.1.png)
 
 PSC replaces traditional CPU-centric communication with a unified fabric model, enabling flexible and scalable data movement.
 （PSCは従来のCPU中心通信を統一ファブリックモデルに置き換え、柔軟でスケーラブルなデータ転送を実現します。）
+
+---
+
+### Control Model (Resolver Integration)
+
+![PSC Resolver Control Model](diagrams/control/psc_resolver_control_model_v0.1.png)
+
+This diagram shows how decision-making is performed inside the PSC fabric.
+
+Unlike traditional architectures, control is not centralized in a CPU.
+Instead, PSC distributes decision-making across the fabric, with RCU operating autonomously and Resolver intervening only when escalation or override is required.
+
+- RCU operates autonomously under normal conditions
+- Resolver intervenes only when escalation or override is required
+- TMU and OMU provide operational and telemetry inputs
+
+PSC is not just a data transport system —
+it is a **decision-driven fabric architecture**.
+
+This separation of autonomous control and intervention is a fundamental design principle of PSC.
 
 ---
 
