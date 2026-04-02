@@ -10,11 +10,13 @@ Advanced PSC simulation experiments.
 - `mini_psc_v10.py`: trust-aware routing experiment
 - `mini_psc_v10a.py`: trust fallback behavior experiment
 - `mini_psc_v11.py`: degraded-mode fallback experiment
+- `rcu_decision/`: simulations for the RCU Decision Model (v0.1 and later)
 - `mini_psc_advanced_experiment_log.md`: experiment notes and results
 
 ## Purpose
 
-This directory contains advanced PSC simulation experiments focused on routing behavior under policy, trust, and Resolver-guided conditions.
+This directory contains advanced PSC simulation experiments focused on routing behavior under policy, trust, Resolver-guided conditions,
+and the RCU decision model.
 
 ## Notes
 
@@ -24,6 +26,7 @@ These experiments extend the basic simulation series with more advanced routing 
 - trust-aware routing
 - Resolver intervention
 - degraded fallback behavior
+- RCU decision logic
 
 ## Usage
 
