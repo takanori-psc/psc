@@ -16,7 +16,7 @@ recovery_stability_threshold = 0.7
 recovery_cooldown_steps = 2
 
 trust_threshold = 0.5
-epsilon = 0.03
+epsilon = 0.05
 
 TEST_DEGRADED = False
 TEST_RESOLVER_TRIGGER = True
@@ -89,18 +89,18 @@ def create_paths(step):
                     "health": 1,
                 },
             ]
-        else:
+        elif step == 1:
             return [
                 {
                     "name": "A",
-                    "utilization": 0.51,
-                    "buffer": 0.20,
-                    "retry": 0.10,
-                    "latency": 0.41,
-                    "throughput": 0.69,
-                    "variance": 0.10,
-                    "trend": 0.10,
-                    "persistence": 0.20,
+                    "utilization": 0.58,
+                    "buffer": 0.26,
+                    "retry": 0.16,
+                    "latency": 0.46,
+                    "throughput": 0.63,
+                    "variance": 0.05,
+                    "trend": 0.05,
+                    "persistence": 0.05,
                     "trust": 0.60,
                     "health": 1,
                 },
@@ -110,11 +110,40 @@ def create_paths(step):
                     "buffer": 0.20,
                     "retry": 0.10,
                     "latency": 0.40,
-                    "throughput": 0.70,
-                    "variance": 0.10,
-                    "trend": 0.10,
-                    "persistence": 0.20,
-                    "trust": 0.95,
+                    "throughput": 0.69,
+                    "variance": 0.40,
+                    "trend": 0.40,
+                    "persistence": 0.40,
+                    "trust": 0.60,
+                    "health": 1,
+                },
+            ]
+        else:
+            return [
+                {
+                    "name": "A",
+                    "utilization": 0.58,
+                    "buffer": 0.26,
+                    "retry": 0.16,
+                    "latency": 0.46,
+                    "throughput": 0.63,
+                    "variance": 0.05,
+                    "trend": 0.05,
+                    "persistence": 0.05,
+                    "trust": 0.60,
+                    "health": 1,
+                },
+                {
+                    "name": "B",
+                    "utilization": 0.50,
+                    "buffer": 0.20,
+                    "retry": 0.10,
+                    "latency": 0.40,
+                    "throughput": 0.69,
+                    "variance": 0.40,
+                    "trend": 0.40,
+                    "persistence": 0.40,
+                    "trust": 0.60,
                     "health": 1,
                 },
             ]
@@ -196,8 +225,12 @@ def stability_score(p):
 def final_score(p):
     congestion_benefit = 1 - congestion_score(p)
     performance = performance_score(p)
-    stability = stability_score(p)
-    return Wc * congestion_benefit + Wp * performance + Ws * stability
+
+    # stabilityを一時的に外す
+    # temporary validation mode:
+    # exclude stability from final_score so that stability conflict
+    # can be escalated to Resolver instead of being absorbed by RCU.
+    return Wc * congestion_benefit + Wp * performance
 
 
 def resolver_score(p):
@@ -276,13 +309,15 @@ degradation_counter = 0
 mode = "NORMAL"
 recovery_cooldown_counter = 0
 
+resolver_cooldown = 0
+
 
 # =========================
 # Decision Logic
 # =========================
 
 def decide(paths):
-    global selected_path_name, degradation_counter, mode, recovery_cooldown_counter
+    global selected_path_name, degradation_counter, mode, recovery_cooldown_counter, resolver_cooldown
 
     valid_paths, rejected_paths = filter_paths(paths)
 
@@ -396,36 +431,63 @@ def decide(paths):
     # Resolver Escalation
     # =========================
     if len(scored) >= 2:
-        second_entry = scored[1]
-        score_gap = best_entry["final"] - second_entry["final"]
 
-        if score_gap < epsilon and best["name"] != selected["name"]:
-            print("[ESCALATE] invoking resolver")
+        if resolver_cooldown > 0:
+            print(f"[RESOLVER_COOLDOWN] remaining={resolver_cooldown}")
+            resolver_cooldown -= 1
+        else:
+            second_entry = scored[1]
+            score_gap = best_entry["final"] - second_entry["final"]
 
-            resolved = resolve([entry["path"] for entry in scored])
-            resolved_name = resolved.get("name")
+            trust_gap = abs(best["trust"] - selected["trust"])
+            stability_gap = abs(stability_score(best) - stability_score(selected))
 
-            if resolved_name is None:
-                print("[DECISION] decision=KEEP reason=RESOLVER_NO_RESULT")
+            if (
+                score_gap < epsilon
+                and best["name"] != selected["name"]
+                and (trust_gap > 0.1 or stability_gap > 0.2)
+            ):
+                reason_parts = []
+
+                if trust_gap > 0.1:
+                    reason_parts.append("TRUST_CONFLICT")
+                if stability_gap > 0.2:
+                    reason_parts.append("STABILITY_CONFLICT")
+
+                reason = "+".join(reason_parts)
+
+                print(
+                    f"[ESCALATE] reason={reason} "
+                    f"score_gap={score_gap:.3f} "
+                    f"trust_gap={trust_gap:.3f} "
+                    f"stability_gap={stability_gap:.3f}"
+                )
+
+                resolved = resolve([entry["path"] for entry in scored])
+                resolved_name = resolved.get("name")
+
+                if resolved_name is None:
+                    print("[DECISION] decision=KEEP reason=RESOLVER_NO_RESULT")
+                    degradation_counter = 0
+                    mode = "NORMAL"
+                    return
+
+                if resolved_name == selected_path_name:
+                    print(
+                        "[DECISION] decision=RESOLVED_KEEP "
+                        "reason=RESOLVER_SAME_SELECTION"
+                    )
+                else:
+                    print(
+                        f"[DECISION] decision=RESOLVED_SWITCH to={resolved_name} "
+                        f"reason=RESOLVER_DECISION"
+                    )
+                    selected_path_name = resolved_name
+
+                resolver_cooldown = 2
                 degradation_counter = 0
                 mode = "NORMAL"
                 return
-
-            if resolved_name == selected_path_name:
-                print(
-                    "[DECISION] decision=RESOLVED_KEEP "
-                    "reason=RESOLVER_SAME_SELECTION"
-                )
-            else:
-                print(
-                    f"[DECISION] decision=RESOLVED_SWITCH to={resolved_name} "
-                    f"reason=RESOLVER_DECISION"
-                )
-                selected_path_name = resolved_name
-
-            degradation_counter = 0
-            mode = "NORMAL"
-            return
 
     print("[CHECK]")
     print(f"  selected={selected['name']} best={best['name']}")
