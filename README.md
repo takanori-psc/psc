@@ -223,3 +223,13 @@ PSC Fabric Specification v0.1 is currently under development.
 T. Hirose
 Independent architecture research project
 （個人によるアーキテクチャ研究プロジェクト）
+
+---
+
+## Contributing
+
+Contributions, discussions, and ideas are welcome.
+
+This project is open to questions, feedback, and collaboration.
+
+See [CONTRIBUTING.md](CONTRIBUTING.md)
