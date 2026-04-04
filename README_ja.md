@@ -43,7 +43,7 @@ PSCの動作は2種類のデモで確認できます。
 - 最短経路よりも安定した経路を優先
 
 ```bash
-python3 sim/04_demo/run_psc_demo.py
+python sim/04_demo/run_psc_demo.py
 ```
 
 ---
@@ -59,7 +59,7 @@ python3 sim/04_demo/run_psc_demo.py
 - 信頼性に基づく意思決定の変化
 
 ```bash
-python3 sim/04_demo/run_psc_dynamic_demo.py
+python sim/04_demo/run_psc_dynamic_demo.py
 ```
 
 ---

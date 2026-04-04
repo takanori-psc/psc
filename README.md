@@ -31,7 +31,7 @@ Observe how PSC selects routes based on trust and cost.
 - Stable path preference over shortest path
 
 ```bash
-python3 sim/04_demo/run_psc_demo.py
+python sim/04_demo/run_psc_demo.py
 ```
 
 ---
@@ -47,7 +47,7 @@ Observe how PSC reacts to changing network conditions.
 - Trust-driven decision changes
 
 ```bash
-python3 sim/04_demo/run_psc_dynamic_demo.py
+python sim/04_demo/run_psc_dynamic_demo.py
 ```
 
 ---
