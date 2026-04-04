@@ -1,46 +1,130 @@
 # Photon System Controller (PSC)
 
-## 🚀 Quick Demo（クイックデモ）
+🇺🇸 English | 🇯🇵 日本語 → README_ja.md
 
-Try PSC behavior in seconds:
-（数秒でPSCの動作を体験できます）
-
-### Static Demo（静的デモ）
-```bash
-python3 sim/04_demo/run_psc_demo.py
-```
-Basic trust-aware routing decision.
-（信頼性を考慮した基本的なルート選択）
-
-### Dynamic Demo（動的デモ）
-```bash
-python3 sim/04_demo/run_psc_dynamic_demo.py
-```
-Adaptive routing with changing network conditions.
-（ネットワーク状態の変化に応じた適応的ルーティング）
-
-This demo shows how PSC selects routes based on:
-（このデモでは、PSCが以下の要素に基づいて経路選択する様子を確認できます）
-
-- cost（コスト）
-- trust（信頼性）
-- adaptive decision logic（適応的な判断ロジック）
-
-PSC does not always choose the shortest path —
-it prefers stable and trusted routes.
-（PSCは常に最短経路を選ぶわけではなく、安定性と信頼性を優先します）
-
-## 📄 Article（記事）
-
-👉 Read the concept:
-
-**[A Fabric-Centric Computer Architecture: PSC](https://zenn.dev/takanori_psc/articles/73827700dc68a6)**
+A fabric-driven system that dynamically selects the most stable and trusted network path — not just the shortest one.
 
 ---
 
-## What is PSC?（PSCとは何か）
+## Why PSC?
 
-### Core Architecture Components
+- Avoids unstable network paths automatically
+- Prioritizes trust and stability over raw speed
+- Adapts routing decisions in real time
+- Moves decision-making into the network fabric
+
+PSC is a **decision-driven routing system**, not just a data transport layer.
+
+---
+
+## Quick Demo
+
+PSC provides two demo modes:
+
+### 1. Static Demo (Basic Behavior)
+
+Observe how PSC selects routes based on trust and cost.
+
+**What you will see:**
+
+- Basic trust-aware routing
+- Stable path preference over shortest path
+
+```bash
+python3 sim/04_demo/run_psc_demo.py
+```
+
+---
+
+### 2. Dynamic Demo (Adaptive Behavior)
+
+Observe how PSC reacts to changing network conditions.
+
+**What you will see:**
+
+- Real-time routing adaptation
+- Avoidance of unstable paths
+- Trust-driven decision changes
+
+```bash
+python3 sim/04_demo/run_psc_dynamic_demo.py
+```
+
+---
+
+## What is PSC?
+
+PSC (Photon System Controller) is a fabric-centric computer architecture
+that shifts system control and data movement away from traditional CPU-centric designs.
+
+In PSC, the communication fabric itself becomes the core of coordination and data flow.
+
+Instead of relying on a centralized controller,
+PSC distributes decision-making across the fabric.
+
+---
+
+## Architecture Overview
+
+PSC shifts system control from a centralized CPU to the communication fabric.
+
+**Key idea:**
+
+- Control is distributed across the fabric
+- Data flow and decision-making are integrated
+
+![PSC Architecture Concept](diagrams/concept/psc_concept_architecture_comparison_v0.1.png)
+
+This diagram compares traditional CPU-centric architecture with PSC’s fabric-driven model.
+
+---
+
+### Resolver Control Model
+
+This diagram shows how decision-making works inside PSC.
+
+**Key behavior:**
+
+- RCU operates autonomously under normal conditions
+- Resolver intervenes only when escalation or override is required
+- Decision control is separated from execution
+
+![PSC Resolver Control Model](diagrams/control/psc_resolver_control_model_v0.1.png)
+
+PSC is not just a data transport system —
+it is a **decision-driven fabric architecture**.
+
+---
+
+## Transfer Flow
+
+This diagram shows how data moves through the PSC fabric.
+
+**What to focus on:**
+
+- How data flows between components
+- How routing decisions affect transfer behavior
+- Interaction between control and execution layers
+
+![PSC Transfer Flow](diagrams/fabric/psc_transfer_flow_v0.1.png)
+
+---
+
+## Fabric Internal Architecture
+
+This diagram shows the internal structure of the PSC fabric.
+
+**What to focus on:**
+
+- Roles of each module (RCU, TMU, TEU, OMU)
+- Separation of control and execution
+- How components are connected inside the fabric
+
+![PSC Fabric Internal Architecture](diagrams/fabric/psc_fabric_internal_architecture_v0.1.png)
+
+---
+
+## Core Architecture Components
 
 PSC introduces dedicated control modules inside the fabric:
 
@@ -51,178 +135,101 @@ PSC introduces dedicated control modules inside the fabric:
 - OMU (optical monitoring unit)
 
 Each component has a clearly defined role within the fabric.
-（各コンポーネントはファブリック内で明確に役割分担されています）
 
-The Resolver acts as the core decision-control module that defines system-wide behavior.
-（Resolverはシステム全体の挙動を決定する中核制御モジュールです）
-
-PSC is a fabric-centric computer architecture designed to shift system control and data movement away from traditional CPU-centric designs.
-（PSCは、従来のCPU中心設計から、ファブリック中心の制御とデータ転送へ移行するコンピュータアーキテクチャです。）
-
-In PSC, the communication fabric itself becomes the core of coordination and data flow.
-（PSCでは、通信ファブリックそのものがシステムの制御とデータ流通の中心となります。）
-
-In simple terms, PSC shifts the role of system control from the CPU to the communication fabric.
-（簡単に言うと、PSCはシステム制御の主役をCPUから通信ファブリックへ移す構造です。）
+The Resolver defines system-wide behavior,
+while RCU operates autonomously under normal conditions.
 
 ---
 
-## Architecture Overview（アーキテクチャ概要）
-
-### Conceptual Architecture
-
-![PSC Architecture Concept](diagrams/concept/psc_concept_architecture_comparison_v0.1.png)
-
-PSC replaces traditional CPU-centric communication with a unified fabric model, enabling flexible and scalable data movement.
-（PSCは従来のCPU中心通信を統一ファブリックモデルに置き換え、柔軟でスケーラブルなデータ転送を実現します。）
-
----
-
-### Control Model (Resolver Integration)
-
-![PSC Resolver Control Model](diagrams/control/psc_resolver_control_model_v0.1.png)
-
-This diagram shows how decision-making is performed inside the PSC fabric.
-
-Unlike traditional architectures, control is not centralized in a CPU.
-Instead, PSC distributes decision-making across the fabric, with RCU operating autonomously and Resolver intervening only when escalation or override is required.
-
-- RCU operates autonomously under normal conditions
-- Resolver intervenes only when escalation or override is required
-- TMU and OMU provide operational and telemetry inputs
-
-PSC is not just a data transport system —
-it is a **decision-driven fabric architecture**.
-
-This separation of autonomous control and intervention is a fundamental design principle of PSC.
-
----
-
-## Documentation（ドキュメント）
+## Documentation
 
 Start here to understand PSC:
-（ここからPSCの理解を開始できます）
 
-* 📘 [Architecture Overview](docs/architecture/psc_architecture_overview_en.md)
-* 🧭 [Architecture Map](docs/architecture/psc_architecture_map_v0.1_en.md)
-* 📚 [Specification](docs/specification/)
-
----
-
-## Key Concepts（主要コンセプト）
-
-PSC is built around the following principles:
-（PSCは以下の原則に基づいています）
-
-* Fabric-driven computer architecture
-  （ファブリック駆動型アーキテクチャ）
-
-* Receiver-driven data transfer
-  （受信側主導データ転送）
-
-* Chunk-based transport
-  （チャンク単位転送）
-
-* Congestion-aware routing
-  （輻輳認識ルーティング：混雑を考慮した経路制御）
-
-* Policy-aware routing
-  （ポリシー認識ルーティング）
-
-* Trust-aware routing
-  （信頼性考慮ルーティング）
-
-* Adaptive fabric control
-  （適応型ファブリック制御）
+- [Architecture Overview](docs/architecture/psc_architecture_overview_en.md)
+- [Architecture Map](docs/architecture/psc_architecture_map_v0.1_en.md)
+- [Specification](docs/specification/)
 
 ---
 
-## Architecture Diagrams（構造図）
+## Specification
 
-### Transfer Flow（転送フロー）
+### Published Documents
 
-![PSC Transfer Flow](diagrams/fabric/psc_transfer_flow_v0.1.png)
+- PSC AI Behavior Model v0.1
 
-### Fabric Internal Architecture（ファブリック内部構造）
-
-![PSC Fabric Internal Architecture](diagrams/fabric/psc_fabric_internal_architecture_v0.1.png)
-
----
-
-## System Architecture（システム構造）
-
-PSC introduces a communication fabric that connects:
-（PSCは以下の構成要素をファブリックで接続します）
-
-* CPU
-* GPU
-* Memory（メモリ）
-* Storage（ストレージ）
-* Network（ネットワーク）
-* Accelerators（アクセラレータ）
-
-All communication flows through the PSC Fabric.
-（すべての通信はPSCファブリックを通過します。）
-
----
-
-## Specification（仕様）
-
-### Published Documents（公開仕様）
-
-- 🧠 PSC AI Behavior Model v0.1
   - English: docs/specification/published/psc_ai_behavior_model_v0.1_en.md
   - Japanese: docs/specification/published/psc_ai_behavior_model_v0.1_ja.md
 
-These documents represent stable and reference-level specifications of PSC.
-（これらはPSCの安定した参照仕様です）
+These documents represent stable and reference-level specifications.
 
-### Draft Documents（開発中仕様）
+---
+
+### Draft Documents
 
 - Routing Model
 - Congestion Control Model
 
-These documents are under active development and subject to change.
-（これらは開発中であり、変更される可能性があります）
+These are under active development and subject to change.
 
-### Core Specifications
+---
 
-- 🧠 Resolver Specification v0.1
+### Core Specification
+
+- Resolver Specification v0.1
   → docs/specification/resolver/psc_resolver_spec_v0.1.md
 
 The Resolver defines the decision-control model of PSC,
 including state-based control, authority modes, and constraint-based outputs.
-（ResolverはPSCの意思決定制御モデルを定義し、状態ベース制御・権限モデル・制約ベース出力を扱います）
-
-The PSC specification includes:
-（PSC仕様には以下が含まれます）
-
-* Addressing（アドレッシング）
-* Communication Protocol（通信プロトコル）
-* Routing（ルーティング）
-* Fabric Control（ファブリック制御）
-* Security（セキュリティ）
-* Telemetry（テレメトリ）
-
-📚 [Browse full specification](docs/specification/)
-
-Each specification is available in both Japanese and English.
-（各仕様は日本語と英語の両方で提供されます）
 
 ---
 
-## Project Status（開発状況）
+## Key Concepts
+
+PSC is built around the following principles:
+
+- Fabric-driven computer architecture
+- Receiver-driven data transfer
+- Chunk-based transport
+- Congestion-aware routing
+- Policy-aware routing
+- Trust-aware routing
+- Adaptive fabric control
+
+---
+
+## System Architecture
+
+PSC introduces a communication fabric that connects:
+
+- CPU
+- GPU
+- Memory
+- Storage
+- Network
+- Accelerators
+
+All communication flows through the PSC Fabric.
+
+---
+
+## Article
+
+Read the concept:
+
+[https://zenn.dev/takanori_psc/articles/73827700dc68a6](https://zenn.dev/takanori_psc/articles/73827700dc68a6)
+
+---
+
+## Project Status
 
 PSC Fabric Specification v0.1 is currently under development.
-（PSC Fabric仕様 v0.1 は現在開発中です）
 
 ---
 
-## Author（作者）
+## Author
 
 T. Hirose
 Independent architecture research project
-（個人によるアーキテクチャ研究プロジェクト）
 
 ---
 
@@ -230,6 +237,6 @@ Independent architecture research project
 
 Contributions, discussions, and ideas are welcome.
 
-This project is open to questions, feedback, and collaboration.
+See `CONTRIBUTING.md`
 
-See [CONTRIBUTING.md](CONTRIBUTING.md)
+---
