@@ -1,212 +1,237 @@
-# PSC RCU Decision Model v0.1 (English Version)
+# PSC RCU Decision Model v0.1
 
-## 1. Document Information
-
-- Document Name   : PSC RCU Decision Model
-- Version         : v0.1
-- Project         : PSC (Photon System Controller)
-- Layer           : PSCOS / PSC Fabric
-- Document Type   : Specification / Model
-- Status          : Draft
-- Author          : T. Hirose
-- Created         : 2026-04-02
-- Last Updated    : 2026-04-02
-- Language        : English
+## Absolute Rules
 
 ---
 
-## 2. Objective
+## 1. Path Validity Rules
 
-This model defines the path selection and switching decision logic of the RCU (Routing Control Unit).
+### RULE-01: Trust / Health Filtering
 
-The RCU evaluates path candidates based on telemetry and determines whether to keep the current Selected Path or switch to a new Best Path.
+Paths that do not satisfy the minimum trust or health requirements must not be considered for normal selection.
 
----
+- Condition:
 
-## 3. Basic Structure
+  - `trust < trust_threshold`
+  - `health == 0`
+- Action:
 
-The RCU decision process consists of the following three stages.
-
-1. Candidate Filtering
-2. Score Evaluation
-3. Switching Decision
+  - Exclude from valid path set
 
 ---
 
-## 4. Candidate Filtering
+### RULE-02: No Valid Path → Degraded Mode
 
-The RCU removes unusable paths before score calculation.
+If no valid paths exist, the system must enter DEGRADED mode.
 
-### 4.1 Rejection Conditions
+- If fallback paths (`health != 0`) exist:
 
-A path is rejected if any of the following conditions is met.
+  - Select best fallback path
+- Otherwise:
 
-- trust violation
-- node failure
-- policy violation
-- hard stale telemetry
-- route unavailable
+  - Return `NO_ROUTE`
+- Mode:
 
-### 4.2 Rules
-
-```text
-If trust_violation(path) = true, reject path.
-If node_failure(path) = true, reject path.
-If policy_violation(path) = true, reject path.
-If telemetry_state(path) = hard_invalid, reject path.
-```
-
-If no candidate remains, the RCU outputs `NO_ROUTE` or `ESCALATE_SWITCH`.
+  - `DEGRADED`
 
 ---
 
-## 5. Score Evaluation
+### RULE-03: Selected Path Invalid → Immediate Replacement
 
-All metrics MUST be normalized to [0, 1] before evaluation
-and MUST maintain consistent scaling across all paths.
-The RCU evaluates the following three scores for valid path candidates.
+If the currently selected path becomes invalid, it must not be retained.
 
-- CongestionScore(path)
-- PerformanceScore(path)
-- StabilityScore(path)
+- Action:
 
-### 5.1 Congestion Benefit
+  - Switch to best valid path
+- Mode:
 
-Since a lower CongestionScore is better, it is inverted during integration.
-
-```text
-CongestionBenefit(path) = 1 - CongestionScore(path)
-```
-
-### 5.2 Final Score
-
-```text
-FinalScore(path) =
-  Wc * CongestionBenefit(path) +
-  Wp * PerformanceScore(path) +
-  Ws * StabilityScore(path)
-```
-
-### 5.3 Initial Weights
-
-```text
-Wc = 0.4
-Wp = 0.3
-Ws = 0.3
-```
+  - `DEGRADED`
 
 ---
 
-## 6. Best Path and Selected Path
+## 2. Normal Selection Rules
 
-The RCU distinguishes the following two paths.
+### RULE-04: Initial Selection
 
-- Best Path
-  The path with the highest FinalScore at the current time
+When no path is selected:
 
-- Selected Path
-  The path currently in use
+- Action:
 
-The Best Path and the Selected Path do not need to be the same.
+  - Select path with highest `final_score`
+- Mode:
 
----
-
-## 7. Switching Decision
-
-The RCU does not switch immediately even if a Best Path exists.
-It makes the decision based on improvement, stability, and persistence.
-
-### 7.1 Improvement
-
-```text
-Improvement =
-  FinalScore(BestPath) - FinalScore(SelectedPath)
-```
-
-### 7.2 Switch Condition
-
-```text
-If Improvement > switch_margin
-  AND StabilityScore(SelectedPath) < switch_stability_threshold
-  AND persistence_degradation(SelectedPath) > persistence_limit
-then SWITCH
-else KEEP
-```
-
-### 7.3 Return Condition
-
-```text
-If Improvement > return_margin
-  AND StabilityScore(BestPath) > return_stability_threshold
-  AND persistence_recovery(BestPath) > recovery_limit
-then RETURN or SWITCH_BACK
-```
-
-### 7.4 Initial Example Values
-
-```text
-switch_margin = 0.10
-return_margin = 0.15
-
-switch_stability_threshold = 0.40
-return_stability_threshold = 0.60
-
-persistence_limit = 3 cycles
-recovery_limit = 5 cycles
-```
-
-Return conditions must be stricter than switch conditions.
+  - `NORMAL`
 
 ---
 
-## 8. Decision Outputs
+### RULE-05: No Switch on Small Improvement
 
-The RCU has the following outputs.
+A path must not be switched if the improvement is below threshold.
 
-- KEEP
-- SWITCH
-- DEGRADED_SWITCH
-- ESCALATE_SWITCH
-- NO_ROUTE
+- Condition:
 
----
+  - `improvement <= switch_margin`
+- Action:
 
-## 9. Resolver Escalation
-
-If the RCU cannot make a safe decision by itself, it delegates the decision to the Resolver.
-
-### 9.1 Escalation Conditions
-
-- no trusted route
-- multiple candidates with similar score
-- degraded-only candidates
-- policy conflict
-- unstable telemetry confidence
-- repeated switch attempts without convergence
-
-### 9.2 Rules
-
-```text
-If no trusted route exists, escalate.
-If score difference between top candidates < epsilon, escalate.
-If only degraded paths remain, escalate.
-If repeated switching does not converge, escalate.
-```
+  - KEEP
 
 ---
 
-## 10. Conclusion
+### RULE-06: Persistent Degradation Required for Switch
 
-This model enables the RCU to provide the following.
+Switching must only occur when degradation is sustained.
 
-- candidate rejection based on constraints
-- path evaluation based on multiple scores
-- stable switching decisions using hysteresis
+- Conditions:
+
+  - `best != selected`
+  - `improvement > switch_margin`
+  - `stability(selected) < switch_stability_threshold`
+  - `degradation_counter > persistence_limit`
+- Action:
+
+  - SWITCH
 
 ---
 
-## 11. Next Steps
+### RULE-07: Degradation Counter Behavior
 
-- integration into the full RCU Model
-- implementation in simulation
-- refinement of Resolver interaction conditions
+Degradation must be tracked over time.
+
+- If:
+  - `stability < switch_stability_threshold` → increment counter
+  - otherwise → reset counter
+
+---
+
+## 3. Resolver Rules
+
+### RULE-08: Resolver Activation Conditions
+
+Resolver must only be invoked under ambiguity conditions.
+
+- Conditions:
+
+  - `score_gap < epsilon`
+  - `best != selected`
+  - `(trust_gap > 0.1 OR stability_gap > 0.2)`
+  - `resolver_cooldown == 0`
+
+---
+
+### RULE-09: Same Selection → No Switch
+
+If Resolver returns the currently selected path:
+
+- Action:
+
+  - `RESOLVED_KEEP`
+- No switching is allowed
+
+---
+
+### RULE-10: Resolver-Driven Switch
+
+Switching is only allowed when Resolver selects a different path.
+
+- Action:
+
+  - `RESOLVED_SWITCH`
+
+---
+
+### RULE-11: Resolver Cooldown
+
+After Resolver execution:
+
+- Action:
+  - Set resolver cooldown to a fixed number of steps
+    (`resolver_cooldown = resolver_cooldown_steps`)
+
+- Default:
+  - `resolver_cooldown_steps = 2`
+
+- Behavior:
+  - While cooldown is active:
+    - Resolver must not be re-invoked
+
+---
+
+## 4. Degraded / Recovery Rules
+
+### RULE-12: Recovery Condition
+
+Recovery from DEGRADED mode requires stable and trusted paths.
+
+- Condition:
+
+  - `stability > recovery_stability_threshold`
+- Action:
+
+  - Select best candidate
+  - Transition to NORMAL
+
+---
+
+### RULE-13: Recovery Cooldown
+
+After recovery:
+
+- Action:
+  - Set recovery cooldown to a fixed number of steps
+    (`recovery_cooldown_counter = recovery_cooldown_steps`)
+
+- Default:
+  - `recovery_cooldown_steps = 2`
+
+- Behavior:
+  - While cooldown is active:
+    - No switching is allowed
+
+---
+
+### RULE-14: Fallback Behavior
+
+In DEGRADED mode:
+
+- Trust filtering is explicitly relaxed as an exception rule
+- Paths with valid health (`health != 0`) must be considered
+
+- Action:
+  - Select the best path from fallback candidates using `final_score`
+
+- Constraint:
+  - Health validation must always be enforced
+
+---
+
+## 5. Scoring Rules
+
+### RULE-15: Separation of RCU and Resolver Logic
+
+RCU and Resolver must not use identical evaluation logic.
+
+- RCU:
+
+  - `congestion + performance`
+- Resolver:
+
+  - `trust + stability + performance`
+
+---
+
+### RULE-16: Stability Escalation Model (v0.1)
+
+Stability must not be absorbed into RCU scoring.
+
+- Stability conflicts must be escalated to Resolver
+- This is a deliberate design choice in v0.1
+
+---
+
+## Notes
+
+- These rules define **non-negotiable behavior constraints**
+- Parameter values (e.g., thresholds, margins) are defined separately
+- The system must always behave consistently with these rules
+
+---
