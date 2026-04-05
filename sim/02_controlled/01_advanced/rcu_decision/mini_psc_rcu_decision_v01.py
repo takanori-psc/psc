@@ -15,6 +15,9 @@ persistence_limit = 3
 recovery_stability_threshold = 0.7
 recovery_cooldown_steps = 2
 
+# Resolver behavior
+resolver_cooldown_steps = 2
+
 trust_threshold = 0.5
 epsilon = 0.05
 
@@ -484,7 +487,8 @@ def decide(paths):
                     )
                     selected_path_name = resolved_name
 
-                resolver_cooldown = 2
+                # Resolver cooldown (prevents repeated escalation)
+                resolver_cooldown = resolver_cooldown_steps
                 degradation_counter = 0
                 mode = "NORMAL"
                 return

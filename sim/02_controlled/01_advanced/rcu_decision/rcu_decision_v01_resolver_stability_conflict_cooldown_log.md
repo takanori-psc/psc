@@ -94,14 +94,15 @@ python3 mini_psc_rcu_decision_v01.py
   persistence=0
   mode=NORMAL
 [DECISION] decision=KEEP reason=HYSTERESIS_HOLD
+
 ```
 
 ## Summary
 
-- STABILITY_CONFLICT escalation was successfully triggered and handled by the Resolver.
-- Resolver correctly maintained the selected path based on stability considerations.
-- Resolver cooldown mechanism effectively suppressed redundant escalations.
-- The system demonstrates stable and periodic escalation behavior with proper cooldown control.
-- This confirms that the separation between RCU and Resolver responsibilities is functioning as designed.
+- STABILITY_CONFLICT escalation was triggered under near-equal scoring conditions between competing paths.
+- Resolver correctly returned `RESOLVED_KEEP`, maintaining the current path based on stability-oriented evaluation.
+- Resolver cooldown successfully suppressed redundant escalations for subsequent steps.
+- During cooldown, the system maintained stability using `HYSTERESIS_HOLD`.
+- This log confirms that the separation between RCU ambiguity detection and Resolver decision logic is functioning as designed in PSC RCU Decision Model v0.1.
 
 ---
