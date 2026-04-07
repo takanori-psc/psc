@@ -29,6 +29,101 @@ PSCは単なるデータ転送機構ではなく、
 
 ---
 
+## スタートガイド（RCU Decision v0.1）
+
+ここがPSCの中核です。
+
+RCU Decision Modelは以下を定義します：
+- 不安定経路の回避
+- 信頼性・安定性優先の判断
+- 無駄な切り替えを防ぐ制御
+
+PSCを理解するには、ここから始めてください。
+このモデルは、シミュレーションログにより実装・検証済みです。
+
+### 1. 仕様を読む
+
+docs/specification/published/models/psc_rcu_decision_model_v0.1_ja.md
+
+### 2. シミュレーションを実行
+
+> すべての例は Python 3 環境を前提としています。
+```bash
+python3 sim/02_controlled/01_advanced/rcu_decision/mini_psc_rcu_decision_v01.py
+```
+
+### 3. ログを確認
+
+sim/02_controlled/01_advanced/rcu_decision/
+
+確認ポイント：
+
+* resolverのエスカレーション挙動
+* degraded / recovery
+* trustベース判断
+
+---
+
+## 検証ログ（Validation Logs）
+
+以下のログは、PSC RCU Decision Model v0.1 の挙動を再現可能な形で検証したものです。
+すべてのログはシミュレーションから直接生成されており、実際の実行結果をそのまま反映しています。
+
+### 1. Resolver 安定性競合 + クールダウン
+
+**シナリオ：**
+スコアがほぼ同等の経路間で安定性の競合が発生し、Resolverへのエスカレーションが発生。
+クールダウンにより連続エスカレーションを防ぎ、ヒステリシスによって安定性を維持。
+
+```bash
+python3 mini_psc_rcu_decision_v01.py
+```
+
+**ログ：**
+`rcu_decision_v01_resolver_stability_conflict_cooldown_rule_log.md`
+
+**ポイント：**
+
+- `RULE-05_ESCALATE_conflict` による曖昧性検出
+- Resolverによる不要な切替回避（KEEP相当の判断）
+- `RULE-12_COOLDOWN_active` によるエスカレーション抑制
+- `RULE-01_KEEP_score` による安定維持
+
+### 2. Degraded → Recovery → 安定化
+
+**シナリオ：**
+全経路のtrustが低下し、degraded状態へ移行。
+fallbackで安全側に倒れ、その後条件回復により正常状態へ復帰。
+
+```bash
+python3 mini_psc_rcu_decision_v01.py
+```
+
+**ログ：**
+`rcu_decision_v01_degraded_switch_recovery_rule_log.md`
+
+**ポイント：**
+
+- `RULE-09_DEGRADE_switch` によるフォールバック選択
+- `RULE-08_DEGRADE_keep` による不要な切替抑制
+- `RULE-10_RECOVERY_trigger` による正常復帰
+- `RULE-11_RECOVERY_cooldown` による安定化
+- `RULE-01_KEEP_score` による最終安定維持
+
+---
+
+## このログが示すこと
+
+- 曖昧な状況でも無駄に切り替えない
+- 異常時には安全側へ確実に遷移する
+- 回復は予測可能かつ安定的に行われる
+- すべての判断がRULEにより説明可能
+
+> PSCは最適化エンジンではない
+> **“壊れない意思決定エンジン”である**
+
+---
+
 ## デモ
 
 PSCの動作は2種類のデモで確認できます。
@@ -43,7 +138,7 @@ PSCの動作は2種類のデモで確認できます。
 - 最短経路よりも安定した経路を優先
 
 ```bash
-python sim/04_demo/run_psc_demo.py
+python3 sim/04_demo/run_psc_demo.py
 ```
 
 ---
@@ -59,7 +154,7 @@ python sim/04_demo/run_psc_demo.py
 - 信頼性に基づく意思決定の変化
 
 ```bash
-python sim/04_demo/run_psc_dynamic_demo.py
+python3 sim/04_demo/run_psc_dynamic_demo.py
 ```
 
 ---

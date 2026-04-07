@@ -17,6 +17,113 @@ PSC is a **decision-driven routing system**, not just a data transport layer.
 
 ---
 
+## What is PSC?
+
+PSC (Photon System Controller) is a fabric-centric computer architecture
+that shifts system control and data movement away from traditional CPU-centric designs.
+
+In PSC, the communication fabric itself becomes the core of coordination and data flow.
+
+Instead of relying on a centralized controller,
+PSC distributes decision-making across the fabric.
+
+---
+
+## Start Here (RCU Decision v0.1)
+
+This is the core of PSC.
+
+The RCU Decision Model defines how PSC:
+- avoids unstable paths
+- prioritizes trust and stability
+- prevents oscillation through controlled switching
+
+If you want to understand PSC, start here.
+This model is fully implemented and validated through simulation logs.
+
+### 1. Read the specification
+
+docs/specification/published/models/psc_rcu_decision_model_v0.1_en.md
+
+### 2. Run the simulation
+
+> All examples assume a Python 3 environment.
+```bash
+python3 sim/02_controlled/01_advanced/rcu_decision/mini_psc_rcu_decision_v01.py
+```
+
+### 3. Check validation logs
+
+sim/02_controlled/01_advanced/rcu_decision/
+
+Focus on:
+
+- resolver_stability_conflict
+- degraded / recovery behavior
+- trust-aware decisions
+
+---
+
+## Validation Logs
+
+The following logs provide reproducible validation of the PSC RCU Decision Model v0.1.
+Each log is fully reproducible and directly linked to RULE-based decision traces.
+
+All logs are directly generated from the simulation and reflect actual execution behavior.
+
+### 1. Resolver Stability Conflict + Cooldown
+
+**Scenario:**
+Near-equal scoring paths with a stability conflict trigger escalation to the Resolver.
+Cooldown prevents repeated escalation, and hysteresis maintains stability.
+
+```bash
+python3 mini_psc_rcu_decision_v01.py
+```
+
+**Log:**
+`rcu_decision_v01_resolver_stability_conflict_cooldown_rule_log.md`
+
+**Highlights:**
+
+- `RULE-05_ESCALATE_conflict` detects ambiguity between competing paths
+- Resolver avoids unnecessary switching (KEEP-equivalent decision)
+- `RULE-12_COOLDOWN_active` suppresses repeated escalation
+- `RULE-01_KEEP_score` maintains stability via hysteresis
+
+### 2. Degraded → Recovery → Stabilization
+
+**Scenario:**
+All paths lose trust, forcing degraded operation.
+System safely falls back, then recovers once conditions improve.
+
+```bash
+python3 mini_psc_rcu_decision_v01.py
+```
+
+**Log:**
+`rcu_decision_v01_degraded_switch_recovery_rule_log.md`
+
+**Highlights:**
+
+- `RULE-09_DEGRADE_switch` selects a fallback path under failure conditions
+- `RULE-08_DEGRADE_keep` prevents unnecessary switching in degraded mode
+- `RULE-10_RECOVERY_trigger` restores normal operation when conditions improve
+- `RULE-11_RECOVERY_cooldown` stabilizes the transition
+- `RULE-01_KEEP_score` ensures stable operation after recovery
+
+## What These Logs Prove
+
+- PSC avoids unnecessary switching under ambiguity
+- PSC safely degrades when trust conditions fail
+- PSC recovers predictably without oscillation
+- All decisions are traceable to explicit RULE definitions
+
+> PSC is not an optimization engine.
+> It is a **failure-resilient decision engine**.
+
+---
+
 ## Quick Demo
 
 PSC provides two demo modes:
@@ -31,7 +138,7 @@ Observe how PSC selects routes based on trust and cost.
 - Stable path preference over shortest path
 
 ```bash
-python sim/04_demo/run_psc_demo.py
+python3 sim/04_demo/run_psc_demo.py
 ```
 
 ---
@@ -47,20 +154,8 @@ Observe how PSC reacts to changing network conditions.
 - Trust-driven decision changes
 
 ```bash
-python sim/04_demo/run_psc_dynamic_demo.py
+python3 sim/04_demo/run_psc_dynamic_demo.py
 ```
-
----
-
-## What is PSC?
-
-PSC (Photon System Controller) is a fabric-centric computer architecture
-that shifts system control and data movement away from traditional CPU-centric designs.
-
-In PSC, the communication fabric itself becomes the core of coordination and data flow.
-
-Instead of relying on a centralized controller,
-PSC distributes decision-making across the fabric.
 
 ---
 

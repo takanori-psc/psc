@@ -21,8 +21,8 @@ resolver_cooldown_steps = 2
 trust_threshold = 0.5
 epsilon = 0.05
 
-TEST_DEGRADED = False
-TEST_RESOLVER_TRIGGER = True
+TEST_DEGRADED = True
+TEST_RESOLVER_TRIGGER = False
 
 # =========================
 # Dummy Telemetry
@@ -251,6 +251,10 @@ def resolve(paths):
 # =========================
 # Helpers
 # =========================
+def log_rule(event, rule, **kwargs):
+    details = " ".join(f"{k}={v}" for k, v in kwargs.items())
+    print(f"[{event}] rule={rule} {details}".rstrip())
+
 
 def get_path_by_name(paths, name):
     for path in paths:
@@ -338,9 +342,12 @@ def decide(paths):
 
             best = max(recovery_candidates, key=lambda path: final_score(path))
 
-            print(
-                f"[DECISION] decision=RECOVER to={best['name']} "
-                f"reason=STABLE_TRUSTED_PATH mode=NORMAL"
+            log_rule(
+                "STATE",
+                "RULE-10_RECOVERY_trigger",
+                to=best["name"],
+                reason="STABLE_TRUSTED_PATH",
+                mode="NORMAL",
             )
 
             selected_path_name = best["name"]
@@ -360,7 +367,12 @@ def decide(paths):
         fallback_paths = [path for path in paths if path["health"] != 0]
 
         if len(fallback_paths) == 0:
-            print("[DECISION] decision=NO_ROUTE reason=NO_HEALTHY_PATH mode=DEGRADED")
+            log_rule(
+                "STATE",
+                "RULE-07_DEGRADE_trigger",
+                reason="NO_HEALTHY_PATH",
+                mode="DEGRADED",
+            )
             selected_path_name = None
             degradation_counter = 0
             mode = "DEGRADED"
@@ -371,14 +383,22 @@ def decide(paths):
         fallback = fallback_entry["path"]
 
         if selected_path_name == fallback["name"]:
-            print(
-                f"[DECISION] decision=DEGRADED_KEEP selected={fallback['name']} "
-                f"score={fallback_entry['final']:.3f} reason=NO_TRUSTED_PATH mode=DEGRADED"
+            log_rule(
+                "DECISION",
+                "RULE-08_DEGRADE_keep",
+                selected=fallback["name"],
+                score=f"{fallback_entry['final']:.3f}",
+                reason="NO_TRUSTED_PATH",
+                mode="DEGRADED",
             )
         else:
-            print(
-                f"[DECISION] decision=DEGRADED_SWITCH to={fallback['name']} "
-                f"score={fallback_entry['final']:.3f} reason=NO_TRUSTED_PATH mode=DEGRADED"
+            log_rule(
+                "DECISION",
+                "RULE-09_DEGRADE_switch",
+                to=fallback["name"],
+                score=f"{fallback_entry['final']:.3f}",
+                reason="NO_TRUSTED_PATH",
+                mode="DEGRADED",
             )
             selected_path_name = fallback["name"]
 
@@ -403,11 +423,22 @@ def decide(paths):
 
     if selected is None:
         mode = "DEGRADED"
+        log_rule(
+            "STATE",
+            "RULE-07_DEGRADE_trigger",
+            reason="SELECTED_REJECTED",
+            mode=mode,
+        )
         selected_path_name = best["name"]
         degradation_counter = 0
-        print(
-            f"[DECISION] decision=DEGRADED_SWITCH from=INVALID to={best['name']} "
-            f"score_best={best_entry['final']:.3f} reason=SELECTED_REJECTED mode={mode}"
+        log_rule(
+            "DECISION",
+            "RULE-09_DEGRADE_switch",
+            from_="INVALID",
+            to=best["name"],
+            score_best=f"{best_entry['final']:.3f}",
+            reason="SELECTED_REJECTED",
+            mode=mode,
         )
         return
 
@@ -415,9 +446,13 @@ def decide(paths):
     # Recovery Cooldown Check
     # =========================
     if recovery_cooldown_counter > 0:
-        print(f"[COOLDOWN] holding after recovery ({recovery_cooldown_counter})")
+        log_rule(
+            "STATE",
+            "RULE-11_RECOVERY_cooldown",
+            remaining=recovery_cooldown_counter,
+            reason="RECOVERY_COOLDOWN",
+        )
         recovery_cooldown_counter -= 1
-        print("[DECISION] decision=KEEP reason=RECOVERY_COOLDOWN")
         return
 
     selected_score = final_score(selected)
@@ -434,9 +469,13 @@ def decide(paths):
     # Resolver Escalation
     # =========================
     if len(scored) >= 2:
-
         if resolver_cooldown > 0:
-            print(f"[RESOLVER_COOLDOWN] remaining={resolver_cooldown}")
+            log_rule(
+                "STATE",
+                "RULE-12_COOLDOWN_active",
+                remaining=resolver_cooldown,
+                reason="RESOLVER_COOLDOWN",
+            )
             resolver_cooldown -= 1
         else:
             second_entry = scored[1]
@@ -459,11 +498,15 @@ def decide(paths):
 
                 reason = "+".join(reason_parts)
 
-                print(
-                    f"[ESCALATE] reason={reason} "
-                    f"score_gap={score_gap:.3f} "
-                    f"trust_gap={trust_gap:.3f} "
-                    f"stability_gap={stability_gap:.3f}"
+                log_rule(
+                    "ESCALATE",
+                    "RULE-05_ESCALATE_conflict",
+                    reason=reason,
+                    score_gap=f"{score_gap:.3f}",
+                    trust_gap=f"{trust_gap:.3f}",
+                    stability_gap=f"{stability_gap:.3f}",
+                    best=best["name"],
+                    selected=selected["name"],
                 )
 
                 resolved = resolve([entry["path"] for entry in scored])
@@ -487,7 +530,6 @@ def decide(paths):
                     )
                     selected_path_name = resolved_name
 
-                # Resolver cooldown (prevents repeated escalation)
                 resolver_cooldown = resolver_cooldown_steps
                 degradation_counter = 0
                 mode = "NORMAL"
@@ -507,15 +549,26 @@ def decide(paths):
         and stability < switch_stability_threshold
         and degradation_counter > persistence_limit
     ):
-        print(
-            f"[DECISION] decision=SWITCH from={selected['name']} to={best['name']} "
-            f"reason=IMPROVEMENT_AND_PERSISTENT_DEGRADATION"
+        log_rule(
+            "DECISION",
+            "RULE-02_SWITCH_score",
+            from_=selected["name"],
+            to=best["name"],
+            improvement=f"{improvement:.3f}",
+            reason="IMPROVEMENT_AND_PERSISTENT_DEGRADATION",
         )
         selected_path_name = best["name"]
         degradation_counter = 0
         mode = "NORMAL"
     else:
-        print("[DECISION] decision=KEEP reason=HYSTERESIS_HOLD")
+        log_rule(
+            "DECISION",
+            "RULE-01_KEEP_score",
+            selected=selected["name"],
+            best=best["name"],
+            improvement=f"{improvement:.3f}",
+            reason="HYSTERESIS_HOLD",
+        )
 
 
 # =========================
