@@ -112,6 +112,26 @@ python3 mini_psc_rcu_decision_v01.py
 - `RULE-11_RECOVERY_cooldown` stabilizes the transition
 - `RULE-01_KEEP_score` ensures stable operation after recovery
 
+### 3. Resolver Switch Decision
+
+**Scenario:**
+Near-equal scoring paths with a strong trust difference trigger escalation.
+The Resolver explicitly switches the selected path.
+
+```bash
+python3 mini_psc_rcu_decision_v01.py
+```
+
+**Log:**
+`rcu_decision_v01_resolver_switch_rule_log.md`
+
+**Highlights:**
+
+- `RULE-05_ESCALATE_conflict` triggered by trust conflict
+- `RULE-14_RESOLVER_switch` performs explicit path switch (A → B)
+- `RULE-12_COOLDOWN_active` prevents repeated escalation
+- `RULE-01_KEEP_score` stabilizes the new selection
+
 ## What These Logs Prove
 
 - PSC avoids unnecessary switching under ambiguity
@@ -193,7 +213,7 @@ it is a **decision-driven fabric architecture**.
 
 ## Transfer Flow
 
-This diagram shows how data moves through the PSC fabric.
+This diagram shows how PSC executes data transfer decisions within the fabric.
 
 **What to focus on:**
 

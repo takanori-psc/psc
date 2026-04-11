@@ -29,174 +29,44 @@ TEST_RESOLVER_TRIGGER = True
 # =========================
 
 def create_paths(step):
-    if TEST_DEGRADED:
-        trust_a = 0.3 if step < 3 else 0.9
-        trust_b = 0.2 if step < 3 else 0.8
+    phase = step % 4
 
-        return [
-            {
-                "name": "A",
-                "utilization": 0.6,
-                "buffer": 0.2,
-                "retry": 0.1,
-                "latency": 0.6,
-                "throughput": 0.5,
-                "variance": 0.1,
-                "trend": 0.0,
-                "persistence": 0.2,
-                "trust": trust_a,
-                "health": 1,
-            },
-            {
-                "name": "B",
-                "utilization": 0.5,
-                "buffer": 0.3,
-                "retry": 0.2,
-                "latency": 0.4,
-                "throughput": 0.7,
-                "variance": 0.3,
-                "trend": 0.2,
-                "persistence": 0.3,
-                "trust": trust_b,
-                "health": 1,
-            },
-        ]
-
-    if TEST_RESOLVER_TRIGGER:
-        if step == 0:
-            return [
-                {
-                    "name": "A",
-                    "utilization": 0.50,
-                    "buffer": 0.20,
-                    "retry": 0.10,
-                    "latency": 0.40,
-                    "throughput": 0.71,
-                    "variance": 0.10,
-                    "trend": 0.10,
-                    "persistence": 0.20,
-                    "trust": 0.60,
-                    "health": 1,
-                },
-                {
-                    "name": "B",
-                    "utilization": 0.52,
-                    "buffer": 0.18,
-                    "retry": 0.08,
-                    "latency": 0.42,
-                    "throughput": 0.68,
-                    "variance": 0.12,
-                    "trend": 0.10,
-                    "persistence": 0.20,
-                    "trust": 0.60,
-                    "health": 1,
-                },
-            ]
-        elif step == 1:
-            return [
-                {
-                    "name": "A",
-                    "utilization": 0.58,
-                    "buffer": 0.26,
-                    "retry": 0.16,
-                    "latency": 0.46,
-                    "throughput": 0.63,
-                    "variance": 0.05,
-                    "trend": 0.05,
-                    "persistence": 0.05,
-                    "trust": 0.60,
-                    "health": 1,
-                },
-                {
-                    "name": "B",
-                    "utilization": 0.50,
-                    "buffer": 0.20,
-                    "retry": 0.10,
-                    "latency": 0.40,
-                    "throughput": 0.69,
-                    "variance": 0.05,
-                    "trend": 0.05,
-                    "persistence": 0.05,
-                    "trust": 0.95,
-                    "health": 1,
-                },
-            ]
-        else:
-            return [
-                {
-                    "name": "A",
-                    "utilization": 0.58,
-                    "buffer": 0.26,
-                    "retry": 0.16,
-                    "latency": 0.46,
-                    "throughput": 0.63,
-                    "variance": 0.05,
-                    "trend": 0.05,
-                    "persistence": 0.05,
-                    "trust": 0.60,
-                    "health": 1,
-                },
-                {
-                    "name": "B",
-                    "utilization": 0.50,
-                    "buffer": 0.20,
-                    "retry": 0.10,
-                    "latency": 0.40,
-                    "throughput": 0.69,
-                    "variance": 0.40,
-                    "trend": 0.40,
-                    "persistence": 0.40,
-                    "trust": 0.60,
-                    "health": 1,
-                },
-            ]
-
-    # normal mode: stepごとに状態変化させる
+    # A: 安定（少し遅い）
     path_a = {
         "name": "A",
-        "utilization": 0.6,
+        "utilization": 0.55,
         "buffer": 0.2,
         "retry": 0.1,
-        "latency": 0.6,
-        "throughput": 0.5,
-        "variance": 0.1,
-        "trend": 0.0,
-        "persistence": 0.2,
-        "trust": 0.7,
+        "latency": 0.45,
+        "throughput": 0.65,
+        "variance": 0.05,
+        "trend": 0.05,
+        "persistence": 0.1,
+        "trust": 0.8,
         "health": 1,
     }
 
-    instability = min(1.0, 0.2 + step * 0.15)
+    # B: 高速だが揺れる
+    if phase in [0, 2]:
+        instability = 0.1
+    else:
+        instability = 0.6
 
     path_b = {
         "name": "B",
         "utilization": 0.5,
         "buffer": instability,
         "retry": instability,
-        "latency": 0.3,
-        "throughput": 0.8,
+        "latency": 0.35,
+        "throughput": 0.75,
         "variance": instability,
-        "trend": 1.0 if instability > 0.5 else 0.3,
+        "trend": instability,
         "persistence": instability,
-        "trust": 1.0,
+        "trust": 0.7,
         "health": 1,
     }
 
-    path_c = {
-        "name": "C",
-        "utilization": 0.7,
-        "buffer": 0.3,
-        "retry": 0.15,
-        "latency": 0.7,
-        "throughput": 0.4,
-        "variance": 0.2,
-        "trend": 0.0,
-        "persistence": 0.2,
-        "trust": 1.0 if step < 6 else 0.3,
-        "health": 1,
-    }
-
-    return [path_a, path_b, path_c]
+    return [path_a, path_b]
 
 # =========================
 # Score Functions

@@ -58,9 +58,9 @@ sim/02_controlled/01_advanced/rcu_decision/
 
 確認ポイント：
 
-* resolverのエスカレーション挙動
-* degraded / recovery
-* trustベース判断
+- resolverのエスカレーション挙動
+- degraded / recovery
+- trustベース判断
 
 ---
 
@@ -73,7 +73,7 @@ sim/02_controlled/01_advanced/rcu_decision/
 
 **シナリオ：**
 スコアがほぼ同等の経路間で安定性の競合が発生し、Resolverへのエスカレーションが発生。
-クールダウンにより連続エスカレーションを防ぎ、ヒステリシスによって安定性を維持。
+クールダウンにより連続エスカレーションを防ぎ、ヒステリシスによって安定性を維持します。
 
 ```bash
 python3 mini_psc_rcu_decision_v01.py
@@ -92,8 +92,8 @@ python3 mini_psc_rcu_decision_v01.py
 ### 2. Degraded → Recovery → 安定化
 
 **シナリオ：**
-全経路のtrustが低下し、degraded状態へ移行。
-fallbackで安全側に倒れ、その後条件回復により正常状態へ復帰。
+全経路のTrustが低下し、Degraded状態へ移行。
+フォールバックにより安全側へ遷移し、その後条件回復により正常状態へ復帰します。
 
 ```bash
 python3 mini_psc_rcu_decision_v01.py
@@ -110,9 +110,27 @@ python3 mini_psc_rcu_decision_v01.py
 - `RULE-11_RECOVERY_cooldown` による安定化
 - `RULE-01_KEEP_score` による最終安定維持
 
----
+### 3. Resolverによる切替判断
 
-## このログが示すこと
+**シナリオ：**
+スコアがほぼ同等でTrustに大きな差がある場合、
+Resolverがエスカレーションされ、明示的に経路を切り替えます。
+
+```bash
+python3 mini_psc_rcu_decision_v01.py
+```
+
+**ログ：**
+`rcu_decision_v01_resolver_switch_rule_log.md`
+
+**ポイント：**
+
+- `RULE-05_ESCALATE_conflict` によるTrust競合検出
+- `RULE-14_RESOLVER_switch` による明示的な切替（A → B）
+- `RULE-12_COOLDOWN_active` による再エスカレーション防止
+- `RULE-01_KEEP_score` による切替後の安定維持
+
+## ✔ このログが示すこと
 
 - 曖昧な状況でも無駄に切り替えない
 - 異常時には安全側へ確実に遷移する
@@ -120,7 +138,7 @@ python3 mini_psc_rcu_decision_v01.py
 - すべての判断がRULEにより説明可能
 
 > PSCは最適化エンジンではない
-> **“壊れない意思決定エンジン”である**
+> **障害時にも破綻しない意思決定エンジンである**
 
 ---
 
