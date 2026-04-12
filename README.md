@@ -15,6 +15,9 @@ A fabric-driven system that dynamically selects the most stable and trusted netw
 
 PSC is a **decision-driven routing system**, not just a data transport layer.
 
+PSC prioritizes stability over immediate performance gains
+across all phases: normal operation, degradation, and recovery.
+
 ---
 
 ## What is PSC?
@@ -141,6 +144,36 @@ python3 mini_psc_rcu_decision_v01.py
 
 > PSC is not an optimization engine.
 > It is a **failure-resilient decision engine**.
+
+### Recovery Behavior (Important)
+
+PSC adopts a conservative recovery strategy.
+
+Even when a previously degraded path recovers and becomes the best-performing path again,
+PSC does not immediately switch back if the currently selected path remains stable and trusted.
+
+This behavior prevents unnecessary switching and ensures stability after recovery,
+rather than aggressively chasing performance improvements.
+
+### Recovery Behavior Comparison (v0.1 vs v0.2)
+
+The following comparison log demonstrates the difference between conservative recovery hold (v0.1)
+and staged recovery return (v0.2).
+
+**Log:**
+[Recovery Comparison Log (v0.1 vs v0.2)](sim/02_controlled/06_recovery_return_v02/logs/rcu_decision_v02_recovery_return_vs_v01_recovery_hold_log.md)
+
+**Key Difference:**
+
+- v0.1:
+  Holds the current stable path even after the original path recovers
+
+- v0.2:
+  Introduces staged recovery:
+  RECOVERY_CANDIDATE → VALIDATION → RETURN_ELIGIBLE → RETURN_SWITCH
+
+This comparison clearly demonstrates how PSC evolves from stability-first behavior
+to controlled adaptability while preserving stability guarantees.
 
 ---
 

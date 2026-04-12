@@ -6,3 +6,4 @@ This directory contains simulation programs for PSC (Photon System Controller).
 
 ```bash
 python3 04_demo/run_psc_demo.py
+```

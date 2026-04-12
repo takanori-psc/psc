@@ -1,9 +1,15 @@
-# RCU Decision v0.1 Recovery Partial Validation Log
+# RCU Decision v0.1 Recovery Hold Behavior Log
 
 ## Purpose
 
-Validate intermediate recovery behavior after degraded-mode transition.
-This log confirms recovery cooldown and hysteresis hold, but does not yet demonstrate path switching back to B.
+Validate the conservative recovery behavior of PSC after a degraded-mode transition.
+
+This log demonstrates that even when a previously degraded path recovers and becomes
+the best-performing path again, PSC does not immediately switch back if the currently
+selected path remains stable and trusted.
+
+This behavior is intentional and reflects the PSC design principle of avoiding
+unnecessary switching and maintaining stability.
 
 ```
 python3 mini_psc_rcu_decision_v01_recovery.py

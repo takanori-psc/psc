@@ -140,6 +140,37 @@ python3 mini_psc_rcu_decision_v01.py
 > PSCは最適化エンジンではない
 > **障害時にも破綻しない意思決定エンジンである**
 
+### リカバリ挙動（重要）
+
+PSCは保守的なリカバリ戦略を採用しています。
+
+一度劣化した経路が回復し、再び最良の性能を示した場合でも、
+現在選択されている経路が安定かつ信頼できる状態であれば、
+即座に復帰することはありません。
+
+この挙動は、性能の追従よりも安定性を優先し、
+回復後の不要な切り替えを防ぐためのものです。
+
+### リカバリ挙動の比較（v0.1 vs v0.2）
+
+以下のログは、保守的なリカバリ保持（v0.1）と、
+段階的復帰（v0.2）の違いを示します。
+
+**ログ:**
+[Recovery Comparison Log (v0.1 vs v0.2)](sim/02_controlled/06_recovery_return_v02/logs/rcu_decision_v02_recovery_return_vs_v01_recovery_hold_log.md)
+
+**主な違い：**
+
+- v0.1:
+  回復後も安定経路を維持する
+
+- v0.2:
+  段階的復帰を導入：
+  RECOVERY_CANDIDATE → VALIDATION → RETURN_ELIGIBLE → RETURN_SWITCH
+
+この比較により、PSCが安定性を維持しながら、
+制御された適応性を持つことが示されます。
+
 ---
 
 ## デモ

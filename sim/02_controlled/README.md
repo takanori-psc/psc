@@ -1,37 +1,96 @@
-# 01_advanced
+# PSC Controlled Simulation
 
-Advanced PSC simulation experiments.
+PSC prioritizes stability over immediate performance recovery.
 
-## Contents
+This directory contains controlled PSC simulation experiments,
+representing the evolution of routing control logic and decision models.
 
-- `mini_psc_v08d.py`: policy-aware routing simulation
-- `mini_psc_v09.py`: Resolver intervention experiment
-- `mini_psc_v09a.py`: structured logging refinement
-- `mini_psc_v10.py`: trust-aware routing experiment
-- `mini_psc_v10a.py`: trust fallback behavior experiment
-- `mini_psc_v11.py`: degraded-mode fallback experiment
-- `rcu_decision/`: simulations for the RCU Decision Model (v0.1 and later)
-- `mini_psc_advanced_experiment_log.md`: experiment notes and results
+---
 
-## Purpose
+## Structure Overview
 
-This directory contains advanced PSC simulation experiments focused on routing behavior under policy, trust, Resolver-guided conditions,
-and the RCU decision model.
-
-## Notes
-
-These experiments extend the basic simulation series with more advanced routing logic, including:
+### 01_advanced_series
+Early advanced simulations (v08d–v13b) exploring:
 
 - policy-aware routing
 - trust-aware routing
 - Resolver intervention
-- degraded fallback behavior
-- RCU decision logic
+- degraded mode behavior
+
+These experiments represent the transition from basic routing
+to structured control-plane logic.
+
+---
+
+### 02_rcu_decision_v01
+Implementation of the PSC RCU Decision Model v0.1.
+
+Includes:
+
+- core decision logic
+- resolver escalation behavior
+- stability / trust-based decision rules
+
+---
+
+### 03_oscillation
+Validation of oscillation behavior.
+
+- Comparison with ECMP
+- Demonstrates PSC stability via hysteresis and resolver control
+
+---
+
+### 04_degraded
+Validation of degraded path handling.
+
+- Trust / health-based rejection
+- Safe fallback behavior
+- Rule validation logs
+
+---
+
+### 05_recovery_hold
+Validation of conservative recovery behavior (v0.1).
+
+- PSC does not immediately return to recovered paths
+- Stability-first design is preserved
+
+---
+
+### 06_recovery_return_v02
+Next-generation recovery model (v0.2).
+
+- Staged re-entry of recovered paths
+- Validation before return
+- Controlled recovery switching
+
+---
+
+## Evolution Flow
+
+```
+basic routing (01_basic)
+→ advanced control experiments (01_advanced_series)
+→ RCU Decision Model v0.1
+→ scenario validation (oscillation / degraded / recovery)
+→ recovery return extension (v0.2)
+```
+
+---
 
 ## Usage
 
 Run a simulation file directly, for example:
 
 ```bash
-python3 sim/02_controlled/01_advanced/mini_psc_v11.py
+python3 sim/02_controlled/03_oscillation/mini_psc_rcu_decision_v01_oscillation.py
 ```
+
+---
+
+## Notes
+
+- Each directory represents a specific stage in PSC evolution.
+- Logs are stored alongside simulations for traceability.
+- English logs are primary; Japanese logs provide design context.
