@@ -18,7 +18,71 @@
 
 ---
 
-## 2. Objective
+## 2. Recovery Return Model Overview
+
+PSC v0.2 introduces a staged recovery return mechanism
+that extends the conservative recovery hold behavior of v0.1.
+
+Unlike v0.1, which maintains the current stable path after recovery,
+v0.2 allows controlled return to a recovered path under specific conditions.
+
+The recovery return process consists of the following stages:
+
+- RECOVERY_CANDIDATE
+  A recovered path is detected based on trust and stability thresholds
+
+- VALIDATING
+  The candidate path is continuously validated over multiple steps
+
+- RETURN_ELIGIBLE
+  The candidate satisfies validation requirements
+
+- RETURN_SWITCH
+  The system switches to the recovered path only if improvement is sufficient
+
+- RETURN_KEEP
+  Even if eligible, the system may retain the current path if switching conditions are not met
+
+This staged approach ensures that recovery does not introduce instability,
+while still allowing adaptive performance improvement.
+
+---
+
+## 3. Validation Status
+
+The staged recovery return behavior has been implemented
+and validated through controlled simulation.
+
+Validated sequence:
+
+- fallback to a safe path after degradation
+- recovered path detection as `RECOVERY_CANDIDATE`
+- validation window progression
+- transition to `RETURN_ELIGIBLE`
+- conditional `RETURN_SWITCH`
+- recovery cooldown after return
+
+Validation logs:
+
+- Recovery validation:
+  [log](sim/02_controlled/06_recovery_return_v02/logs/rcu_decision_v02_recovery_return_validation_log.md)
+
+- v0.1 vs v0.2 comparison:
+  [log](sim/02_controlled/06_recovery_return_v02/logs/rcu_decision_v02_recovery_return_vs_v01_recovery_hold_log.md)
+
+---
+
+## 4. Design Note (v0.2 Scope)
+
+The current implementation validates staged recovery return
+under a controlled single-candidate scenario.
+
+Generalization of recovery candidates (multiple paths, dynamic tracking)
+is considered future work beyond v0.2 scope.
+
+---
+
+## 5. Objective
 
 This document defines the staged recovery return behavior of PSC RCU.
 
@@ -31,12 +95,12 @@ The goal is stable and explainable re-admission of recovered paths.
 
 ---
 
-## 3. Relationship to v0.1
+## 6. Relationship to v0.1
 
 This model does not replace v0.1 behavior.
 It extends it.
 
-### 3.1 v0.1 Behavior
+### 6.1 v0.1 Behavior
 
 In v0.1, PSC does not immediately return to a previously degraded path
 even if that path later becomes the best-performing path again.
@@ -44,7 +108,7 @@ even if that path later becomes the best-performing path again.
 If the currently selected path remains stable and trusted,
 PSC keeps the current path.
 
-### 3.2 v0.2 Extension
+### 6.2 v0.2 Extension
 
 v0.2 preserves the conservative design of v0.1,
 but adds a staged re-entry mechanism.
@@ -54,22 +118,22 @@ They must first pass validation before becoming eligible again.
 
 ---
 
-## 4. Design Principles
+## 7. Design Principles
 
-### 4.1 Stability First
+### 7.1 Stability First
 
 Recovery return must not undermine the stability achieved after failover.
 
-### 4.2 Recovered Path != Immediately Reusable Path
+### 7.2 Recovered Path != Immediately Reusable Path
 
 A recovered path is treated as a candidate,
 not as an immediate switch target.
 
-### 4.3 Explainable Decision Process
+### 7.3 Explainable Decision Process
 
 Each recovery return decision must be traceable through explicit state transitions and rules.
 
-### 4.4 Separation of Roles
+### 7.4 Separation of Roles
 
 - Routing Table : stores path state and candidate information
 - Telemetry : provides evidence with confidence and freshness
@@ -78,7 +142,7 @@ Each recovery return decision must be traceable through explicit state transitio
 
 ---
 
-## 5. Recovery Return State Model
+## 8. Recovery Return State Model
 
 The following additional recovery return states are introduced.
 
@@ -88,16 +152,16 @@ The following additional recovery return states are introduced.
 
 These states are logical control states for the RCU decision process.
 
-### 5.1 RECOVERY_CANDIDATE
+### 8.1 RECOVERY_CANDIDATE
 
 A previously degraded or unavailable path has recovered
 to a minimum acceptable condition.
 
-### 5.2 VALIDATING
+### 8.2 VALIDATING
 
 The recovered path is observed over a validation window.
 
-### 5.3 RETURN_ELIGIBLE
+### 8.3 RETURN_ELIGIBLE
 
 The recovered path has passed validation
 and may now be considered for selection.
@@ -108,7 +172,7 @@ RETURN_ELIGIBLE does not mean immediate switch.
 
 ---
 
-## 6. Entry Conditions
+## 9. Entry Conditions
 
 A path may enter RECOVERY_CANDIDATE if all of the following conditions are satisfied:
 
@@ -120,7 +184,7 @@ A path may enter RECOVERY_CANDIDATE if all of the following conditions are satis
 
 ---
 
-## 7. Validation Conditions
+## 10. Validation Conditions
 
 A path in RECOVERY_CANDIDATE enters VALIDATING and is observed for a fixed window.
 
@@ -137,7 +201,7 @@ If validation fails, the path returns to RECOVERY_CANDIDATE or remains excluded.
 
 ---
 
-## 8. Return Eligibility
+## 11. Return Eligibility
 
 A path becomes RETURN_ELIGIBLE only when the validation window is completed successfully.
 
@@ -151,14 +215,14 @@ Return eligibility does not force selection.
 
 ---
 
-## 9. Return Decision Policy
+## 12. Return Decision Policy
 
-### 9.1 Basic Rule
+### 12.1 Basic Rule
 
 If the currently selected path remains stable and trusted,
 PSC does not switch back aggressively.
 
-### 9.2 Controlled Return
+### 12.2 Controlled Return
 
 A RETURN_ELIGIBLE path may be selected only if:
 
@@ -167,7 +231,7 @@ A RETURN_ELIGIBLE path may be selected only if:
 - stability risk is acceptable
 - policy constraints permit re-entry
 
-### 9.3 Ambiguous Case
+### 12.3 Ambiguous Case
 
 If the recovered path is eligible but the return decision remains ambiguous,
 the case may be escalated to Resolver.
@@ -177,7 +241,7 @@ Resolver only arbitrates after validation is complete.
 
 ---
 
-## 10. Telemetry Requirements
+## 13. Telemetry Requirements
 
 Recovery return depends on telemetry as evidence.
 
@@ -193,7 +257,7 @@ Old or low-confidence telemetry must not justify aggressive return.
 
 ---
 
-## 11. Interaction with Routing Table
+## 14. Interaction with Routing Table
 
 The Routing Table may expose:
 
@@ -208,7 +272,7 @@ but recovery return logic remains in the decision layer.
 
 ---
 
-## 12. Rules (Conceptual)
+## 15. Rules (Conceptual)
 
 - RULE-15_RECOVERY_CANDIDATE
 - RULE-16_RECOVERY_VALIDATION_START
@@ -222,7 +286,7 @@ Rule names are provisional and may be refined during implementation.
 
 ---
 
-## 13. Out of Scope
+## 16. Out of Scope
 
 This model does not yet define:
 
@@ -235,7 +299,7 @@ These are future extensions beyond the minimum v0.2 scope.
 
 ---
 
-## 14. Summary
+## 17. Summary
 
 PSC RCU Recovery Return Model v0.2 extends the conservative recovery hold behavior of v0.1
 by introducing staged re-entry for recovered paths.
