@@ -2,7 +2,7 @@
 
 ---
 
-## ■ コア原則
+## コア原則
 
 ```text
 RETURN_ELIGIBLE ≠ RETURN_SWITCH
@@ -11,7 +11,7 @@ RETURN_SWITCH ≠ FINAL_DECISION
 
 ---
 
-## ■ 解釈
+## 解釈
 
 - `RETURN_ELIGIBLE` は「復帰候補が検証を通過した状態」を意味する
 - これは即時の経路切り替えを保証しない
@@ -22,7 +22,7 @@ RETURN_SWITCH ≠ FINAL_DECISION
 
 ---
 
-## ■ Recovery フロー
+## Recovery フロー
 
 ```text
 RCU
@@ -37,16 +37,16 @@ RCU
 
 ---
 
-## ■ 検証済み挙動
+## 検証済み挙動
 
-### ● 単一候補ケース（Single-candidate）
+### 単一候補ケース（Single-candidate）
 
 - `return_score` が B を選択
 - 競合が発生しないため、そのまま復帰
 
 ---
 
-### ● 複数候補ケース（Multi-candidate）
+### 複数候補ケース（Multi-candidate）
 
 - `return_score` が C を選択（安定性優先）
 - `final_score` は B を選好（性能優先）
@@ -54,7 +54,7 @@ RCU
 
 ---
 
-## ■ 設計上の意味
+## 設計上の意味
 
 - `return_score` は「復帰専用の候補選択ロジック」
 - `final_score` は「通常時の経路評価ロジック」
@@ -62,7 +62,7 @@ RCU
 
 ---
 
-## ■ 設計の本質
+## 設計の本質
 
 ```text
 復帰判定と最終決定は分離されている
@@ -73,7 +73,7 @@ RCU
 
 ---
 
-## ■ 状態
+## 状態
 
 - v0.2 Recovery Return：検証済み
 - multi-candidate 拡張：検証済み
@@ -81,7 +81,7 @@ RCU
 
 ---
 
-## ■ 参照
+## 参照
 
 - 検証ログ：
 
@@ -92,7 +92,7 @@ RCU
 
 ---
 
-## ■ 次のステップ
+## 次のステップ
 
 - v0.2.x Recovery 拡張モデルとして正式仕様化
 - Resolver の評価ルール詳細化（trust / stability / score差）
