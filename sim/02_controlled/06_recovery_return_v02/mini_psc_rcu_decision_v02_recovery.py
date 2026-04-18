@@ -104,12 +104,28 @@ def create_paths(step):
             "retry": 0.02,
             "latency": 0.20,
             "throughput": 0.95,
-            "variance": 0.03,
-            "trend": 0.03,
-            "persistence": 0.03,
+            "variance": 0.08,
+            "trend": 0.08,
+            "persistence": 0.08,
             "trust": 0.95,
             "health": 1,
         }
+
+        path_c = {
+            "name": "C",
+            "utilization": 0.45,
+            "buffer": 0.06,
+            "retry": 0.03,
+            "latency": 0.28,
+            "throughput": 0.82,
+            "variance": 0.00,
+            "trend": 0.00,
+            "persistence": 0.00,
+            "trust": 0.95,
+            "health": 1,
+        }
+
+        return [path_a, path_b, path_c]
 
     return [path_a, path_b]
 
@@ -156,6 +172,13 @@ def resolver_score(p):
     stability = stability_score(p)
     performance = performance_score(p)
     return 0.5 * trust + 0.3 * stability + 0.2 * performance
+
+
+def return_score(p):
+    trust = p["trust"]
+    stability = stability_score(p)
+    performance = performance_score(p)
+    return 0.6 * stability + 0.3 * trust + 0.1 * performance
 
 
 def resolve(paths):
@@ -260,13 +283,13 @@ def decide(paths):
     if mode == "DEGRADED" and len(valid_paths) > 0:
         recovery_candidates = [
             path for path in valid_paths
-            if path["name"] == "B"
+            if path["name"] != selected_path_name
             and path["trust"] >= return_trust_threshold
             and stability_score(path) >= return_stability_threshold
         ]
 
         if len(recovery_candidates) > 0:
-            best_recovery = max(recovery_candidates, key=lambda path: final_score(path))
+            best_recovery = max(recovery_candidates, key=lambda path: return_score(path))
 
             if recovery_state == "NONE" or recovery_candidate_name != best_recovery["name"]:
                 recovery_candidate_name = best_recovery["name"]
@@ -278,6 +301,8 @@ def decide(paths):
                     "RULE-15_RECOVERY_CANDIDATE",
                     candidate=recovery_candidate_name,
                     step=recovery_validation_counter,
+                    return_score=f"{return_score(best_recovery):.3f}",
+                    final_score=f"{final_score(best_recovery):.3f}",
                     reason="STABLE_TRUSTED_PATH",
                 )
                 return
