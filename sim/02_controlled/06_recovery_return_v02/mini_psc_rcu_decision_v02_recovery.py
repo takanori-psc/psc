@@ -1,8 +1,30 @@
 # mini_psc_rcu_decision_v01.py
 
-# =========================
+# ============================================
+# PSC RCU Decision Model v0.1 Core Rules
+# ============================================
+
+# RULE-05: ESCALATE
+# condition:
+#   score_gap < epsilon AND best != selected
+# trigger:
+#   TRUST_CONFLICT or STABILITY_CONFLICT
+
+# RULE-10: RECOVERY (conservative)
+# even if previous path recovers,
+# DO NOT switch immediately if current path is stable
+
+# RULE-11: RECOVERY_COOLDOWN
+# after recovery or switch:
+#   hold decision for N steps to stabilize system
+
+# DESIGN PRINCIPLE:
+# PSC prioritizes stability over performance.
+# switching is conservative, not reactive.
+
+# ============================================
 # Config
-# =========================
+# ============================================
 
 Wc = 0.4
 Wp = 0.3
