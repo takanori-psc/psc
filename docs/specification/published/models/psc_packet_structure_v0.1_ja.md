@@ -83,17 +83,17 @@ PSC Packet は以下の要素で構成される。
 ```
 PSC Packet
 ┌─────────────────────┐
-│ PSC Header          │
+│ PSC Header                               │
 ├─────────────────────┤
-│ Routing Information │
+│ Routing Information                      │
 ├─────────────────────┤
-│ Security Tag        │
+│ Security Tag                             │
 ├─────────────────────┤
-│ Transfer Control    │
+│ Transfer Control                         │
 ├─────────────────────┤
-│ Chunk Descriptor    │
+│ Chunk Descriptor                         │
 ├─────────────────────┤
-│ Payload Data        │
+│ Payload Data                             │
 └─────────────────────┘
 ```
 ---
