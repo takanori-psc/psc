@@ -6,12 +6,16 @@
 
 - Rack-Local & Consumer Model（英語 / 日本語）
 
+## アーキテクチャ図
+
+![PSC Fabric Architecture](./psc_fabric_architecture_rack_local_consumer_ja.png)
+
 ## 概要
 
 PSC Fabricは、ファブリック中心の通信アーキテクチャであり、
 厳格な境界制御と単一ホップによる高速データドメインを特徴とします。
 
-すべての外部通信はPSC Fabric Switchを経由して制御されます。
+すべての外部通信は、PSC Fabric Switchを経由して厳格に制御されます。
 
 ## 特徴
 
