@@ -278,3 +278,105 @@ Native PSC Fabric
 
 Phase4
 Optical Fabric
+
+----------------------------------------
+PSC Fabric Extensions (v0.3 Addendum)
+----------------------------------------
+
+Port Bundle Model
+
+Bundle
+
+Bundle
+
+A logical grouping of PSC ports treated as a single operational unit.
+
+Bundle Size
+
+The number of ports assigned to a bundle (1, 2, or 4).
+
+Role Model
+
+Defines the functional role of a bundle.
+
+ROLE_LOCAL
+
+Node-internal only bundle.
+
+Characteristics:
+- Fast Mode allowed
+- External communication restricted
+
+ROLE_EXTERNAL
+
+External connectivity bundle.
+
+Characteristics:
+- Fast Mode not allowed
+- Used for inter-node communication
+
+ROLE_MIXED
+
+Conditionally shared bundle.
+
+Characteristics:
+- Restricted Fast Mode
+- Resolver involvement required
+
+Mode Extensions
+
+Fast Mode
+
+A boot-time provisioned fixed high-speed path.
+
+Characteristics:
+- Low latency
+- No runtime decision
+- Typically restricted to LOCAL bundles
+
+System Configuration
+
+Node Profile
+
+A configuration set defining PSC behavior per node type.
+
+Includes:
+- Bundle layout
+- Role assignment
+- Mode constraints
+- Security domain
+
+Boot-time Configuration
+
+Initialization phase where PSC structure is fixed.
+
+Includes:
+- Bundle configuration
+- Role assignment
+- Fast Mode provisioning
+- Security boundaries
+
+Topology Extensions
+
+Logical Mesh
+
+A logical connectivity model where nodes appear fully connected.
+
+On-demand Mesh
+
+A dynamic connectivity model formed only when needed.
+
+AI Data Model
+
+AI Data Path
+
+High-speed data transfer paths optimized for AI workloads.
+
+AI Scratch Memory
+
+A temporary high-speed memory space for AI processing.
+
+Examples:
+- KV cache
+- Intermediate data
+- Training buffers
