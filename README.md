@@ -30,6 +30,19 @@ In PSC, the communication fabric itself becomes the core of coordination and dat
 Instead of relying on a centralized controller,
 PSC distributes decision-making across the fabric.
 
+## Design Philosophy
+
+PSC is designed not only for high-speed communication,
+but also for stability, trust-aware control,
+containment, and recovery-oriented operation
+within large-scale distributed systems.
+
+- English:
+  docs/specification/published/vision/psc_design_philosophy_v0.1_en.md
+
+- Japanese:
+  docs/specification/published/vision/psc_design_philosophy_v0.1_ja.md
+
 ---
 
 ## Start Here (RCU Decision v0.1)

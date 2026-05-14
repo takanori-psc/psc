@@ -27,6 +27,24 @@ PSC（Photon System Controller）は、従来のCPU中心の制御から脱却�
 PSCは単なるデータ転送機構ではなく、
 **意思決定を行うルーティングシステム**です。
 
+## 設計思想（Design Philosophy）
+
+PSCは単なる高速通信を目的としたシステムではありません。
+
+PSCは、
+大規模分散システムにおける
+安定性、
+信頼性、
+封じ込め、
+および回復性を重視した
+Fabric-centric Control Architecture を目指しています。
+
+- English:
+  docs/specification/published/vision/psc_design_philosophy_v0.1_en.md
+
+- Japanese:
+  docs/specification/published/vision/psc_design_philosophy_v0.1_ja.md
+
 ---
 
 ## スタートガイド（RCU Decision v0.1）
