@@ -43,6 +43,14 @@ return_margin = 0.08
 return_trust_threshold = 0.8
 return_stability_threshold = 0.7
 
+# v0.3 progressive recovery ramp
+ramp_initial_weight = 0.10
+ramp_increment = 0.20
+ramp_max_weight = 1.00
+ramp_min_stability = 0.70
+ramp_min_trust = 0.80
+ramp_hold_steps = 1
+
 # Resolver behavior
 resolver_cooldown_steps = 2
 
@@ -53,7 +61,7 @@ epsilon = 0.05
 # Dummy Telemetry
 # =========================
 
-def create_paths(step):
+def create_paths(step, scenario="baseline"):
     path_a = {
         "name": "A",
         "utilization": 0.6,
@@ -124,6 +132,11 @@ def create_paths(step):
             "trust": 0.95,
             "health": 1,
         }
+
+        if scenario == "ramp_abort" and step >= 9:
+            path_b["variance"] = 0.45
+            path_b["trend"] = 0.45
+            path_b["persistence"] = 0.45
 
         return [path_a, path_b, path_c]
 
@@ -264,8 +277,32 @@ recovery_cooldown_counter = 0
 recovery_state = "NONE"
 recovery_validation_counter = 0
 recovery_candidate_name = None
+recovery_return_path_name = None
+recovery_evacuated_path_name = None
+recovery_ramp_weight = 0.0
+recovery_ramp_hold_counter = 0
 
 resolver_cooldown = 0
+
+
+def reset_state():
+    global selected_path_name, degradation_counter, mode, recovery_cooldown_counter
+    global resolver_cooldown, recovery_state, recovery_validation_counter, recovery_candidate_name
+    global recovery_return_path_name, recovery_evacuated_path_name, recovery_ramp_weight
+    global recovery_ramp_hold_counter
+
+    selected_path_name = None
+    degradation_counter = 0
+    mode = "NORMAL"
+    recovery_cooldown_counter = 0
+    recovery_state = "NONE"
+    recovery_validation_counter = 0
+    recovery_candidate_name = None
+    recovery_return_path_name = None
+    recovery_evacuated_path_name = None
+    recovery_ramp_weight = 0.0
+    recovery_ramp_hold_counter = 0
+    resolver_cooldown = 0
 
 # =========================
 # Decision Logic
@@ -274,16 +311,19 @@ resolver_cooldown = 0
 def decide(paths):
     global selected_path_name, degradation_counter, mode, recovery_cooldown_counter
     global resolver_cooldown, recovery_state, recovery_validation_counter, recovery_candidate_name
+    global recovery_return_path_name, recovery_evacuated_path_name, recovery_ramp_weight
+    global recovery_ramp_hold_counter
 
     valid_paths, rejected_paths = filter_paths(paths)
 
     # =========================
     # Recovery Check
     # =========================
-    if mode == "DEGRADED" and len(valid_paths) > 0:
+    if mode == "DEGRADED" and recovery_state != "RAMPING" and len(valid_paths) > 0:
         recovery_candidates = [
             path for path in valid_paths
             if path["name"] != selected_path_name
+            and (recovery_return_path_name is None or path["name"] == recovery_return_path_name)
             and path["trust"] >= return_trust_threshold
             and stability_score(path) >= return_stability_threshold
         ]
@@ -401,6 +441,7 @@ def decide(paths):
     selected = get_path_by_name(valid_paths, selected_path_name)
 
     if selected is None:
+        rejected_selection_name = selected_path_name
         mode = "DEGRADED"
         log_rule(
             "STATE",
@@ -408,6 +449,7 @@ def decide(paths):
             reason="SELECTED_REJECTED",
             mode=mode,
         )
+        recovery_return_path_name = rejected_selection_name
         selected_path_name = best["name"]
         degradation_counter = 0
         log_rule(
@@ -440,7 +482,115 @@ def decide(paths):
     stability = stability_score(selected)
 
     # =========================
-    # Recovery Return Decision (v0.2)
+    # Progressive Recovery Ramp (v0.3)
+    # =========================
+    if recovery_state == "RAMPING" and recovery_candidate_name is not None:
+        recovered = get_path_by_name(valid_paths, recovery_candidate_name)
+        evacuation = get_path_by_name(valid_paths, recovery_evacuated_path_name)
+
+        if recovered is None:
+            log_rule(
+                "RECOVERY",
+                "RULE-23_RETURN_RAMP_ABORT",
+                recovered=recovery_candidate_name,
+                fallback=recovery_evacuated_path_name,
+                reason="RECOVERED_PATH_INVALID",
+            )
+            selected_path_name = recovery_evacuated_path_name
+            recovery_state = "NONE"
+            recovery_validation_counter = 0
+            recovery_candidate_name = None
+            recovery_return_path_name = None
+            recovery_evacuated_path_name = None
+            recovery_ramp_weight = 0.0
+            recovery_ramp_hold_counter = 0
+            mode = "DEGRADED"
+            return
+
+        recovered_stability = stability_score(recovered)
+        recovered_trust = recovered["trust"]
+        evacuation_weight = max(0.0, 1.0 - recovery_ramp_weight)
+
+        if recovered_trust < ramp_min_trust or recovered_stability < ramp_min_stability:
+            log_rule(
+                "RECOVERY",
+                "RULE-23_RETURN_RAMP_ABORT",
+                recovered=recovered["name"],
+                fallback=recovery_evacuated_path_name,
+                recovered_weight=f"{recovery_ramp_weight:.2f}",
+                evacuation_weight=f"{evacuation_weight:.2f}",
+                stability=f"{recovered_stability:.3f}",
+                trust=f"{recovered_trust:.3f}",
+                reason="RECOVERED_PATH_UNSTABLE",
+            )
+            selected_path_name = recovery_evacuated_path_name
+            recovery_state = "NONE"
+            recovery_validation_counter = 0
+            recovery_candidate_name = None
+            recovery_return_path_name = None
+            recovery_evacuated_path_name = None
+            recovery_ramp_weight = 0.0
+            recovery_ramp_hold_counter = 0
+            mode = "DEGRADED"
+            return
+
+        if recovery_ramp_hold_counter < ramp_hold_steps:
+            recovery_ramp_hold_counter += 1
+            log_rule(
+                "RECOVERY",
+                "RULE-22_RETURN_RAMP_HOLD",
+                recovered=recovered["name"],
+                recovered_weight=f"{recovery_ramp_weight:.2f}",
+                evacuation=recovery_evacuated_path_name,
+                evacuation_weight=f"{evacuation_weight:.2f}",
+                stability=f"{recovered_stability:.3f}",
+                trust=f"{recovered_trust:.3f}",
+                reason="OBSERVE_MORE",
+            )
+            return
+
+        recovery_ramp_weight = min(ramp_max_weight, recovery_ramp_weight + ramp_increment)
+        recovery_ramp_hold_counter = 0
+        evacuation_weight = max(0.0, 1.0 - recovery_ramp_weight)
+
+        if recovery_ramp_weight >= ramp_max_weight:
+            log_rule(
+                "RECOVERY",
+                "RULE-24_RETURN_RAMP_COMPLETE",
+                selected=recovered["name"],
+                recovered_weight=f"{recovery_ramp_weight:.2f}",
+                evacuation=recovery_evacuated_path_name,
+                evacuation_weight=f"{evacuation_weight:.2f}",
+                reason="RAMP_TARGET_REACHED",
+            )
+            selected_path_name = recovered["name"]
+            degradation_counter = 0
+            mode = "NORMAL"
+            recovery_cooldown_counter = recovery_cooldown_steps
+            recovery_state = "NONE"
+            recovery_validation_counter = 0
+            recovery_candidate_name = None
+            recovery_return_path_name = None
+            recovery_evacuated_path_name = None
+            recovery_ramp_weight = 0.0
+            recovery_ramp_hold_counter = 0
+            return
+
+        log_rule(
+            "RECOVERY",
+            "RULE-21_RETURN_RAMP_ADVANCE",
+            recovered=recovered["name"],
+            recovered_weight=f"{recovery_ramp_weight:.2f}",
+            evacuation=recovery_evacuated_path_name,
+            evacuation_weight=f"{evacuation_weight:.2f}",
+            stability=f"{recovered_stability:.3f}",
+            trust=f"{recovered_trust:.3f}",
+            reason="RECOVERED_PATH_STABLE",
+        )
+        return
+
+    # =========================
+    # Recovery Return Decision (v0.3 ramp start)
     # =========================
     if (
         recovery_state == "ELIGIBLE"
@@ -448,22 +598,23 @@ def decide(paths):
         and best["name"] == recovery_candidate_name
     ):
         if improvement >= return_margin and best["name"] != selected["name"]:
+            recovery_state = "RAMPING"
+            recovery_evacuated_path_name = selected["name"]
+            recovery_ramp_weight = ramp_initial_weight
+            recovery_ramp_hold_counter = 0
+            evacuation_weight = max(0.0, 1.0 - recovery_ramp_weight)
+
             log_rule(
-                "DECISION",
-                "RULE-19_RETURN_SWITCH",
+                "RECOVERY",
+                "RULE-19_RETURN_RAMP_START",
                 from_=selected["name"],
                 to=best["name"],
                 improvement=f"{improvement:.3f}",
+                recovered_weight=f"{recovery_ramp_weight:.2f}",
+                evacuation_weight=f"{evacuation_weight:.2f}",
                 reason="RECOVERY_RETURN_ELIGIBLE",
             )
-            selected_path_name = best["name"]
             degradation_counter = 0
-            mode = "NORMAL"
-            recovery_cooldown_counter = recovery_cooldown_steps
-
-            recovery_state = "NONE"
-            recovery_validation_counter = 0
-            recovery_candidate_name = None
 
             return
         else:
@@ -597,17 +748,26 @@ def decide(paths):
 # Simulation Loop
 # =========================
 
-def run():
-    for step in range(10):
+def run_scenario(name, steps):
+    reset_state()
+    print(f"\n### SCENARIO: {name} ###")
+
+    for step in range(steps):
         print(f"\n=== STEP {step} ===")
 
-        paths = create_paths(step)
+        paths = create_paths(step, scenario=name)
 
         # PSC（既存）
         decide(paths)
 
         ecmp_selected = select_path_ecmp(paths)
         print(f"[ECMP] selected={ecmp_selected['name']}")
+
+
+def run():
+    run_scenario("baseline", 10)
+    run_scenario("ramp_abort", 10)
+    run_scenario("ramp_complete", 18)
 
 if __name__ == "__main__":
     run()
