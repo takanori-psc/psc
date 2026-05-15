@@ -50,6 +50,9 @@ ramp_max_weight = 1.00
 ramp_min_stability = 0.70
 ramp_min_trust = 0.80
 ramp_hold_steps = 1
+observation_mode = "FULL"
+light_ramp_abort_stability = 0.60
+light_ramp_abort_trust = 0.70
 
 # Resolver behavior
 resolver_cooldown_steps = 2
@@ -138,6 +141,21 @@ def create_paths(step, scenario="baseline"):
             path_b["trend"] = 0.45
             path_b["persistence"] = 0.45
 
+        if scenario == "ramp_abort_full_stability_dip" and step >= 9:
+            path_b["variance"] = 0.35
+            path_b["trend"] = 0.35
+            path_b["persistence"] = 0.35
+
+        if scenario == "ramp_light_tolerates_moderate_dip" and step >= 9:
+            path_b["variance"] = 0.35
+            path_b["trend"] = 0.35
+            path_b["persistence"] = 0.35
+
+        if scenario == "ramp_abort_light_hard_failure" and step >= 9:
+            path_b["variance"] = 0.45
+            path_b["trend"] = 0.45
+            path_b["persistence"] = 0.45
+
         return [path_a, path_b, path_c]
 
     return [path_a, path_b]
@@ -220,6 +238,12 @@ def get_path_by_name(paths, name):
     return None
 
 
+def ramp_abort_thresholds(mode):
+    if mode == "LIGHT":
+        return light_ramp_abort_stability, light_ramp_abort_trust
+    return ramp_min_stability, ramp_min_trust
+
+
 def filter_paths(paths):
     valid = []
     rejected = []
@@ -289,7 +313,7 @@ def reset_state():
     global selected_path_name, degradation_counter, mode, recovery_cooldown_counter
     global resolver_cooldown, recovery_state, recovery_validation_counter, recovery_candidate_name
     global recovery_return_path_name, recovery_evacuated_path_name, recovery_ramp_weight
-    global recovery_ramp_hold_counter
+    global recovery_ramp_hold_counter, observation_mode
 
     selected_path_name = None
     degradation_counter = 0
@@ -302,6 +326,7 @@ def reset_state():
     recovery_evacuated_path_name = None
     recovery_ramp_weight = 0.0
     recovery_ramp_hold_counter = 0
+    observation_mode = "FULL"
     resolver_cooldown = 0
 
 # =========================
@@ -494,6 +519,7 @@ def decide(paths):
                 "RULE-23_RETURN_RAMP_ABORT",
                 recovered=recovery_candidate_name,
                 fallback=recovery_evacuated_path_name,
+                observation_mode=observation_mode,
                 reason="RECOVERED_PATH_INVALID",
             )
             selected_path_name = recovery_evacuated_path_name
@@ -510,8 +536,9 @@ def decide(paths):
         recovered_stability = stability_score(recovered)
         recovered_trust = recovered["trust"]
         evacuation_weight = max(0.0, 1.0 - recovery_ramp_weight)
+        min_stability, min_trust = ramp_abort_thresholds(observation_mode)
 
-        if recovered_trust < ramp_min_trust or recovered_stability < ramp_min_stability:
+        if recovered_trust < min_trust or recovered_stability < min_stability:
             log_rule(
                 "RECOVERY",
                 "RULE-23_RETURN_RAMP_ABORT",
@@ -519,6 +546,7 @@ def decide(paths):
                 fallback=recovery_evacuated_path_name,
                 recovered_weight=f"{recovery_ramp_weight:.2f}",
                 evacuation_weight=f"{evacuation_weight:.2f}",
+                observation_mode=observation_mode,
                 stability=f"{recovered_stability:.3f}",
                 trust=f"{recovered_trust:.3f}",
                 reason="RECOVERED_PATH_UNSTABLE",
@@ -543,6 +571,7 @@ def decide(paths):
                 recovered_weight=f"{recovery_ramp_weight:.2f}",
                 evacuation=recovery_evacuated_path_name,
                 evacuation_weight=f"{evacuation_weight:.2f}",
+                observation_mode=observation_mode,
                 stability=f"{recovered_stability:.3f}",
                 trust=f"{recovered_trust:.3f}",
                 reason="OBSERVE_MORE",
@@ -561,6 +590,7 @@ def decide(paths):
                 recovered_weight=f"{recovery_ramp_weight:.2f}",
                 evacuation=recovery_evacuated_path_name,
                 evacuation_weight=f"{evacuation_weight:.2f}",
+                observation_mode=observation_mode,
                 reason="RAMP_TARGET_REACHED",
             )
             selected_path_name = recovered["name"]
@@ -583,6 +613,7 @@ def decide(paths):
             recovered_weight=f"{recovery_ramp_weight:.2f}",
             evacuation=recovery_evacuated_path_name,
             evacuation_weight=f"{evacuation_weight:.2f}",
+            observation_mode=observation_mode,
             stability=f"{recovered_stability:.3f}",
             trust=f"{recovered_trust:.3f}",
             reason="RECOVERED_PATH_STABLE",
@@ -612,6 +643,7 @@ def decide(paths):
                 improvement=f"{improvement:.3f}",
                 recovered_weight=f"{recovery_ramp_weight:.2f}",
                 evacuation_weight=f"{evacuation_weight:.2f}",
+                observation_mode=observation_mode,
                 reason="RECOVERY_RETURN_ELIGIBLE",
             )
             degradation_counter = 0
@@ -748,9 +780,13 @@ def decide(paths):
 # Simulation Loop
 # =========================
 
-def run_scenario(name, steps):
+def run_scenario(name, steps, scenario_observation_mode="FULL"):
+    global observation_mode
+
     reset_state()
+    observation_mode = scenario_observation_mode
     print(f"\n### SCENARIO: {name} ###")
+    print(f"[SCENARIO] observation_mode={observation_mode}")
 
     for step in range(steps):
         print(f"\n=== STEP {step} ===")
@@ -768,6 +804,9 @@ def run():
     run_scenario("baseline", 10)
     run_scenario("ramp_abort", 10)
     run_scenario("ramp_complete", 18)
+    run_scenario("ramp_abort_full_stability_dip", 10, "FULL")
+    run_scenario("ramp_light_tolerates_moderate_dip", 12, "LIGHT")
+    run_scenario("ramp_abort_light_hard_failure", 10, "LIGHT")
 
 if __name__ == "__main__":
     run()
