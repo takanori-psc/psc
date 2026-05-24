@@ -30,6 +30,8 @@ In PSC, the communication fabric itself becomes the core of coordination and dat
 Instead of relying on a centralized controller,
 PSC distributes decision-making across the fabric.
 
+---
+
 ## Design Philosophy
 
 PSC is designed not only for high-speed communication,
@@ -65,12 +67,37 @@ docs/specification/published/models/psc_rcu_decision_model_v0.1_en.md
 
 > All examples assume a Python 3 environment.
 ```bash
-python3 sim/02_controlled/01_advanced/rcu_decision/mini_psc_rcu_decision_v01.py
+python3 sim/02_controlled/02_rcu_decision_v01/mini_psc_rcu_decision_v01.py
 ```
+
+## Validation / Evidence
+
+PSC validation behavior is organized through
+traceable RULE-to-scenario-to-log mappings.
+
+Reference:
+
+- docs/specification/published/validation/psc_evidence_matrix_v0.1_en.md
+- docs/specification/published/validation/psc_evidence_matrix_v0.1_ja.md
+
+Recommended validation flow:
+
+1. Read specification documents
+2. Run simulation scenarios
+3. Open Evidence Matrix
+4. Verify corresponding logs
+
+This traceability structure allows PSC behavior
+to be reproducible, auditable, and directly linked
+to RULE-based control decisions.
 
 ### 3. Check validation logs
 
-sim/02_controlled/01_advanced/rcu_decision/
+sim/02_controlled/02_rcu_decision_v01/
+
+Detailed validation traceability is available in:
+
+docs/specification/published/validation/psc_evidence_matrix_v0.1_en.md
 
 Focus on:
 
