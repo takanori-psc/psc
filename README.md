@@ -295,7 +295,7 @@ This diagram shows the internal structure of the PSC fabric.
 - Separation of control and execution
 - How components are connected inside the fabric
 
-![PSC Fabric Internal Architecture](diagrams/fabric/psc_fabric_internal_architecture_v0.1.png)
+![PSC Fabric Architecture](docs/architecture/diagrams/fabric/psc_fabric_architecture_rack_local_consumer_en.png)
 
 ---
 

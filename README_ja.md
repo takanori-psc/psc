@@ -301,7 +301,7 @@ PSC は単なるデータ転送システムではありません。
 - 制御と実行の分離
 - ファブリック内部でコンポーネントがどのように接続されるか
 
-![PSC Fabric Internal Architecture](diagrams/fabric/psc_fabric_internal_architecture_v0.1.png)
+![PSC Fabric Architecture](docs/architecture/diagrams/fabric/psc_fabric_architecture_rack_local_consumer_ja.png)
 
 ---
 
