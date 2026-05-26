@@ -81,8 +81,8 @@ PSC の検証挙動は、RULE、シナリオ、ログを対応付ける
 
 参照:
 
-- docs/specification/published/validation/psc_evidence_matrix_v0.1_en.md
-- docs/specification/published/validation/psc_evidence_matrix_v0.1_ja.md
+- docs/specification/validation/psc_evidence_matrix_v0.1_en.md
+- docs/specification/validation/psc_evidence_matrix_v0.1_ja.md
 
 推奨される検証フロー:
 
@@ -100,7 +100,7 @@ sim/02_controlled/02_rcu_decision_v01/
 
 詳細な検証トレーサビリティは以下にあります。
 
-docs/specification/published/validation/psc_evidence_matrix_v0.1_ja.md
+docs/specification/validation/psc_evidence_matrix_v0.1_ja.md
 
 確認ポイント:
 
@@ -127,7 +127,7 @@ Resolver へのエスカレーションが発生します。
 ヒステリシスは安定性を維持します。
 
 ```bash
-python3 mini_psc_rcu_decision_v01.py
+python3 sim/02_controlled/02_rcu_decision_v01/mini_psc_rcu_decision_v01.py
 ```
 
 **ログ:**
@@ -147,7 +147,7 @@ python3 mini_psc_rcu_decision_v01.py
 システムは安全側へ fallback し、その後条件が改善すると回復します。
 
 ```bash
-python3 mini_psc_rcu_decision_v01.py
+python3 sim/02_controlled/02_rcu_decision_v01/mini_psc_rcu_decision_v01.py
 ```
 
 **ログ:**
@@ -169,11 +169,11 @@ Resolver へのエスカレーションが発生します。
 Resolver は選択中 path を明示的に切り替えます。
 
 ```bash
-python3 mini_psc_rcu_decision_v01.py
+python3 sim/02_controlled/02_rcu_decision_v01/mini_psc_rcu_decision_v01.py
 ```
 
 **ログ:**
-`rcu_decision_v01_resolver_switch_rule_log.md`
+`sim/02_controlled/02_rcu_decision_v01/logs/rcu_decision_v01_resolver_switch_rule_log.md`
 
 **ポイント:**
 
@@ -361,7 +361,7 @@ PSC を理解するには、以下から始めてください。
 
 ---
 
-### Draft Documents
+### Draft 文書
 
 - Routing Model
 - Congestion Control Model

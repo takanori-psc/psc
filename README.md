@@ -77,8 +77,8 @@ traceable RULE-to-scenario-to-log mappings.
 
 Reference:
 
-- docs/specification/published/validation/psc_evidence_matrix_v0.1_en.md
-- docs/specification/published/validation/psc_evidence_matrix_v0.1_ja.md
+- docs/specification/validation/psc_evidence_matrix_v0.1_en.md
+- docs/specification/validation/psc_evidence_matrix_v0.1_ja.md
 
 Recommended validation flow:
 
@@ -97,7 +97,7 @@ sim/02_controlled/02_rcu_decision_v01/
 
 Detailed validation traceability is available in:
 
-docs/specification/published/validation/psc_evidence_matrix_v0.1_en.md
+docs/specification/validation/psc_evidence_matrix_v0.1_en.md
 
 Focus on:
 
@@ -121,7 +121,7 @@ Near-equal scoring paths with a stability conflict trigger escalation to the Res
 Cooldown prevents repeated escalation, and hysteresis maintains stability.
 
 ```bash
-python3 mini_psc_rcu_decision_v01.py
+python3 sim/02_controlled/02_rcu_decision_v01/mini_psc_rcu_decision_v01.py
 ```
 
 **Log:**
@@ -141,7 +141,7 @@ All paths lose trust, forcing degraded operation.
 System safely falls back, then recovers once conditions improve.
 
 ```bash
-python3 mini_psc_rcu_decision_v01.py
+python3 sim/02_controlled/02_rcu_decision_v01/mini_psc_rcu_decision_v01.py
 ```
 
 **Log:**
@@ -162,11 +162,11 @@ Near-equal scoring paths with a strong trust difference trigger escalation.
 The Resolver explicitly switches the selected path.
 
 ```bash
-python3 mini_psc_rcu_decision_v01.py
+python3 sim/02_controlled/02_rcu_decision_v01/mini_psc_rcu_decision_v01.py
 ```
 
 **Log:**
-`rcu_decision_v01_resolver_switch_rule_log.md`
+`sim/02_controlled/02_rcu_decision_v01/logs/rcu_decision_v01_resolver_switch_rule_log.md`
 
 **Highlights:**
 
