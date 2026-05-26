@@ -98,7 +98,17 @@
 
 ---
 
-## 6. 推奨される次の補完
+## 6. STEP Traceability
+
+| RULE | Scenario | Evidence Step | Related Trace | Evidence Log |
+|------|----------|---------------|---------------|--------------|
+| RULE-02_SWITCH_score | switch_score | STEP 2 | STEP 1: `RULE-01_KEEP_score` は score_gap が switch_threshold 未満のため A を維持; STEP 2: `RULE-02_SWITCH_score` は score_gap が switch_threshold に達したため A -> B へ切替 | `sim/02_controlled/02_rcu_decision_v01/logs/rcu_decision_v01_switch_score_validation_log.md` |
+| RULE-08_DEGRADE_keep | degraded_keep | STEP 2 | STEP 1: `RULE-09_DEGRADE_switch` は A unsafe 後に fallback B を選択; STEP 2: `RULE-08_DEGRADE_keep` は current degraded path B が health-valid かつ A が recovery eligible でないため B を維持 | `sim/02_controlled/04_degraded/logs/rcu_decision_v01_degraded_keep_validation_log.md` |
+| RULE-20_RETURN_KEEP | recovery_return_keep | STEP 4 | STEP 4: `RULE-18_RETURN_ELIGIBLE` が B を eligible と判定; STEP 4: `RULE-20_RETURN_KEEP` は improvement が return_margin 未満のため A を維持 | `sim/02_controlled/06_recovery_return_v02/logs/rcu_decision_v02_return_keep_validation_log.md` |
+
+---
+
+## 7. 推奨される次の補完
 
 1. v0.3 系 RULE は Experimental のまま、仕様統合後に Verified へ昇格する。
-2. 本マトリクスの各証拠ログに対して、該当 step / line を追記する。
+2. 専用 validation log が存在する残りの Verified RULE に STEP traceability を追加する。

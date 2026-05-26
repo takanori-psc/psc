@@ -98,7 +98,17 @@ can be directly confirmed in execution logs.
 
 ---
 
-## 6. Recommended Next Additions
+## 6. STEP Traceability
+
+| RULE | Scenario | Evidence Step | Related Trace | Evidence Log |
+|------|----------|---------------|---------------|--------------|
+| RULE-02_SWITCH_score | switch_score | STEP 2 | STEP 1: `RULE-01_KEEP_score` keeps A because score_gap is below switch_threshold; STEP 2: `RULE-02_SWITCH_score` switches A -> B because score_gap reaches switch_threshold | `sim/02_controlled/02_rcu_decision_v01/logs/rcu_decision_v01_switch_score_validation_log.md` |
+| RULE-08_DEGRADE_keep | degraded_keep | STEP 2 | STEP 1: `RULE-09_DEGRADE_switch` selects fallback B after A becomes unsafe; STEP 2: `RULE-08_DEGRADE_keep` keeps B because current degraded path is health-valid and A is not recovery eligible | `sim/02_controlled/04_degraded/logs/rcu_decision_v01_degraded_keep_validation_log.md` |
+| RULE-20_RETURN_KEEP | recovery_return_keep | STEP 4 | STEP 4: `RULE-18_RETURN_ELIGIBLE` marks B eligible; STEP 4: `RULE-20_RETURN_KEEP` keeps A because improvement is below return_margin | `sim/02_controlled/06_recovery_return_v02/logs/rcu_decision_v02_return_keep_validation_log.md` |
+
+---
+
+## 7. Recommended Next Additions
 
 1. Keep v0.3 RULEs as Experimental until they are integrated into the specification.
-2. Add the relevant step / line references for each evidence log in this matrix.
+2. Add STEP traceability for the remaining verified RULEs where dedicated validation logs exist.
