@@ -24,14 +24,29 @@ PSC は通常動作、劣化、回復のすべての段階において、
 
 ## PSC とは何か？
 
-PSC（Photon System Controller）は、従来の CPU 中心設計から脱却し、
-システム制御とデータ移動を通信ファブリック中心へ移す
-ファブリック中心型コンピュータアーキテクチャです。
+PSC（Photon System Controller）は、安定性を重視する
+ファブリック制御アーキテクチャです。
+従来の CPU 中心設計から一部の制御判断とデータ移動を切り離し、
+通信ファブリック内部へ移します。
 
-PSC では、通信ファブリック自体が協調制御とデータフローの中心になります。
+PSC は、不安定なピークスループットよりも、
+破綻しにくい挙動を優先します。
+対象は AI、HPC、データセンター、および
+不安定なピーク性能よりも安定挙動が重要な分散システムです。
 
-中央集権的な制御に依存せず、
-ファブリック内で分散的に意思決定を行います。
+中核となる関心は、制御された回復、oscillation 抑制、
+trust-aware routing、RULE 駆動の意思決定制御です。
+
+---
+
+## なぜ Photon なのか？
+
+"Photon" は、光リンク、高速インターコネクト、path レベルの観測を
+第一級の制御入力として扱う fabric-oriented な制御モデルを示します。
+
+この README では、まず control-plane model を中心に説明しています:
+安定 routing、recovery、trust、oscillation 抑制です。
+photonic / optical fabric の詳細は fabric および architecture 文書で展開します。
 
 ---
 
@@ -49,6 +64,46 @@ PSC は単なる高速通信だけを目的としたものではありません�
 
 ---
 
+## 推奨される読み進め方
+
+初めて読む場合は、以下の順序を推奨します。
+
+| 順序 | セクション | 目的 |
+| --- | --- | --- |
+| 1 | PSC とは何か？ | 安定性重視の制御目標を把握する |
+| 2 | コア構成要素 | 図や仕様を読む前に主要用語を確認する |
+| 3 | [Quick Start](QUICK_START_ja.md) | PSC simulation を実行し、生成ログを確認する |
+| 4 | 検証 / Evidence | RULE、シナリオ、ログの対応関係を追う |
+| 5 | アーキテクチャ概要 | RCU、Resolver、転送、Fabric の位置づけを確認する |
+| 6 | 仕様 | 公開済みの安定モデルと発展中のモデルを区別する |
+| 7 | クイックデモ / 検証ログ | 生成ログから挙動を再現する |
+
+---
+
+## 追加の読み進め先
+
+| 文書 | 目的 |
+| --- | --- |
+| [QUICK_START_ja.md](QUICK_START_ja.md) | PSC simulation を最小手順で実行し、生成ログを確認する |
+| [Architecture Overview](docs/architecture/psc_architecture_overview_en.md) | PSC Fabric、Resolver、control flow のアーキテクチャ視点 |
+| [Published Models](docs/specification/published/models/) | routing、control、recovery、trust、telemetry、fabric behavior の参照モデル |
+| [Evidence Matrix](docs/specification/validation/psc_evidence_matrix_v0.1_ja.md) | RULE、シナリオ、ログの検証トレーサビリティ |
+
+---
+
+## コア構成要素
+
+| 構成要素 | 役割 |
+| --- | --- |
+| Resolver | 意思決定制御モジュール。RCU の自律制御だけでは不十分な場合に、エスカレーション、override、システム全体の制御判断を扱います。 |
+| RCU | Routing Control Unit。trust、score、cooldown、degradation、recovery rules に基づいて path を選択・維持します。 |
+| TMU | Transfer Management Unit。転送レベルの意図、スケジューリング、制御判断から実行への受け渡しを調整します。 |
+| TEU | Transfer Execution Unit。制御層が選択した実際の転送挙動を実行します。 |
+| OMU | Optical Monitoring Unit。制御判断に使われる link、path、fabric 状態を観測します。 |
+| Fabric | routing、monitoring、transfer control、decision feedback を統合する通信基盤です。 |
+
+---
+
 ## スタートガイド（RCU Decision v0.1）
 
 ここが PSC の中核です。
@@ -62,17 +117,17 @@ RCU Decision Model は、PSC が以下をどのように実現するかを定義
 PSC を理解するには、ここから始めてください。
 このモデルは、シミュレーションログによって実装・検証済みです。
 
-### 1. 仕様を読む
+**仕様を読む:**
 
 docs/specification/published/models/psc_rcu_decision_model_v0.1_ja.md
 
-### 2. シミュレーションを実行
+**実行方法:**
 
-> すべての例は Python 3 環境を前提としています。
+コマンドは [検証ログ](#検証ログ) を参照してください。
 
-```bash
-python3 sim/02_controlled/02_rcu_decision_v01/mini_psc_rcu_decision_v01.py
-```
+**生成ログ:**
+
+`sim/02_controlled/02_rcu_decision_v01/logs/`
 
 ## 検証 / Evidence
 
@@ -94,10 +149,6 @@ PSC の検証挙動は、RULE、シナリオ、ログを対応付ける
 この追跡可能性により、PSC の挙動は再現可能で、
 監査可能であり、RULE ベースの制御判断と直接対応付けられます。
 
-### 3. ログを確認
-
-sim/02_controlled/02_rcu_decision_v01/
-
 詳細な検証トレーサビリティは以下にあります。
 
 docs/specification/validation/psc_evidence_matrix_v0.1_ja.md
@@ -118,69 +169,25 @@ docs/specification/validation/psc_evidence_matrix_v0.1_ja.md
 すべてのログはシミュレーションから直接生成されており、
 実際の実行挙動を反映しています。
 
-### 1. Resolver 安定性競合 + クールダウン
+**実行方法:**
 
-**シナリオ:**
-スコアがほぼ同等の経路間で安定性の競合が発生し、
-Resolver へのエスカレーションが発生します。
-クールダウンは連続エスカレーションを防ぎ、
-ヒステリシスは安定性を維持します。
+[QUICK_START_ja.md](QUICK_START_ja.md) に最小実行手順をまとめています。
 
-```bash
-python3 sim/02_controlled/02_rcu_decision_v01/mini_psc_rcu_decision_v01.py
-```
+**生成ログ:**
 
-**ログ:**
-`rcu_decision_v01_resolver_stability_conflict_cooldown_rule_log.md`
+| シナリオ | ログ |
+| --- | --- |
+| Resolver 安定性競合 + クールダウン | `sim/02_controlled/02_rcu_decision_v01/logs/rcu_decision_v01_resolver_stability_conflict_cooldown_rule_log.md` |
+| Degraded → Recovery → Stabilization | `sim/02_controlled/02_rcu_decision_v01/logs/rcu_decision_v01_degraded_switch_recovery_rule_log.md` |
+| Resolver による切替判断 | `sim/02_controlled/02_rcu_decision_v01/logs/rcu_decision_v01_resolver_switch_rule_log.md` |
 
-**ポイント:**
+**シナリオ説明:**
 
-- `RULE-05_ESCALATE_conflict` が競合する path 間の曖昧性を検出
-- Resolver は不要な切替を避ける（KEEP 相当の判断）
-- `RULE-12_COOLDOWN_active` が連続エスカレーションを抑制
-- `RULE-01_KEEP_score` がヒステリシスにより安定性を維持
-
-### 2. Degraded → Recovery → Stabilization
-
-**シナリオ:**
-全 path の trust が低下し、degraded operation が強制されます。
-システムは安全側へ fallback し、その後条件が改善すると回復します。
-
-```bash
-python3 sim/02_controlled/02_rcu_decision_v01/mini_psc_rcu_decision_v01.py
-```
-
-**ログ:**
-`rcu_decision_v01_degraded_switch_recovery_rule_log.md`
-
-**ポイント:**
-
-- `RULE-09_DEGRADE_switch` が障害条件下で fallback path を選択
-- `RULE-08_DEGRADE_keep` が degraded mode における不要な切替を防止
-- `RULE-10_RECOVERY_trigger` が条件改善時に通常動作へ復帰
-- `RULE-11_RECOVERY_cooldown` が遷移を安定化
-- `RULE-01_KEEP_score` が回復後の安定動作を保証
-
-### 3. Resolver による切替判断
-
-**シナリオ:**
-スコアがほぼ同等で trust に大きな差がある場合、
-Resolver へのエスカレーションが発生します。
-Resolver は選択中 path を明示的に切り替えます。
-
-```bash
-python3 sim/02_controlled/02_rcu_decision_v01/mini_psc_rcu_decision_v01.py
-```
-
-**ログ:**
-`sim/02_controlled/02_rcu_decision_v01/logs/rcu_decision_v01_resolver_switch_rule_log.md`
-
-**ポイント:**
-
-- `RULE-05_ESCALATE_conflict` が trust conflict により発火
-- `RULE-14_RESOLVER_switch` が明示的な path switch（A → B）を実行
-- `RULE-12_COOLDOWN_active` が連続エスカレーションを防止
-- `RULE-01_KEEP_score` が新しい選択を安定化
+| シナリオ | 示される挙動 | RULE 参照 |
+| --- | --- | --- |
+| Resolver 安定性競合 + クールダウン | スコアがほぼ同等の経路間で安定性の競合が発生し、Resolver へのエスカレーションが発生します。クールダウンは連続エスカレーションを防ぎ、ヒステリシスは安定性を維持します。 | `RULE-05_ESCALATE_conflict`, `RULE-12_COOLDOWN_active`, `RULE-01_KEEP_score` |
+| Degraded → Recovery → Stabilization | 全 path の trust が低下し、degraded operation が強制されます。PSC は安全側へ fallback し、その後条件が改善すると回復します。 | `RULE-09_DEGRADE_switch`, `RULE-08_DEGRADE_keep`, `RULE-10_RECOVERY_trigger`, `RULE-11_RECOVERY_cooldown`, `RULE-01_KEEP_score` |
+| Resolver による切替判断 | スコアがほぼ同等で trust に大きな差がある場合、Resolver へのエスカレーションが発生します。Resolver は選択中 path を明示的に切り替えます。 | `RULE-05_ESCALATE_conflict`, `RULE-14_RESOLVER_switch`, `RULE-12_COOLDOWN_active`, `RULE-01_KEEP_score` |
 
 ## これらのログが示すこと
 
@@ -221,7 +228,8 @@ PSC は即座に切り戻しません。
   RECOVERY_CANDIDATE → VALIDATION → RETURN_ELIGIBLE → RETURN_SWITCH
 
 この比較は、PSC が安定性の保証を維持しながら、
-安定性優先の挙動から制御された適応性へ発展することを示しています。
+安定性優先の hold 挙動から、staged return、progressive migration、
+recovery ramp 的な検証を通じた制御された適応性へ発展することを示しています。
 
 ---
 
@@ -229,34 +237,10 @@ PSC は即座に切り戻しません。
 
 PSC には 2 種類のデモモードがあります。
 
-### 1. 静的デモ（基本挙動）
-
-PSC が trust と cost に基づいて経路を選択する様子を確認できます。
-
-**確認できる内容:**
-
-- 基本的な trust-aware routing
-- 最短 path よりも安定した path を優先
-
-```bash
-python3 sim/04_demo/run_psc_demo.py
-```
-
----
-
-### 2. 動的デモ（適応挙動）
-
-PSC が変化するネットワーク状態にどのように反応するかを確認できます。
-
-**確認できる内容:**
-
-- リアルタイムな routing adaptation
-- 不安定 path の回避
-- trust に基づく意思決定の変化
-
-```bash
-python3 sim/04_demo/run_psc_dynamic_demo.py
-```
+| デモ | 実行方法 | 確認できる内容 |
+| --- | --- | --- |
+| 静的デモ | `python3 sim/04_demo/run_psc_demo.py` | 基本的な trust-aware routing と、最短 path よりも安定した path を優先する挙動 |
+| 動的デモ | `python3 sim/04_demo/run_psc_dynamic_demo.py` | リアルタイムな routing adaptation、不安定 path の回避、trust に基づく意思決定の変化 |
 
 ---
 
@@ -321,20 +305,17 @@ PSC は単なるデータ転送システムではありません。
 
 ---
 
-## コアアーキテクチャ構成要素
+## アーキテクチャ読解のヒント
 
-PSC はファブリック内部に専用の制御モジュールを導入します。
+アーキテクチャ図は、単なる接続関係ではなく、
+制御フローを示す文書として読むと理解しやすくなります。
 
-- Resolver（意思決定制御モジュール）
-- RCU（routing control unit）
-- TMU（transfer management unit）
-- TEU（transfer execution unit）
-- OMU（optical monitoring unit）
+- まず、判断がどこで行われるかを見る: 通常時は RCU、エスカレーション時は Resolver
+- 次に、その判断がどう実行されるかを見る: TMU による調整、TEU による転送挙動
+- 最後に、判断材料がどこから来るかを見る: OMU の観測と fabric state
 
-各コンポーネントは、ファブリック内で明確に定義された役割を持ちます。
-
-Resolver はシステム全体の挙動を定義し、
-RCU は通常条件下で自律的に動作します。
+この順序で読むと、PSC の制御哲学が見えます。
+まず自律的な局所制御を行い、必要な場合にのみ保守的にエスカレーションします。
 
 ---
 
@@ -350,30 +331,45 @@ PSC を理解するには、以下から始めてください。
 
 ## 仕様
 
-### 公開済み文書
+PSC は、公開済みの参照モデルと、意図的に発展中の設計領域を分けています。
+発展中の領域は、公開済みの安定性モデルを弱めるものではなく、
+アーキテクチャの制御範囲を広げるものです。
 
-- PSC AI Behavior Model v0.1
-
-  - English: docs/specification/published/psc_ai_behavior_model_v0.1_en.md
-  - Japanese: docs/specification/published/psc_ai_behavior_model_v0.1_ja.md
+### 公開済み / 安定文書
 
 これらの文書は、安定した参照レベルの仕様です。
 
+| 領域 | English | Japanese |
+| --- | --- | --- |
+| PSC Architecture Specification v1.0 | docs/specification/published/architecture/psc_architecture_spec_v1.0_en.md | docs/specification/published/architecture/psc_architecture_spec_v1.0_ja.md |
+| RCU Decision Model v0.1 | docs/specification/published/models/psc_rcu_decision_model_v0.1_en.md | docs/specification/published/models/psc_rcu_decision_model_v0.1_ja.md |
+| Routing Model v0.1 | docs/specification/published/models/psc_routing_model_v0.1_en.md | docs/specification/published/models/psc_routing_model_v0.1_ja.md |
+| Congestion Control Model v0.1 | docs/specification/published/models/psc_congestion_control_model_v0.1_en.md | docs/specification/published/models/psc_congestion_control_model_v0.1_ja.md |
+| PSC AI Behavior Model v0.1 | docs/specification/published/psc_ai_behavior_model_v0.1_en.md | docs/specification/published/psc_ai_behavior_model_v0.1_ja.md |
+
 ---
 
-### Draft 文書
+### 実験的 / 発展中の文書
 
-- Routing Model
-- Congestion Control Model
+これらの文書は、baseline model 以降の制御されたアーキテクチャ発展を示します。
 
-これらは現在開発中であり、変更される可能性があります。
+| 領域 | English | Japanese |
+| --- | --- | --- |
+| RCU Recovery Return Model v0.2 | docs/specification/published/models/psc_rcu_recovery_return_model_v0.2_en.md | docs/specification/published/models/psc_rcu_recovery_return_model_v0.2_ja.md |
+| Resolver Arbitration Extension Model v0.2x | docs/specification/published/models/psc_resolver_arbitration_extension_model_v0.2x_en.md | docs/specification/published/models/psc_resolver_arbitration_extension_model_v0.2x_ja.md |
+| Recovery Return Extension Model v0.2x | docs/specification/published/models/psc_recovery_return_extension_model_v0.2x_en.md | docs/specification/published/models/psc_recovery_return_extension_model_v0.2x_ja.md |
+
+これらは未完成の基盤としてではなく、意図的な発展領域として扱います。
+新しい制御面を探索しながらも、安定性重視の回復と
+RULE 駆動の意思決定モデルは baseline として維持されます。
 
 ---
 
 ### コア仕様
 
-- Resolver Specification v0.1
-  → docs/specification/resolver/psc_resolver_spec_v0.1.md
+| 領域 | English | Japanese |
+| --- | --- | --- |
+| Resolver Specification v0.1 | docs/specification/resolver/psc_resolver_spec_v0.1_en.md | docs/specification/resolver/psc_resolver_spec_v0.1_ja.md |
 
 Resolver は、状態ベース制御、権限モード、制約ベース出力を含む
 PSC の意思決定制御モデルを定義します。
@@ -391,6 +387,40 @@ PSC は以下の原則に基づいています。
 - ポリシー認識ルーティング
 - 信頼性考慮ルーティング
 - 適応型ファブリック制御
+
+---
+
+## 短い用語集
+
+| 用語 | 意味 |
+| --- | --- |
+| RULE | 挙動を再現可能・監査可能にするための明示的な判断条件です。 |
+| Trust | path に対する運用上の確信度です。reliability、policy 適合、validation 状態、観測された挙動を含みます。 |
+| エスカレーション | RCU の自律判断から Resolver 制御へ判断権限を移すことです。 |
+| クールダウン | 連続した切替や連続エスカレーションを抑制する期間です。 |
+| Degraded mode | trust や path 条件が通常選択に不十分な場合の制御された動作状態です。 |
+| Recovery | 即時の性能追従ではなく、安定した遷移を通じて劣化状態から戻ることです。 |
+| Oscillation resistance | 急速な切替が信頼性を下げる状況で、安定した挙動を優先する性質です。 |
+
+---
+
+## ネットワーク routing を超えて
+
+PSC はデータセンター規模の routing 制御だけを目的としたものではありません。
+
+同じ制御思想は以下にも適用可能です。
+
+- CPU-GPU ローカル fabric
+- accelerator interconnect
+- ラックスケール通信
+- photonic internal bus
+- trusted high-speed local transfer domain
+
+これにより PSC は、従来型ネットワークを超え、
+fabric-centric なコンピュータアーキテクチャへ拡張可能です。
+
+この見方では、fabric は単なる転送層ではありません。
+transfer、observation、recovery、control decision が統合される場所になります。
 
 ---
 
@@ -419,7 +449,9 @@ PSC は以下を接続する通信ファブリックを導入します。
 
 ## プロジェクト状況
 
-PSC Fabric Specification v0.1 は現在開発中です。
+PSC には、安定性重視の制御挙動に関する公開済み参照モデルと検証ログがあります。
+Fabric レベルの仕様はアーキテクチャ発展の一部として継続的に拡張されますが、
+保守的な回復と RULE 駆動の意思決定制御は中核制約として維持されます。
 
 ---
 

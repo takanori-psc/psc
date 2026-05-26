@@ -22,13 +22,27 @@ across all phases: normal operation, degradation, and recovery.
 
 ## What is PSC?
 
-PSC (Photon System Controller) is a fabric-centric computer architecture
-that shifts system control and data movement away from traditional CPU-centric designs.
+PSC (Photon System Controller) is a stability-oriented fabric control architecture.
+It shifts selected control and data-movement decisions away from traditional CPU-centric designs
+and into the communication fabric.
 
-In PSC, the communication fabric itself becomes the core of coordination and data flow.
+PSC prioritizes resilient behavior over unstable peak throughput.
+It targets AI, HPC, datacenter, and distributed systems
+where stable behavior matters more than unstable peak throughput.
 
-Instead of relying on a centralized controller,
-PSC distributes decision-making across the fabric.
+The core focus is controlled recovery, oscillation resistance,
+trust-aware routing, and RULE-driven decision control.
+
+---
+
+## Why Photon?
+
+"Photon" indicates a fabric-oriented control model where optical links,
+high-speed interconnects, and path-level observation can become first-class control inputs.
+
+This README focuses on the control-plane model first:
+stable routing, recovery, trust, and oscillation resistance.
+Photonic and optical fabric details are developed in the fabric and architecture documents.
 
 ---
 
@@ -47,6 +61,46 @@ within large-scale distributed systems.
 
 ---
 
+## Recommended Reading Flow
+
+For a first read, use this order:
+
+| Step | Section | Purpose |
+| --- | --- | --- |
+| 1 | What is PSC? | Understand the stability-oriented control goal |
+| 2 | Core Components | Learn the main PSC terms before reading diagrams |
+| 3 | [Quick Start](QUICK_START.md) | Run PSC simulations and inspect generated logs |
+| 4 | Validation / Evidence | Follow RULE-to-scenario-to-log traceability |
+| 5 | Architecture Overview | Place RCU, Resolver, transfer, and fabric roles in context |
+| 6 | Specification | Separate published models from evolving drafts |
+| 7 | Quick Demo / Validation Logs | Reproduce behavior from generated logs |
+
+---
+
+## Further Reading
+
+| Document | Purpose |
+| --- | --- |
+| [QUICK_START.md](QUICK_START.md) | Minimal path to run PSC simulations and inspect generated logs |
+| [Architecture Overview](docs/architecture/psc_architecture_overview_en.md) | Architecture-level view of PSC Fabric, Resolver, and control flow |
+| [Published Models](docs/specification/published/models/) | Reference models for routing, control, recovery, trust, telemetry, and fabric behavior |
+| [Evidence Matrix](docs/specification/validation/psc_evidence_matrix_v0.1_en.md) | RULE-to-scenario-to-log validation traceability |
+
+---
+
+## Core Components
+
+| Component | Role |
+| --- | --- |
+| Resolver | Decision-control module. It handles escalation, override, and system-wide control choices when autonomous local control is insufficient. |
+| RCU | Routing Control Unit. It selects and holds paths using trust, score, cooldown, degradation, and recovery rules. |
+| TMU | Transfer Management Unit. It coordinates transfer-level intent, scheduling, and handoff between decision control and execution. |
+| TEU | Transfer Execution Unit. It performs the actual transfer behavior selected by the control layer. |
+| OMU | Optical Monitoring Unit. It observes link, path, and fabric conditions used by control decisions. |
+| Fabric | The communication substrate where PSC integrates routing, monitoring, transfer control, and decision feedback. |
+
+---
+
 ## Start Here (RCU Decision v0.1)
 
 This is the core of PSC.
@@ -59,16 +113,17 @@ The RCU Decision Model defines how PSC:
 If you want to understand PSC, start here.
 This model is fully implemented and validated through simulation logs.
 
-### 1. Read the specification
+**Read the specification:**
 
 docs/specification/published/models/psc_rcu_decision_model_v0.1_en.md
 
-### 2. Run the simulation
+**How to run:**
 
-> All examples assume a Python 3 environment.
-```bash
-python3 sim/02_controlled/02_rcu_decision_v01/mini_psc_rcu_decision_v01.py
-```
+Use the command in [Validation Logs](#validation-logs).
+
+**Generated logs:**
+
+`sim/02_controlled/02_rcu_decision_v01/logs/`
 
 ## Validation / Evidence
 
@@ -91,10 +146,6 @@ This traceability structure allows PSC behavior
 to be reproducible, auditable, and directly linked
 to RULE-based control decisions.
 
-### 3. Check validation logs
-
-sim/02_controlled/02_rcu_decision_v01/
-
 Detailed validation traceability is available in:
 
 docs/specification/validation/psc_evidence_matrix_v0.1_en.md
@@ -114,66 +165,25 @@ Each log is fully reproducible and directly linked to RULE-based decision traces
 
 All logs are directly generated from the simulation and reflect actual execution behavior.
 
-### 1. Resolver Stability Conflict + Cooldown
+**How to run:**
 
-**Scenario:**
-Near-equal scoring paths with a stability conflict trigger escalation to the Resolver.
-Cooldown prevents repeated escalation, and hysteresis maintains stability.
+Use [QUICK_START.md](QUICK_START.md) for the minimal execution path.
 
-```bash
-python3 sim/02_controlled/02_rcu_decision_v01/mini_psc_rcu_decision_v01.py
-```
+**Generated logs:**
 
-**Log:**
-`rcu_decision_v01_resolver_stability_conflict_cooldown_rule_log.md`
+| Scenario | Log |
+| --- | --- |
+| Resolver Stability Conflict + Cooldown | `sim/02_controlled/02_rcu_decision_v01/logs/rcu_decision_v01_resolver_stability_conflict_cooldown_rule_log.md` |
+| Degraded → Recovery → Stabilization | `sim/02_controlled/02_rcu_decision_v01/logs/rcu_decision_v01_degraded_switch_recovery_rule_log.md` |
+| Resolver Switch Decision | `sim/02_controlled/02_rcu_decision_v01/logs/rcu_decision_v01_resolver_switch_rule_log.md` |
 
-**Highlights:**
+**Scenario descriptions:**
 
-- `RULE-05_ESCALATE_conflict` detects ambiguity between competing paths
-- Resolver avoids unnecessary switching (KEEP-equivalent decision)
-- `RULE-12_COOLDOWN_active` suppresses repeated escalation
-- `RULE-01_KEEP_score` maintains stability via hysteresis
-
-### 2. Degraded → Recovery → Stabilization
-
-**Scenario:**
-All paths lose trust, forcing degraded operation.
-System safely falls back, then recovers once conditions improve.
-
-```bash
-python3 sim/02_controlled/02_rcu_decision_v01/mini_psc_rcu_decision_v01.py
-```
-
-**Log:**
-`rcu_decision_v01_degraded_switch_recovery_rule_log.md`
-
-**Highlights:**
-
-- `RULE-09_DEGRADE_switch` selects a fallback path under failure conditions
-- `RULE-08_DEGRADE_keep` prevents unnecessary switching in degraded mode
-- `RULE-10_RECOVERY_trigger` restores normal operation when conditions improve
-- `RULE-11_RECOVERY_cooldown` stabilizes the transition
-- `RULE-01_KEEP_score` ensures stable operation after recovery
-
-### 3. Resolver Switch Decision
-
-**Scenario:**
-Near-equal scoring paths with a strong trust difference trigger escalation.
-The Resolver explicitly switches the selected path.
-
-```bash
-python3 sim/02_controlled/02_rcu_decision_v01/mini_psc_rcu_decision_v01.py
-```
-
-**Log:**
-`sim/02_controlled/02_rcu_decision_v01/logs/rcu_decision_v01_resolver_switch_rule_log.md`
-
-**Highlights:**
-
-- `RULE-05_ESCALATE_conflict` triggered by trust conflict
-- `RULE-14_RESOLVER_switch` performs explicit path switch (A → B)
-- `RULE-12_COOLDOWN_active` prevents repeated escalation
-- `RULE-01_KEEP_score` stabilizes the new selection
+| Scenario | Behavior demonstrated | RULE references |
+| --- | --- | --- |
+| Resolver Stability Conflict + Cooldown | Near-equal scoring paths with a stability conflict trigger escalation to the Resolver. Cooldown prevents repeated escalation, and hysteresis maintains stability. | `RULE-05_ESCALATE_conflict`, `RULE-12_COOLDOWN_active`, `RULE-01_KEEP_score` |
+| Degraded → Recovery → Stabilization | All paths lose trust, forcing degraded operation. PSC safely falls back, then recovers once conditions improve. | `RULE-09_DEGRADE_switch`, `RULE-08_DEGRADE_keep`, `RULE-10_RECOVERY_trigger`, `RULE-11_RECOVERY_cooldown`, `RULE-01_KEEP_score` |
+| Resolver Switch Decision | Near-equal scoring paths with a strong trust difference trigger escalation. The Resolver explicitly switches the selected path. | `RULE-05_ESCALATE_conflict`, `RULE-14_RESOLVER_switch`, `RULE-12_COOLDOWN_active`, `RULE-01_KEEP_score` |
 
 ## What These Logs Prove
 
@@ -212,8 +222,9 @@ and staged recovery return (v0.2).
   Introduces staged recovery:
   RECOVERY_CANDIDATE → VALIDATION → RETURN_ELIGIBLE → RETURN_SWITCH
 
-This comparison clearly demonstrates how PSC evolves from stability-first behavior
-to controlled adaptability while preserving stability guarantees.
+This comparison shows PSC's progression from stability-first hold behavior
+to controlled adaptability through staged return, progressive migration,
+and recovery ramp-style validation while preserving stability guarantees.
 
 ---
 
@@ -221,34 +232,10 @@ to controlled adaptability while preserving stability guarantees.
 
 PSC provides two demo modes:
 
-### 1. Static Demo (Basic Behavior)
-
-Observe how PSC selects routes based on trust and cost.
-
-**What you will see:**
-
-- Basic trust-aware routing
-- Stable path preference over shortest path
-
-```bash
-python3 sim/04_demo/run_psc_demo.py
-```
-
----
-
-### 2. Dynamic Demo (Adaptive Behavior)
-
-Observe how PSC reacts to changing network conditions.
-
-**What you will see:**
-
-- Real-time routing adaptation
-- Avoidance of unstable paths
-- Trust-driven decision changes
-
-```bash
-python3 sim/04_demo/run_psc_dynamic_demo.py
-```
+| Demo | How to run | What you will see |
+| --- | --- | --- |
+| Static Demo | `python3 sim/04_demo/run_psc_demo.py` | Basic trust-aware routing and stable path preference over shortest path |
+| Dynamic Demo | `python3 sim/04_demo/run_psc_dynamic_demo.py` | Real-time routing adaptation, avoidance of unstable paths, and trust-driven decision changes |
 
 ---
 
@@ -312,20 +299,16 @@ This diagram shows the internal structure of the PSC fabric.
 
 ---
 
-## Core Architecture Components
+## Architecture Reading Hints
 
-PSC introduces dedicated control modules inside the fabric:
+Read the architecture diagrams as control-flow documents, not only topology diagrams.
 
-- Resolver (decision-control module)
-- RCU (routing control unit)
-- TMU (transfer management unit)
-- TEU (transfer execution unit)
-- OMU (optical monitoring unit)
+- Start with where a decision is made: RCU locally, Resolver when escalation is required
+- Then follow how that decision is executed: TMU coordination, TEU transfer behavior
+- Finally check what evidence feeds the decision: OMU observation and fabric state
 
-Each component has a clearly defined role within the fabric.
-
-The Resolver defines system-wide behavior,
-while RCU operates autonomously under normal conditions.
+This order makes the control philosophy visible:
+autonomous local behavior first, conservative escalation only when needed.
 
 ---
 
@@ -341,30 +324,44 @@ Start here to understand PSC:
 
 ## Specification
 
-### Published Documents
+PSC separates published reference models from intentionally evolving design areas.
+The evolving areas extend the architecture without weakening the published stability model.
 
-- PSC AI Behavior Model v0.1
+### Published / Stable Documents
 
-  - English: docs/specification/published/psc_ai_behavior_model_v0.1_en.md
-  - Japanese: docs/specification/published/psc_ai_behavior_model_v0.1_ja.md
+These documents represent stable and reference-level specifications:
 
-These documents represent stable and reference-level specifications.
+| Area | English | Japanese |
+| --- | --- | --- |
+| PSC Architecture Specification v1.0 | docs/specification/published/architecture/psc_architecture_spec_v1.0_en.md | docs/specification/published/architecture/psc_architecture_spec_v1.0_ja.md |
+| RCU Decision Model v0.1 | docs/specification/published/models/psc_rcu_decision_model_v0.1_en.md | docs/specification/published/models/psc_rcu_decision_model_v0.1_ja.md |
+| Routing Model v0.1 | docs/specification/published/models/psc_routing_model_v0.1_en.md | docs/specification/published/models/psc_routing_model_v0.1_ja.md |
+| Congestion Control Model v0.1 | docs/specification/published/models/psc_congestion_control_model_v0.1_en.md | docs/specification/published/models/psc_congestion_control_model_v0.1_ja.md |
+| PSC AI Behavior Model v0.1 | docs/specification/published/psc_ai_behavior_model_v0.1_en.md | docs/specification/published/psc_ai_behavior_model_v0.1_ja.md |
 
 ---
 
-### Draft Documents
+### Experimental / Evolving Documents
 
-- Routing Model
-- Congestion Control Model
+These documents describe controlled architectural progression beyond the baseline model:
 
-These are under active development and subject to change.
+| Area | English | Japanese |
+| --- | --- | --- |
+| RCU Recovery Return Model v0.2 | docs/specification/published/models/psc_rcu_recovery_return_model_v0.2_en.md | docs/specification/published/models/psc_rcu_recovery_return_model_v0.2_ja.md |
+| Resolver Arbitration Extension Model v0.2x | docs/specification/published/models/psc_resolver_arbitration_extension_model_v0.2x_en.md | docs/specification/published/models/psc_resolver_arbitration_extension_model_v0.2x_ja.md |
+| Recovery Return Extension Model v0.2x | docs/specification/published/models/psc_recovery_return_extension_model_v0.2x_en.md | docs/specification/published/models/psc_recovery_return_extension_model_v0.2x_ja.md |
+
+These are not presented as unfinished foundations.
+They explore new control surfaces while the stability-oriented recovery
+and RULE-driven decision model remains the baseline.
 
 ---
 
 ### Core Specification
 
-- Resolver Specification v0.1
-  → docs/specification/resolver/psc_resolver_spec_v0.1.md
+| Area | English | Japanese |
+| --- | --- | --- |
+| Resolver Specification v0.1 | docs/specification/resolver/psc_resolver_spec_v0.1_en.md | docs/specification/resolver/psc_resolver_spec_v0.1_ja.md |
 
 The Resolver defines the decision-control model of PSC,
 including state-based control, authority modes, and constraint-based outputs.
@@ -382,6 +379,41 @@ PSC is built around the following principles:
 - Policy-aware routing
 - Trust-aware routing
 - Adaptive fabric control
+
+---
+
+## Short Glossary
+
+| Term | Meaning |
+| --- | --- |
+| RULE | Explicit decision condition used to make behavior reproducible and auditable. |
+| Trust | Operational confidence in a path, combining reliability, policy fit, validation state, and observed behavior. |
+| Escalation | Transfer of decision authority from autonomous RCU behavior to Resolver control. |
+| Cooldown | A suppression window that prevents repeated switching or repeated escalation. |
+| Degraded mode | Controlled operation when trust or path conditions are insufficient for normal selection. |
+| Recovery | Return from degraded behavior through stable, controlled transitions rather than immediate performance chasing. |
+| Oscillation resistance | PSC's preference for stable behavior when rapid switching would reduce system reliability. |
+
+---
+
+## Beyond Network Routing
+
+PSC is not limited to datacenter-scale routing control.
+
+The same control philosophy can also be applied to:
+
+- CPU-GPU local fabrics
+- accelerator interconnects
+- rack-scale communication
+- photonic internal buses
+- trusted high-speed local transfer domains
+
+This allows PSC to extend beyond traditional networking
+into fabric-centric computer architecture.
+
+In this view, the fabric is not only a transport layer.
+It becomes the place where transfer, observation, recovery,
+and control decisions are integrated.
 
 ---
 
@@ -410,7 +442,9 @@ Read the concept:
 
 ## Project Status
 
-PSC Fabric Specification v0.1 is currently under development.
+PSC has published reference models and validation logs for its stability-oriented control behavior.
+Fabric-level specifications continue to evolve as part of the architecture progression,
+with conservative recovery and RULE-driven decision control preserved as core constraints.
 
 ---
 
