@@ -637,7 +637,7 @@ def decide(paths):
 
             log_rule(
                 "RECOVERY",
-                "RULE-19_RETURN_RAMP_START",
+                "RULE-25_RETURN_RAMP_START",
                 from_=selected["name"],
                 to=best["name"],
                 improvement=f"{improvement:.3f}",

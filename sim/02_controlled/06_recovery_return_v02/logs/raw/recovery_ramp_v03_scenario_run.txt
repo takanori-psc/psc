@@ -71,7 +71,7 @@
 [RECOVERY] rule=RULE-16_RECOVERY_VALIDATION_START candidate=B step=2 required=2
 [RECOVERY] rule=RULE-18_RETURN_ELIGIBLE candidate=B reason=VALIDATION_PASSED
 [FILTER]
-[RECOVERY] rule=RULE-19_RETURN_RAMP_START from_=A to=B improvement=0.152 recovered_weight=0.10 evacuation_weight=0.90 reason=RECOVERY_RETURN_ELIGIBLE
+[RECOVERY] rule=RULE-25_RETURN_RAMP_START from_=A to=B improvement=0.152 recovered_weight=0.10 evacuation_weight=0.90 reason=RECOVERY_RETURN_ELIGIBLE
 [ECMP] selected=B
 
 === STEP 8 ===
@@ -156,7 +156,7 @@
 [RECOVERY] rule=RULE-16_RECOVERY_VALIDATION_START candidate=B step=2 required=2
 [RECOVERY] rule=RULE-18_RETURN_ELIGIBLE candidate=B reason=VALIDATION_PASSED
 [FILTER]
-[RECOVERY] rule=RULE-19_RETURN_RAMP_START from_=A to=B improvement=0.152 recovered_weight=0.10 evacuation_weight=0.90 reason=RECOVERY_RETURN_ELIGIBLE
+[RECOVERY] rule=RULE-25_RETURN_RAMP_START from_=A to=B improvement=0.152 recovered_weight=0.10 evacuation_weight=0.90 reason=RECOVERY_RETURN_ELIGIBLE
 [ECMP] selected=B
 
 === STEP 8 ===
@@ -241,7 +241,7 @@
 [RECOVERY] rule=RULE-16_RECOVERY_VALIDATION_START candidate=B step=2 required=2
 [RECOVERY] rule=RULE-18_RETURN_ELIGIBLE candidate=B reason=VALIDATION_PASSED
 [FILTER]
-[RECOVERY] rule=RULE-19_RETURN_RAMP_START from_=A to=B improvement=0.152 recovered_weight=0.10 evacuation_weight=0.90 reason=RECOVERY_RETURN_ELIGIBLE
+[RECOVERY] rule=RULE-25_RETURN_RAMP_START from_=A to=B improvement=0.152 recovered_weight=0.10 evacuation_weight=0.90 reason=RECOVERY_RETURN_ELIGIBLE
 [ECMP] selected=B
 
 === STEP 8 ===
