@@ -1,16 +1,16 @@
 # GAIOS Architecture Vision v0.1
 
-## ■ ドキュメント情報
+## Document Information
 
-- ドキュメント名 : GAIOS Architecture Vision
-- バージョン     : v0.1 Draft
-- プロジェクト   : PSC / Photon System Controller
-- ドキュメント種別 : Concept / Vision Document
-- 状態           : Public Draft
-- 作成者         : T. Hirose
-- 作成日         : 2026-05
-- 最終更新       : 2026-05
-- 言語           : 日本語
+- Document Name : GAIOS Architecture Vision
+- Version : v0.1 Draft
+- Project : PSC / Photon System Controller
+- Document Type : Concept / Vision Document
+- Status : Public Draft
+- Author : T. Hirose
+- Created : 2026-05
+- Last Updated : 2026-05
+- Language : Japanese
 
 ---
 

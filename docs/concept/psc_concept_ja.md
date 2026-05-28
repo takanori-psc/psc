@@ -5,15 +5,15 @@ English version: [psc_concept_en.md](psc_concept_en.md)
 本ドキュメントはPSCの最終コンセプトを示すものである。  
 初期のドラフトは 99_archive/concept/ に保存されている。
 
-## ドキュメント情報
+## Document Information
 
-- 名称: PSC Concept
-- バージョン: v0.1
-- プロジェクト: PSC / Photon System Controller
-- ドキュメント分類: Concept
-- 状態: Draft
-- 作成者: T. Hirose
-- 言語: 日本語
+- Document Name : PSC Concept
+- Version : v0.1
+- Project : PSC / Photon System Controller
+- Document Type : Concept
+- Status : Draft
+- Author : T. Hirose
+- Language : Japanese
 
 ---
 

@@ -12,7 +12,7 @@
 - Author        : T. Hirose
 - Created       : 2026-03
 - Last Updated  : 2026-03
-- Language      : Japanese
+- Language : Japanese
 
 ---
 

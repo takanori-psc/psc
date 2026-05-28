@@ -1,6 +1,6 @@
 # PSC 状態遷移モデル v0.1
 
-## ドキュメント情報
+## Document Information
 
 - Document Name : PSC State Transition Model
 - Version       : v0.1
@@ -11,7 +11,7 @@
 - Author        : T. Hirose
 - Created       : 2026-04
 - Last Updated  : 2026-04
-- Language      : Japanese
+- Language : Japanese
 
 ---
 

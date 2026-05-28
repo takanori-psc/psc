@@ -1,14 +1,14 @@
 # PSC Chiplet Architecture Model v0.1 (JP)
 
-## ドキュメント情報
+## Document Information
 
 - Document Name: PSC Chiplet Architecture Model
-- Version: v0.1
-- Project: PSC / Photon System Controller
+- Version : v0.1
+- Project : PSC / Photon System Controller
 - Layer: PSC Hardware
 - Status: Draft
-- Author: T. Hirose
-- Language: Japanese
+- Author : T. Hirose
+- Language : Japanese
 
 ---
 

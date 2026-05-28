@@ -1,8 +1,8 @@
 # PSC ドキュメンテーションマップ
 
-プロジェクト: PSC / Photon System Controller  
-ドキュメント種別: Documentation Map  
-ステータス: Draft  
+Project: PSC / Photon System Controller  
+Document Type: Documentation Map  
+Status: Draft  
 
 ---
 

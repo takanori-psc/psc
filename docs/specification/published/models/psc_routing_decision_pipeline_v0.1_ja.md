@@ -1,17 +1,17 @@
 # PSC ルーティング決定パイプライン仕様 v0.1
 
-## ドキュメント情報
+## Document Information
 
-- ドキュメント名   : PSC Routing Decision Pipeline
-- バージョン       : v0.1
-- プロジェクト     : PSC / Photon System Controller
-- レイヤ           : PSC Fabric
-- ドキュメント種別 : 仕様書
-- ステータス       : Draft
-- 作成者           : T. Hirose
-- 作成日           : 2026-03
-- 最終更新         : 2026-03
-- 言語             : Japanese
+- Document Name : PSC Routing Decision Pipeline
+- Version : v0.1
+- Project : PSC / Photon System Controller
+- Layer : PSC Fabric
+- Document Type : Specification
+- Status : Draft
+- Author : T. Hirose
+- Created : 2026-03
+- Last Updated : 2026-03
+- Language : Japanese
 
 ---
 

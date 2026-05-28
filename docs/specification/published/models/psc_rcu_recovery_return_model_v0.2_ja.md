@@ -1,15 +1,15 @@
 # PSC RCU Recovery Return Model v0.2
 
-## 1. ドキュメント情報
+## 1. Document Information
 
-- ドキュメント名 : PSC RCU Recovery Return Model
-- バージョン : v0.2
-- プロジェクト : PSC / Photon System Controller
-- レイヤ : PSC Control Plane / RCU
-- ドキュメント種別 : Model Specification
-- ステータス : Draft
-- 作成者 : T. Hirose
-- 言語 : Japanese
+- Document Name : PSC RCU Recovery Return Model
+- Version : v0.2
+- Project : PSC / Photon System Controller
+- Layer : PSC Control Plane / RCU
+- Document Type : Model Specification
+- Status : Draft
+- Author : T. Hirose
+- Language : Japanese
 
 ---
 

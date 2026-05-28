@@ -14,7 +14,7 @@ English version: [psc_resolver_spec_v0.1_en.md](psc_resolver_spec_v0.1_en.md)
 - Author        : T. Hirose
 - Created       : 2026-03
 - Last Updated  : 2026-03
-- Language      : Japanese
+- Language : Japanese
 
 ## 0. 設計哲学
 

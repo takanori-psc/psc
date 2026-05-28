@@ -1,7 +1,7 @@
 # PSC：高帯域I/Oファブリックのための状態ベース分散安定化アーキテクチャ
 
-著者：T. Hirose
-状態：Draft v0.1
+Author: T. Hirose
+Status: Draft v0.1
 
 ---
 

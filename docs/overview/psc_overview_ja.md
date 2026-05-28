@@ -2,15 +2,15 @@
 
 English version: [psc_overview_en.md](psc_overview_en.md)
 
-## ドキュメント情報
+## Document Information
 
-- 名称: PSC Overview
-- バージョン: v0.1
-- プロジェクト: PSC / Photon System Controller
-- ドキュメント分類: Overview
-- 状態: Draft
-- 作成者: T. Hirose
-- 言語: 日本語
+- Document Name : PSC Overview
+- Version : v0.1
+- Project : PSC / Photon System Controller
+- Document Type : Overview
+- Status : Draft
+- Author : T. Hirose
+- Language : Japanese
 
 ---
 

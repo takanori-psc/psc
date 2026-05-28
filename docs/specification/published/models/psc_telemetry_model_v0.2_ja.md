@@ -1,17 +1,17 @@
 # PSC Telemetry Model v0.2（日本語版）
 
-## 1. ドキュメント情報
+## 1. Document Information
 
-- ドキュメント名   : PSC Telemetry Model
-- バージョン       : v0.2
-- プロジェクト     : PSC (Photon System Controller)
-- レイヤ           : PSCOS / PSC Fabric
-- ドキュメント種別 : Specification / Model
-- ステータス       : Draft
-- 作成者           : T. Hirose
-- 作成日           : 2026-04-02
-- 最終更新         :2026-04-02
-- 言語             :日本語
+- Document Name : PSC Telemetry Model
+- Version : v0.2
+- Project : PSC (Photon System Controller)
+- Layer : PSCOS / PSC Fabric
+- Document Type : Specification / Model
+- Status : Draft
+- Author : T. Hirose
+- Created : 2026-04-02
+- Last Updated : 2026-04-02
+- Language : Japanese
 
 ---
 

@@ -2,15 +2,15 @@
 
 ## Document Information
 
-- ドキュメント名: PSC Port Model
-- プロジェクト : PSC / Photon System Controller
-- レイヤ : PSC Fabric
-- ドキュメント種別 : 仕様書
-- ステータス : Draft
-- 作成者 : T. Hirose
-- 作成日 : 2026-03
-- 最終更新 : 2026-03
-- 言語 : Japanese 
+- Document Name : PSC Port Model
+- Project : PSC / Photon System Controller
+- Layer : PSC Fabric
+- Document Type : Specification
+- Status : Draft
+- Author : T. Hirose
+- Created : 2026-03
+- Last Updated : 2026-03
+- Language : Japanese
 
 ---
 
