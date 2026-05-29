@@ -68,9 +68,15 @@ must emit `RULE-22_RETURN_RAMP_HOLD` and must not emit
 that is present but no longer usable. Stale telemetry must also emit
 `RULE-22_RETURN_RAMP_HOLD` and must not emit `RULE-21_RETURN_RAMP_ADVANCE`.
 
+`light_masked_instability_stub.py` is a LIGHT-only scenario where accepted,
+current telemetry exists, but sparse observation leaves instability risk hidden
+between samples. Masked instability risk must emit `RULE-22_RETURN_RAMP_HOLD`
+and must not emit `RULE-21_RETURN_RAMP_ADVANCE`.
+
 Run them with:
 
 ```bash
 python3 sim/02_controlled/07_light_observation_stub/light_telemetry_gap_stub.py
 python3 sim/02_controlled/07_light_observation_stub/light_stale_telemetry_stub.py
+python3 sim/02_controlled/07_light_observation_stub/light_masked_instability_stub.py
 ```
