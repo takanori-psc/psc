@@ -56,3 +56,16 @@ Existing recovery ramp scenarios remain the baseline:
 The LIGHT stub extends those cases with missing-input and ambiguous-evidence
 conditions. Until those are runnable or manually traceable, LIGHT advance stays
 classified as Hold in the Evidence Matrix.
+
+## Runnable Stubs
+
+`light_telemetry_gap_stub.py` is a minimal LIGHT-only scenario for required
+telemetry input loss during an active recovery ramp. Missing required telemetry
+must emit `RULE-22_RETURN_RAMP_HOLD` and must not emit
+`RULE-21_RETURN_RAMP_ADVANCE`.
+
+Run it with:
+
+```bash
+python3 sim/02_controlled/07_light_observation_stub/light_telemetry_gap_stub.py
+```
