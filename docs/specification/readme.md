@@ -12,7 +12,11 @@ This directory contains PSC specification documents.
 |-----------|-------------------------------------------------------------|----------------------------|
 | published | Specifications that are already published in the repository | リポジトリで公開済みの仕様 |
 | draft     | Work-in-progress specifications                             | 作成中の仕様               |
+| validation | Validation traceability and evidence matrices              | 検証トレーサビリティと証拠対応表 |
 | archive   | Deprecated or historical specifications                     | 廃止または旧仕様           |
+
+Draft validation plans may be placed under `draft/validation/` until execution
+logs and Evidence Matrix mappings are ready.
 
 ---
 
