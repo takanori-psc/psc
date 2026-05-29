@@ -64,8 +64,13 @@ telemetry input loss during an active recovery ramp. Missing required telemetry
 must emit `RULE-22_RETURN_RAMP_HOLD` and must not emit
 `RULE-21_RETURN_RAMP_ADVANCE`.
 
-Run it with:
+`light_stale_telemetry_stub.py` is a separate LIGHT-only scenario for telemetry
+that is present but no longer usable. Stale telemetry must also emit
+`RULE-22_RETURN_RAMP_HOLD` and must not emit `RULE-21_RETURN_RAMP_ADVANCE`.
+
+Run them with:
 
 ```bash
 python3 sim/02_controlled/07_light_observation_stub/light_telemetry_gap_stub.py
+python3 sim/02_controlled/07_light_observation_stub/light_stale_telemetry_stub.py
 ```
