@@ -73,10 +73,16 @@ current telemetry exists, but sparse observation leaves instability risk hidden
 between samples. Masked instability risk must emit `RULE-22_RETURN_RAMP_HOLD`
 and must not emit `RULE-21_RETURN_RAMP_ADVANCE`.
 
+`light_delayed_abort_stub.py` is a LIGHT-only scenario where instability is not
+detected by an earlier LIGHT observation, then hard failure is detected later.
+Delayed hard failure detection must emit `RULE-23_RETURN_RAMP_ABORT` and must
+not emit `RULE-21_RETURN_RAMP_ADVANCE`.
+
 Run them with:
 
 ```bash
 python3 sim/02_controlled/07_light_observation_stub/light_telemetry_gap_stub.py
 python3 sim/02_controlled/07_light_observation_stub/light_stale_telemetry_stub.py
 python3 sim/02_controlled/07_light_observation_stub/light_masked_instability_stub.py
+python3 sim/02_controlled/07_light_observation_stub/light_delayed_abort_stub.py
 ```
