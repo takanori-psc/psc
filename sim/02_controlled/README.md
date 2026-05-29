@@ -67,6 +67,19 @@ Next-generation recovery model (v0.2).
 
 ---
 
+### 07_light_observation_stub
+Design stub for LIGHT observation validation.
+
+- Scenario manifest for LIGHT-specific recovery ramp risks
+- Expected behavior category helper specification
+- Connection plan from existing recovery ramp scenarios to LIGHT scenarios
+
+This directory is not verified evidence yet. It keeps
+`RULE-21_RETURN_RAMP_ADVANCE (LIGHT)` on Hold until runnable or manually
+traceable LIGHT cases exist.
+
+---
+
 ## Evolution Flow
 
 ```
@@ -75,6 +88,7 @@ basic routing (01_basic)
 → RCU Decision Model v0.1
 → scenario validation (oscillation / degraded / recovery)
 → recovery return extension (v0.2)
+→ LIGHT observation scenario stubs
 ```
 
 ---

@@ -21,6 +21,7 @@ class ScenarioCheck:
     name: str
     command: tuple[str, ...]
     expected_rules: tuple[str, ...]
+    expected_category: str | None = None
     variant: str = "subprocess"
 
 
@@ -35,6 +36,7 @@ SCENARIOS = (
             "RULE-01_KEEP_score",
             "RULE-02_SWITCH_score",
         ),
+        expected_category="switch",
     ),
     ScenarioCheck(
         name="resolver_switch",
@@ -47,6 +49,7 @@ SCENARIOS = (
             "RULE-14_RESOLVER_switch",
             "RULE-12_COOLDOWN_active",
         ),
+        expected_category="escalation_and_cooldown",
     ),
     ScenarioCheck(
         name="recovery_return_v02",
@@ -60,9 +63,75 @@ SCENARIOS = (
             "RULE-18_RETURN_ELIGIBLE",
             "RULE-19_RETURN_SWITCH",
         ),
+        expected_category="switch",
         variant="recovery_return_v02_ab",
     ),
 )
+
+CATEGORY_RULES = {
+    "switch": (
+        "RULE-02_SWITCH_score",
+        "RULE-14_RESOLVER_switch",
+        "RULE-19_RETURN_SWITCH",
+        "RULE-21_RETURN_RAMP_ADVANCE",
+        "RULE-24_RETURN_RAMP_COMPLETE",
+    ),
+    "hold": (
+        "RULE-01_KEEP_score",
+        "RULE-08_DEGRADE_keep",
+        "RULE-11_RECOVERY_cooldown",
+        "RULE-20_RETURN_KEEP",
+        "RULE-22_RETURN_RAMP_HOLD",
+    ),
+    "abort": (
+        "RULE-23_RETURN_RAMP_ABORT",
+    ),
+    "escalation": (
+        "RULE-05_ESCALATE_conflict",
+    ),
+    "fallback": (
+        "RULE-07_DEGRADE_trigger",
+        "RULE-09_DEGRADE_switch",
+    ),
+}
+
+CATEGORY_RULE_COMBINATIONS = {
+    "escalation_and_cooldown": (
+        "RULE-05_ESCALATE_conflict",
+        "RULE-12_COOLDOWN_active",
+    ),
+}
+
+CATEGORY_ALIASES = {
+    "hold_or_escalate": (
+        "hold",
+        "escalation",
+    ),
+}
+
+
+def observed_categories(output: str) -> set[str]:
+    categories = {
+        category
+        for category, rules in CATEGORY_RULES.items()
+        if any(rule in output for rule in rules)
+    }
+
+    for category, required_rules in CATEGORY_RULE_COMBINATIONS.items():
+        if all(rule in output for rule in required_rules):
+            categories.add(category)
+
+    for category, accepted_categories in CATEGORY_ALIASES.items():
+        if any(accepted in categories for accepted in accepted_categories):
+            categories.add(category)
+
+    return categories
+
+
+def category_satisfied(expected_category: str | None, output: str) -> bool:
+    if expected_category is None:
+        return True
+    return expected_category in observed_categories(output)
 
 
 def run_recovery_return_v02_ab(check: ScenarioCheck) -> tuple[int, str, str]:
@@ -109,24 +178,33 @@ def run_check(check: ScenarioCheck) -> tuple[bool, str]:
 
     output = stdout + stderr
     missing = [rule for rule in check.expected_rules if rule not in output]
+    category_ok = category_satisfied(check.expected_category, output)
+    categories = observed_categories(output)
 
     lines = [f"[{check.name}] command={' '.join(cmd)}"]
     if check.variant != "subprocess":
         lines.append(f"  variant={check.variant}")
+    if check.expected_category is not None:
+        observed = ", ".join(sorted(categories)) if categories else "none"
+        lines.append(
+            f"  category expected={check.expected_category} observed={observed}"
+        )
     if returncode != 0:
         lines.append(f"  FAIL: process exited with code {returncode}")
     if missing:
         lines.append(f"  FAIL: missing rules: {', '.join(missing)}")
-    if returncode == 0 and not missing:
+    if not category_ok:
+        lines.append(f"  FAIL: expected category not satisfied: {check.expected_category}")
+    if returncode == 0 and not missing and category_ok:
         lines.append(f"  PASS: found {len(check.expected_rules)} expected rules")
 
-    if returncode != 0 or missing:
+    if returncode != 0 or missing or not category_ok:
         tail = "\n".join(output.splitlines()[-25:])
         if tail:
             lines.append("  Output tail:")
             lines.extend(f"    {line}" for line in tail.splitlines())
 
-    return returncode == 0 and not missing, "\n".join(lines)
+    return returncode == 0 and not missing and category_ok, "\n".join(lines)
 
 
 def main() -> int:
