@@ -78,6 +78,12 @@ detected by an earlier LIGHT observation, then hard failure is detected later.
 Delayed hard failure detection must emit `RULE-23_RETURN_RAMP_ABORT` and must
 not emit `RULE-21_RETURN_RAMP_ADVANCE`.
 
+`light_resolver_escalation_stub.py` is a LIGHT-only scenario where trust,
+stability, and confidence evidence conflict, so LIGHT cannot decide recovery vs
+risk by itself. Conflicting LIGHT evidence must emit
+`RULE-05_ESCALATE_conflict`, followed by `RULE-12_COOLDOWN_active`, and must not
+emit `RULE-21_RETURN_RAMP_ADVANCE`.
+
 Run them with:
 
 ```bash
@@ -85,4 +91,5 @@ python3 sim/02_controlled/07_light_observation_stub/light_telemetry_gap_stub.py
 python3 sim/02_controlled/07_light_observation_stub/light_stale_telemetry_stub.py
 python3 sim/02_controlled/07_light_observation_stub/light_masked_instability_stub.py
 python3 sim/02_controlled/07_light_observation_stub/light_delayed_abort_stub.py
+python3 sim/02_controlled/07_light_observation_stub/light_resolver_escalation_stub.py
 ```
