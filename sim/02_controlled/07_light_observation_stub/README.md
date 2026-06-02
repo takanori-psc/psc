@@ -5,9 +5,10 @@
 This directory defines the minimum scenario structure for validating LIGHT
 observation before `RULE-21_RETURN_RAMP_ADVANCE (LIGHT)` can leave Hold.
 
-The files in this directory are design stubs, not verified evidence. They are
-intended to connect the LIGHT observation boundary draft to runnable simulation
-cases without changing the current recovery ramp implementation prematurely.
+The `_stub.py` files in this directory are design stubs. The runnable scenario
+files are validation cases that connect the LIGHT observation boundary draft to
+simulation evidence without changing the current recovery ramp implementation
+prematurely.
 
 ## Scope
 
@@ -27,22 +28,23 @@ only the LIGHT-specific stimulus needed for these risks:
 - delayed abort
 - resolver escalation
 
-## Proposed Structure
+## Structure
 
 ```text
 sim/02_controlled/07_light_observation_stub/
   README.md
   light_scenario_manifest.md
   expected_category_helper_spec.md
-```
-
-Future runnable files should be added only after the scenario manifest is stable:
-
-```text
-mini_psc_light_observation_scenarios.py
+  light_false_negative.py
+  light_stale_telemetry.py
+  light_masked_instability.py
 logs/
-  rcu_decision_v04_light_observation_validation_log.md
-  raw/light_observation_run.txt
+  raw/
+    light_false_negative_run.txt
+    light_stale_telemetry_run.txt
+    light_masked_instability_run.txt
+  verified/
+    light_observation_hold_validation_log.md
 ```
 
 ## Connection To Existing Scenarios
@@ -58,6 +60,20 @@ conditions. Until those are runnable or manually traceable, LIGHT advance stays
 classified as Hold in the Evidence Matrix.
 
 ## Runnable Stubs
+
+`light_false_negative.py` is a runnable LIGHT-only scenario where actual path
+instability exists but LIGHT observation does not detect it. False-negative
+observation must emit `RULE-22_RETURN_RAMP_HOLD` with `category=hold` and
+`reason=OBSERVATION_FALSE_NEGATIVE`.
+
+`light_stale_telemetry.py` is a runnable LIGHT-only scenario for telemetry that
+is present but no longer usable. Stale telemetry must emit
+`RULE-22_RETURN_RAMP_HOLD` with `category=hold` and `reason=STALE_TELEMETRY`.
+
+`light_masked_instability.py` is a runnable LIGHT-only scenario where the
+stability proxy appears healthy while hidden instability exists. Masked
+instability must emit `RULE-22_RETURN_RAMP_HOLD` with `category=hold` and
+`reason=MASKED_INSTABILITY`.
 
 `light_telemetry_gap_stub.py` is a minimal LIGHT-only scenario for required
 telemetry input loss during an active recovery ramp. Missing required telemetry
@@ -87,6 +103,9 @@ emit `RULE-21_RETURN_RAMP_ADVANCE`.
 Run them with:
 
 ```bash
+python3 sim/02_controlled/07_light_observation_stub/light_false_negative.py
+python3 sim/02_controlled/07_light_observation_stub/light_stale_telemetry.py
+python3 sim/02_controlled/07_light_observation_stub/light_masked_instability.py
 python3 sim/02_controlled/07_light_observation_stub/light_telemetry_gap_stub.py
 python3 sim/02_controlled/07_light_observation_stub/light_stale_telemetry_stub.py
 python3 sim/02_controlled/07_light_observation_stub/light_masked_instability_stub.py

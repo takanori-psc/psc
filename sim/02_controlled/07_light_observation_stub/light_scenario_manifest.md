@@ -1,19 +1,19 @@
-# LIGHT Scenario Manifest v0.1 Stub
+# LIGHT Scenario Manifest v0.1
 
 ## Status
 
-- Type: scenario design stub
-- Evidence status: not verified
+- Type: scenario design and runnable validation manifest
+- Evidence status: partial runnable validation
 - Target gate: keep `RULE-21_RETURN_RAMP_ADVANCE (LIGHT)` on Hold
 
 ## Scenario Set
 
 | Scenario | Stimulus | Expected category | Acceptable RULE evidence | Existing connection |
 |----------|----------|-------------------|--------------------------|---------------------|
-| light_false_negative | Recovery ramp runs while a stability dip is not directly visible to LIGHT sampling | hold_or_escalate | `RULE-22_RETURN_RAMP_HOLD` or `RULE-05_ESCALATE_conflict` | Extends `ramp_light_tolerates_moderate_dip` |
+| light_false_negative | Recovery ramp runs while actual instability is not detected by LIGHT sampling | hold | `RULE-22_RETURN_RAMP_HOLD` | Extends `ramp_light_tolerates_moderate_dip` |
 | light_telemetry_gap | Required LIGHT input is missing: trust, stability proxy, freshness, or confidence | hold | `RULE-22_RETURN_RAMP_HOLD` | New LIGHT-only input validation |
 | light_stale_telemetry | Telemetry sample exists but exceeds the freshness window | hold | `RULE-22_RETURN_RAMP_HOLD` | New LIGHT-only freshness validation |
-| light_masked_instability | Sparse accepted samples hide an instability between observations | hold_or_escalate | `RULE-22_RETURN_RAMP_HOLD` or `RULE-05_ESCALATE_conflict` | Extends `ramp_light_tolerates_moderate_dip` |
+| light_masked_instability | Stability proxy appears healthy while hidden instability exists | hold | `RULE-22_RETURN_RAMP_HOLD` | Extends `ramp_light_tolerates_moderate_dip` |
 | light_delayed_abort | LIGHT observes severe instability later than FULL but still sees hard failure | abort | `RULE-23_RETURN_RAMP_ABORT` | Extends `ramp_abort_light_hard_failure` |
 | light_resolver_escalation | LIGHT evidence cannot distinguish recovery from risk | escalation_and_cooldown | `RULE-05_ESCALATE_conflict` and `RULE-12_COOLDOWN_active` | Extends resolver conflict behavior |
 
@@ -30,6 +30,38 @@ Each future runnable LIGHT scenario should declare:
 | `expected_rules` | Required RULE identifiers for the current validation depth |
 | `source_scenario` | Existing scenario or model being extended |
 | `promotion_blocker` | Reason this scenario still blocks LIGHT advance promotion |
+
+## Runnable Validation Records
+
+```text
+name=light_false_negative
+observation_mode=LIGHT
+stimulus=actual path instability exists but LIGHT observation fails to detect it
+expected_category=hold
+expected_rules=RULE-22_RETURN_RAMP_HOLD
+source_scenario=ramp_light_tolerates_moderate_dip
+promotion_blocker=false-negative LIGHT observation must not produce LIGHT advance
+```
+
+```text
+name=light_stale_telemetry
+observation_mode=LIGHT
+stimulus=telemetry data is outdated and confidence is insufficient
+expected_category=hold
+expected_rules=RULE-22_RETURN_RAMP_HOLD
+source_scenario=recovery_ramp_v03
+promotion_blocker=stale telemetry must not produce LIGHT advance
+```
+
+```text
+name=light_masked_instability
+observation_mode=LIGHT
+stimulus=stability proxy appears healthy while hidden instability exists
+expected_category=hold
+expected_rules=RULE-22_RETURN_RAMP_HOLD
+source_scenario=ramp_light_tolerates_moderate_dip
+promotion_blocker=masked instability must not produce LIGHT advance
+```
 
 ## Initial Stub Records
 

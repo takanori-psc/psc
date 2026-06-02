@@ -1,0 +1,3 @@
+STEP 0
+[SCENARIO] name=light_stale_telemetry observation_mode=LIGHT expected_category=hold expected_rules=RULE-22_RETURN_RAMP_HOLD
+[RECOVERY] rule=RULE-22_RETURN_RAMP_HOLD category=hold observation_mode=LIGHT ramp_state=RAMPING telemetry_age=outdated confidence=insufficient scenario=light_stale_telemetry reason=STALE_TELEMETRY

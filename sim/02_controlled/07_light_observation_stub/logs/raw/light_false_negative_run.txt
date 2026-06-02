@@ -1,0 +1,3 @@
+STEP 0
+[SCENARIO] name=light_false_negative observation_mode=LIGHT expected_category=hold expected_rules=RULE-22_RETURN_RAMP_HOLD
+[RECOVERY] rule=RULE-22_RETURN_RAMP_HOLD category=hold observation_mode=LIGHT ramp_state=RAMPING actual_path_instability=exists light_detected_instability=false scenario=light_false_negative reason=OBSERVATION_FALSE_NEGATIVE

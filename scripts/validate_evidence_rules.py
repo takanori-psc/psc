@@ -66,6 +66,33 @@ SCENARIOS = (
         expected_category="switch",
         variant="recovery_return_v02_ab",
     ),
+    ScenarioCheck(
+        name="light_false_negative",
+        command=(
+            "sim/02_controlled/07_light_observation_stub/"
+            "light_false_negative.py",
+        ),
+        expected_rules=("RULE-22_RETURN_RAMP_HOLD",),
+        expected_category="hold",
+    ),
+    ScenarioCheck(
+        name="light_stale_telemetry",
+        command=(
+            "sim/02_controlled/07_light_observation_stub/"
+            "light_stale_telemetry.py",
+        ),
+        expected_rules=("RULE-22_RETURN_RAMP_HOLD",),
+        expected_category="hold",
+    ),
+    ScenarioCheck(
+        name="light_masked_instability",
+        command=(
+            "sim/02_controlled/07_light_observation_stub/"
+            "light_masked_instability.py",
+        ),
+        expected_rules=("RULE-22_RETURN_RAMP_HOLD",),
+        expected_category="hold",
+    ),
 )
 
 CATEGORY_RULES = {
