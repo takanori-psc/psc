@@ -35,7 +35,7 @@
 | RULE-20_RETURN_KEEP | 復帰候補が条件未達のまま切替される危険 | current path 維持 | recovery_return_keep | `LOG-RR-02` | Verified |
 | RULE-21_RETURN_RAMP_ADVANCE | ramp 中の進行条件不明瞭 | 安定時のみ recovered weight を増加 | recovery_ramp_v03 | `LOG-RAMP-01` | Experimental |
 | RULE-22_RETURN_RAMP_HOLD | ramp 中の一時停止条件不明瞭 | 条件未達時に ramp を維持 | recovery_ramp_v03 / light_false_negative / light_stale_telemetry / light_masked_instability | `LOG-RAMP-02`; `LOG-LIGHT-HOLD-01` | Experimental |
-| RULE-23_RETURN_RAMP_ABORT | 不安定 path への早期復帰 | ramp 中の異常検知時に復帰を中断 | recovery_ramp_v03 | `LOG-RAMP-03` | Experimental |
+| RULE-23_RETURN_RAMP_ABORT | 不安定 path への早期復帰 | ramp 中の異常検知時に復帰を中断 | recovery_ramp_v03 / soft_abort_hold_and_reobserve / hard_abort_ramp_down / emergency_cut_no_fallback / two_path_degraded_abort | `LOG-RAMP-03`; `LOG-ABORT-01` | Experimental |
 | RULE-24_RETURN_RAMP_COMPLETE | recovery 完了判定の不明瞭化 | progressive reintegration 完了を確定 | recovery_ramp_v03 | `LOG-RAMP-03` | Experimental |
 | RULE-25_RETURN_RAMP_START | recovery 直後の急激な全量復帰 | progressive return ramp 開始 | recovery_ramp_v03 | `LOG-RAMP-02` | Experimental |
 
@@ -70,6 +70,10 @@
 | light_false_negative | 実際の instability が LIGHT observation で検出されない場合に ramp を hold することを確認 | `LOG-LIGHT-HOLD-01`; `RAW-LIGHT-FN-01` |
 | light_stale_telemetry | telemetry が古い場合に LIGHT observation が ramp を hold することを確認 | `LOG-LIGHT-HOLD-01`; `RAW-LIGHT-ST-01` |
 | light_masked_instability | sparse evidence により instability が隠れる場合に LIGHT observation が ramp を hold することを確認 | `LOG-LIGHT-HOLD-01`; `RAW-LIGHT-MI-01` |
+| soft_abort_hold_and_reobserve | SOFT_ABORT で allocation を保持し、observation 強化と Resolver re-evaluation を行うことを確認 | `LOG-ABORT-01`; `RAW-ABORT-SOFT-01` |
+| hard_abort_ramp_down | HARD_ABORT で suspect recovered path を ramp down し source-side PSC に通知することを確認 | `LOG-ABORT-01`; `RAW-ABORT-HARD-01` |
+| emergency_cut_no_fallback | EMERGENCY_CUT で unsafe path を除外し、capacity margin 不足時に fallback transfer を block することを確認 | `LOG-ABORT-01`; `RAW-ABORT-EMERG-01` |
+| two_path_degraded_abort | safe alternate が存在しない二経路 degraded abort で Resolver least-bad arbitration を行うことを確認 | `LOG-ABORT-01`; `RAW-ABORT-2PATH-01` |
 
 ---
 
@@ -122,6 +126,7 @@
 | RULE-19_RETURN_SWITCH | recovery_return_v02 | STEP 7 | eligible path へ controlled return switch | `LOG-RR-01` |
 | RULE-20_RETURN_KEEP | recovery_return_keep | STEP 4 | return_margin 未満のため current path を維持 | `LOG-RR-02` |
 | RULE-22_RETURN_RAMP_HOLD | light_false_negative / light_stale_telemetry / light_masked_instability | STEP 0 / STEP 0 / STEP 0 | LIGHT recovery ramp を false-negative、stale、masked instability の evidence 条件で hold | `RAW-LIGHT-FN-01`; `RAW-LIGHT-ST-01`; `RAW-LIGHT-MI-01`; `LOG-LIGHT-HOLD-01` |
+| RULE-23_RETURN_RAMP_ABORT | soft_abort_hold_and_reobserve / hard_abort_ramp_down / emergency_cut_no_fallback / two_path_degraded_abort | STEP 0 / STEP 0 / STEP 0 / STEP 0 | active Return Ramp attempt を abort し、abort class に応じて stabilization、ramp-down、emergency cut、または two-path degraded arbitration を適用 | `RAW-ABORT-SOFT-01`; `RAW-ABORT-HARD-01`; `RAW-ABORT-EMERG-01`; `RAW-ABORT-2PATH-01`; `LOG-ABORT-01` |
 
 ---
 
@@ -135,7 +140,18 @@
 
 ---
 
-## 8. v0.3 Experimental RULE 統合候補
+## 8. Recovery Abort Handling Evidence Details
+
+| シナリオ | Scenario File | RULE | Expected Category | Abort Class | Fallback Block Reason | Raw Log | Verified Log | 状態 |
+|----------|---------------|------|-------------------|-------------|-----------------------|---------|--------------|------|
+| soft_abort_hold_and_reobserve | `sim/02_controlled/08_recovery_abort_handling/soft_abort_hold_and_reobserve.py` | RULE-23_RETURN_RAMP_ABORT | abort_and_stabilize | SOFT_ABORT | N/A | `RAW-ABORT-SOFT-01` | `LOG-ABORT-01` | Experimental |
+| hard_abort_ramp_down | `sim/02_controlled/08_recovery_abort_handling/hard_abort_ramp_down.py` | RULE-23_RETURN_RAMP_ABORT | hard_abort_ramp_down | HARD_ABORT | N/A | `RAW-ABORT-HARD-01` | `LOG-ABORT-01` | Experimental |
+| emergency_cut_no_fallback | `sim/02_controlled/08_recovery_abort_handling/emergency_cut_no_fallback.py` | RULE-23_RETURN_RAMP_ABORT | emergency_cut_no_fallback | EMERGENCY_CUT | NO_CAPACITY_MARGIN | `RAW-ABORT-EMERG-01` | `LOG-ABORT-01` | Experimental |
+| two_path_degraded_abort | `sim/02_controlled/08_recovery_abort_handling/two_path_degraded_abort.py` | RULE-23_RETURN_RAMP_ABORT | two_path_degraded_arbitration | DEGRADED_ABORT | NO_SAFE_ALTERNATE | `RAW-ABORT-2PATH-01` | `LOG-ABORT-01` | Experimental |
+
+---
+
+## 9. v0.3 Experimental RULE 統合候補
 
 | RULE | 分類 | Summary | Next |
 |------|------|----------|----------|
@@ -154,10 +170,11 @@
 
 ---
 
-## 9. Log References
+## 10. Log References
 
 - `LOG-DEG-01`: `sim/02_controlled/04_degraded/logs/rcu_decision_v01_degraded_rule_validation_log.md`
 - `LOG-DEG-02`: `sim/02_controlled/04_degraded/logs/rcu_decision_v01_degraded_keep_validation_log.md`
+- `LOG-ABORT-01`: `sim/02_controlled/08_recovery_abort_handling/logs/verified/recovery_abort_stabilization_validation_log.md`
 - `LOG-HOLD-01`: `sim/02_controlled/05_recovery_hold/logs/rcu_decision_v01_recovery_hold_behavior_log.md`
 - `LOG-LIGHT-HOLD-01`: `sim/02_controlled/07_light_observation_stub/logs/verified/light_observation_hold_validation_log.md`
 - `LOG-OSC-01`: `sim/02_controlled/03_oscillation/logs/rcu_decision_v01_oscillation_ecmp_comparison_log.md`
@@ -173,9 +190,13 @@
 - `RAW-LIGHT-FN-01`: `sim/02_controlled/07_light_observation_stub/logs/raw/light_false_negative_run.txt`
 - `RAW-LIGHT-ST-01`: `sim/02_controlled/07_light_observation_stub/logs/raw/light_stale_telemetry_run.txt`
 - `RAW-LIGHT-MI-01`: `sim/02_controlled/07_light_observation_stub/logs/raw/light_masked_instability_run.txt`
+- `RAW-ABORT-SOFT-01`: `sim/02_controlled/08_recovery_abort_handling/logs/raw/soft_abort_hold_and_reobserve_run.txt`
+- `RAW-ABORT-HARD-01`: `sim/02_controlled/08_recovery_abort_handling/logs/raw/hard_abort_ramp_down_run.txt`
+- `RAW-ABORT-EMERG-01`: `sim/02_controlled/08_recovery_abort_handling/logs/raw/emergency_cut_no_fallback_run.txt`
+- `RAW-ABORT-2PATH-01`: `sim/02_controlled/08_recovery_abort_handling/logs/raw/two_path_degraded_abort_run.txt`
 
 ---
 
-## 10. Glossary References
+## 11. Glossary References
 
 - `GLOSSARY-LIGHT-JA-01`: `docs/specification/published/glossary/psc_light_observation_glossary_v0.1_ja.md`

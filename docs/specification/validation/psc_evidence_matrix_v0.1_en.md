@@ -35,7 +35,7 @@ can be directly confirmed in execution logs.
 | RULE-20_RETURN_KEEP | Risk of switching to a return candidate before conditions are met | Keep the current path | recovery_return_keep | `LOG-RR-02` | Verified |
 | RULE-21_RETURN_RAMP_ADVANCE | Ambiguous ramp advancement conditions | Increase recovered-path traffic weight only under stable conditions | recovery_ramp_v03 | `LOG-RAMP-01` | Experimental |
 | RULE-22_RETURN_RAMP_HOLD | Ambiguous temporary hold conditions during ramp | Maintain the current weight when advancement conditions are insufficient | recovery_ramp_v03 / light_false_negative / light_stale_telemetry / light_masked_instability | `LOG-RAMP-02`; `LOG-LIGHT-HOLD-01` | Experimental |
-| RULE-23_RETURN_RAMP_ABORT | Early return to an unstable path | Abort recovery return when instability is detected during ramp | recovery_ramp_v03 | `LOG-RAMP-03` | Experimental |
+| RULE-23_RETURN_RAMP_ABORT | Early return to an unstable path | Abort recovery return when instability is detected during ramp | recovery_ramp_v03 / soft_abort_hold_and_reobserve / hard_abort_ramp_down / emergency_cut_no_fallback / two_path_degraded_abort | `LOG-RAMP-03`; `LOG-ABORT-01` | Experimental |
 | RULE-24_RETURN_RAMP_COMPLETE | Ambiguous recovery completion condition | Confirm completion of progressive reintegration | recovery_ramp_v03 | `LOG-RAMP-03` | Experimental |
 | RULE-25_RETURN_RAMP_START | Abrupt full traffic return immediately after recovery | Start progressive return ramp | recovery_ramp_v03 | `LOG-RAMP-02` | Experimental |
 
@@ -70,6 +70,10 @@ can be directly confirmed in execution logs.
 | light_false_negative | Confirm LIGHT observation holds the ramp when actual instability is not detected | `LOG-LIGHT-HOLD-01`; `RAW-LIGHT-FN-01` |
 | light_stale_telemetry | Confirm LIGHT observation holds the ramp when telemetry is outdated | `LOG-LIGHT-HOLD-01`; `RAW-LIGHT-ST-01` |
 | light_masked_instability | Confirm LIGHT observation holds the ramp when sparse evidence masks instability | `LOG-LIGHT-HOLD-01`; `RAW-LIGHT-MI-01` |
+| soft_abort_hold_and_reobserve | Confirm SOFT_ABORT holds allocation, increases observation, and triggers Resolver re-evaluation | `LOG-ABORT-01`; `RAW-ABORT-SOFT-01` |
+| hard_abort_ramp_down | Confirm HARD_ABORT ramps down the suspect recovered path and notifies source-side PSC | `LOG-ABORT-01`; `RAW-ABORT-HARD-01` |
+| emergency_cut_no_fallback | Confirm EMERGENCY_CUT excludes the unsafe path and blocks fallback transfer when capacity margin is insufficient | `LOG-ABORT-01`; `RAW-ABORT-EMERG-01` |
+| two_path_degraded_abort | Confirm two-path degraded abort triggers Resolver least-bad arbitration when no safe alternate exists | `LOG-ABORT-01`; `RAW-ABORT-2PATH-01` |
 
 ---
 
@@ -122,6 +126,7 @@ can be directly confirmed in execution logs.
 | RULE-19_RETURN_SWITCH | recovery_return_v02 | STEP 7 | Performs controlled return switch to eligible path | `LOG-RR-01` |
 | RULE-20_RETURN_KEEP | recovery_return_keep | STEP 4 | Keeps current path because return_margin is not met | `LOG-RR-02` |
 | RULE-22_RETURN_RAMP_HOLD | light_false_negative / light_stale_telemetry / light_masked_instability | STEP 0 / STEP 0 / STEP 0 | Holds LIGHT recovery ramp when evidence is false-negative, stale, or masks instability | `RAW-LIGHT-FN-01`; `RAW-LIGHT-ST-01`; `RAW-LIGHT-MI-01`; `LOG-LIGHT-HOLD-01` |
+| RULE-23_RETURN_RAMP_ABORT | soft_abort_hold_and_reobserve / hard_abort_ramp_down / emergency_cut_no_fallback / two_path_degraded_abort | STEP 0 / STEP 0 / STEP 0 / STEP 0 | Aborts the active Return Ramp attempt and applies stabilization, ramp-down, emergency cut, or two-path degraded arbitration according to abort class | `RAW-ABORT-SOFT-01`; `RAW-ABORT-HARD-01`; `RAW-ABORT-EMERG-01`; `RAW-ABORT-2PATH-01`; `LOG-ABORT-01` |
 
 ---
 
@@ -135,7 +140,18 @@ can be directly confirmed in execution logs.
 
 ---
 
-## 8. v0.3 Experimental RULE Integration Candidates
+## 8. Recovery Abort Handling Evidence Details
+
+| Scenario | Scenario File | RULE | Expected Category | Abort Class | Fallback Block Reason | Raw Log | Verified Log | Status |
+|----------|---------------|------|-------------------|-------------|-----------------------|---------|--------------|--------|
+| soft_abort_hold_and_reobserve | `sim/02_controlled/08_recovery_abort_handling/soft_abort_hold_and_reobserve.py` | RULE-23_RETURN_RAMP_ABORT | abort_and_stabilize | SOFT_ABORT | N/A | `RAW-ABORT-SOFT-01` | `LOG-ABORT-01` | Experimental |
+| hard_abort_ramp_down | `sim/02_controlled/08_recovery_abort_handling/hard_abort_ramp_down.py` | RULE-23_RETURN_RAMP_ABORT | hard_abort_ramp_down | HARD_ABORT | N/A | `RAW-ABORT-HARD-01` | `LOG-ABORT-01` | Experimental |
+| emergency_cut_no_fallback | `sim/02_controlled/08_recovery_abort_handling/emergency_cut_no_fallback.py` | RULE-23_RETURN_RAMP_ABORT | emergency_cut_no_fallback | EMERGENCY_CUT | NO_CAPACITY_MARGIN | `RAW-ABORT-EMERG-01` | `LOG-ABORT-01` | Experimental |
+| two_path_degraded_abort | `sim/02_controlled/08_recovery_abort_handling/two_path_degraded_abort.py` | RULE-23_RETURN_RAMP_ABORT | two_path_degraded_arbitration | DEGRADED_ABORT | NO_SAFE_ALTERNATE | `RAW-ABORT-2PATH-01` | `LOG-ABORT-01` | Experimental |
+
+---
+
+## 9. v0.3 Experimental RULE Integration Candidates
 
 | RULE | Classification | Summary | Next |
 |------|----------------|-----------|-----------|
@@ -154,10 +170,11 @@ Notes:
 
 ---
 
-## 9. Log References
+## 10. Log References
 
 - `LOG-DEG-01`: `sim/02_controlled/04_degraded/logs/rcu_decision_v01_degraded_rule_validation_log.md`
 - `LOG-DEG-02`: `sim/02_controlled/04_degraded/logs/rcu_decision_v01_degraded_keep_validation_log.md`
+- `LOG-ABORT-01`: `sim/02_controlled/08_recovery_abort_handling/logs/verified/recovery_abort_stabilization_validation_log.md`
 - `LOG-HOLD-01`: `sim/02_controlled/05_recovery_hold/logs/rcu_decision_v01_recovery_hold_behavior_log.md`
 - `LOG-LIGHT-HOLD-01`: `sim/02_controlled/07_light_observation_stub/logs/verified/light_observation_hold_validation_log.md`
 - `LOG-OSC-01`: `sim/02_controlled/03_oscillation/logs/rcu_decision_v01_oscillation_ecmp_comparison_log.md`
@@ -173,9 +190,13 @@ Notes:
 - `RAW-LIGHT-FN-01`: `sim/02_controlled/07_light_observation_stub/logs/raw/light_false_negative_run.txt`
 - `RAW-LIGHT-ST-01`: `sim/02_controlled/07_light_observation_stub/logs/raw/light_stale_telemetry_run.txt`
 - `RAW-LIGHT-MI-01`: `sim/02_controlled/07_light_observation_stub/logs/raw/light_masked_instability_run.txt`
+- `RAW-ABORT-SOFT-01`: `sim/02_controlled/08_recovery_abort_handling/logs/raw/soft_abort_hold_and_reobserve_run.txt`
+- `RAW-ABORT-HARD-01`: `sim/02_controlled/08_recovery_abort_handling/logs/raw/hard_abort_ramp_down_run.txt`
+- `RAW-ABORT-EMERG-01`: `sim/02_controlled/08_recovery_abort_handling/logs/raw/emergency_cut_no_fallback_run.txt`
+- `RAW-ABORT-2PATH-01`: `sim/02_controlled/08_recovery_abort_handling/logs/raw/two_path_degraded_abort_run.txt`
 
 ---
 
-## 10. Glossary References
+## 11. Glossary References
 
 - `GLOSSARY-LIGHT-EN-01`: `docs/specification/published/glossary/psc_light_observation_glossary_v0.1_en.md`
