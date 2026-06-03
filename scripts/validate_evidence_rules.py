@@ -8,6 +8,7 @@ import sys
 import contextlib
 import importlib.util
 import io
+import re
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -93,6 +94,42 @@ SCENARIOS = (
         expected_rules=("RULE-22_RETURN_RAMP_HOLD",),
         expected_category="hold",
     ),
+    ScenarioCheck(
+        name="soft_abort_hold_and_reobserve",
+        command=(
+            "sim/02_controlled/08_recovery_abort_handling/"
+            "soft_abort_hold_and_reobserve.py",
+        ),
+        expected_rules=("RULE-23_RETURN_RAMP_ABORT",),
+        expected_category="abort_and_stabilize",
+    ),
+    ScenarioCheck(
+        name="hard_abort_ramp_down",
+        command=(
+            "sim/02_controlled/08_recovery_abort_handling/"
+            "hard_abort_ramp_down.py",
+        ),
+        expected_rules=("RULE-23_RETURN_RAMP_ABORT",),
+        expected_category="hard_abort_ramp_down",
+    ),
+    ScenarioCheck(
+        name="emergency_cut_no_fallback",
+        command=(
+            "sim/02_controlled/08_recovery_abort_handling/"
+            "emergency_cut_no_fallback.py",
+        ),
+        expected_rules=("RULE-23_RETURN_RAMP_ABORT",),
+        expected_category="emergency_cut_no_fallback",
+    ),
+    ScenarioCheck(
+        name="two_path_degraded_abort",
+        command=(
+            "sim/02_controlled/08_recovery_abort_handling/"
+            "two_path_degraded_abort.py",
+        ),
+        expected_rules=("RULE-23_RETURN_RAMP_ABORT",),
+        expected_category="two_path_degraded_arbitration",
+    ),
 )
 
 CATEGORY_RULES = {
@@ -143,6 +180,7 @@ def observed_categories(output: str) -> set[str]:
         for category, rules in CATEGORY_RULES.items()
         if any(rule in output for rule in rules)
     }
+    categories.update(re.findall(r"\bcategory=([A-Za-z0-9_]+)", output))
 
     for category, required_rules in CATEGORY_RULE_COMBINATIONS.items():
         if all(rule in output for rule in required_rules):
