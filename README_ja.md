@@ -85,7 +85,7 @@ PSC は単なる高速通信だけを目的としたものではありません�
 | 文書 | 目的 |
 | --- | --- |
 | [QUICK_START_ja.md](QUICK_START_ja.md) | PSC simulation を最小手順で実行し、生成ログを確認する |
-| [Architecture Overview](docs/architecture/psc_architecture_overview_en.md) | PSC Fabric、Resolver、control flow のアーキテクチャ視点 |
+| [Architecture Overview](docs/architecture/psc_architecture_overview_ja.md) | PSC Fabric、Resolver、control flow のアーキテクチャ視点 |
 | [Published Models](docs/specification/published/models/) | routing、control、recovery、trust、telemetry、fabric behavior の参照モデル |
 | [Evidence Matrix](docs/specification/validation/psc_evidence_matrix_v0.1_ja.md) | RULE、シナリオ、ログの検証トレーサビリティ |
 
@@ -323,7 +323,7 @@ PSC は単なるデータ転送システムではありません。
 
 PSC を理解するには、以下から始めてください。
 
-- [Architecture Overview](docs/architecture/psc_architecture_overview_en.md)
+- [Architecture Overview](docs/architecture/psc_architecture_overview_ja.md)
 - [Architecture Map](docs/architecture/psc_architecture_map_v0.1_en.md)
 - [Specification](docs/specification/)
 
