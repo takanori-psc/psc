@@ -1,0 +1,9 @@
+STEP 0
+[SCENARIO] name=soft_abort_hold_and_reobserve abort_class=SOFT_ABORT expected_category=abort_and_stabilize expected_rules=RULE-23_RETURN_RAMP_ABORT
+[STATE] return_ramp=active recovered_path_a_weight=25 stable_path_b_weight=75
+[OBSERVATION] telemetry_conflict=true confidence=reduced conclusively_unsafe=false evidence=suspicious
+[RECOVERY] rule=RULE-23_RETURN_RAMP_ABORT category=abort_and_stabilize abort_class=SOFT_ABORT return_ramp_attempt=aborted immediate_cut=false reason=TELEMETRY_CONFLICT_CONFIDENCE_REDUCTION
+[STABILIZATION] phase=Traffic_Stabilization_Phase entered=true stop_return_ramp_advance=true allocation_action=hold_temporarily recovered_path_a_weight=25 stable_path_b_weight=75
+[OBSERVATION] escalation=requested confidence_action=increase_observation_density target_mode=FULL
+[RESOLVER] re_evaluation=triggered decision_scope=post_abort_stabilization
+[VALIDATION] outcome=PASS category=abort_and_stabilize allocation_unchanged=true observation_escalation=true resolver_re_evaluation=true

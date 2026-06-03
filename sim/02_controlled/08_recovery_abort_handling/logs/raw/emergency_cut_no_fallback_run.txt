@@ -1,0 +1,11 @@
+STEP 0
+[SCENARIO] name=emergency_cut_no_fallback abort_class=EMERGENCY_CUT expected_category=emergency_cut_no_fallback expected_rules=RULE-23_RETURN_RAMP_ABORT
+[STATE] return_ramp=active recovered_path_a_weight=25 stable_path_b_weight=75
+[OBSERVATION] path_a_link_down=true optical_failure=true forwarding_possible=false conclusively_unsafe=true emergency=true
+[FALLBACK] path_b_exists=true path_b_failed=false path_b_capacity_margin=insufficient fallback_transfer_allowed=false fallback_block_reason=NO_CAPACITY_MARGIN
+[RECOVERY] rule=RULE-23_RETURN_RAMP_ABORT category=emergency_cut_no_fallback abort_class=EMERGENCY_CUT return_ramp_attempt=aborted immediate_cut=true reason=LINK_DOWN_OPTICAL_FAILURE_NO_CAPACITY_MARGIN
+[EMERGENCY] emergency_cut=true path_a_excluded=true recovered_path_a_weight=0 stable_path_b_weight=75 dropped_or_blocked_weight=25
+[STABILIZATION] phase=Traffic_Stabilization_Phase entered=false reason=EMERGENCY_CUT_NO_SAFE_TRANSFER
+[RESOLVER] notification=triggered decision_scope=emergency_cut_no_fallback
+[SOURCE] notification=sent action=emergency_throttle_or_stop required=true policy_required=true
+[VALIDATION] outcome=PASS category=emergency_cut_no_fallback immediate_cut=true path_excluded=true fallback_transfer_allowed=false fallback_block_reason=NO_CAPACITY_MARGIN source_emergency_control=true

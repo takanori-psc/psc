@@ -1,0 +1,10 @@
+STEP 0
+[SCENARIO] name=two_path_degraded_abort abort_class=DEGRADED_ABORT expected_category=two_path_degraded_arbitration expected_rules=RULE-23_RETURN_RAMP_ABORT
+[STATE] return_ramp=active recovered_path_a_weight=25 stable_path_b_weight=75 candidate_paths=2 third_path_exists=false
+[OBSERVATION] path_a_instability=true path_b_degraded=true neither_path_fully_safe=true forwarding_possible=true emergency=false
+[FALLBACK] fallback_transfer_allowed=false fallback_block_reason=NO_SAFE_ALTERNATE no_safe_alternate=true
+[RECOVERY] rule=RULE-23_RETURN_RAMP_ABORT category=two_path_degraded_arbitration abort_class=DEGRADED_ABORT return_ramp_attempt=aborted immediate_cut=false reason=TWO_PATH_DEGRADED_NO_SAFE_ALTERNATE
+[STABILIZATION] phase=Traffic_Stabilization_Phase entered=true stop_return_ramp_advance=true allocation_action=hold_for_arbitration recovered_path_a_weight=25 stable_path_b_weight=75
+[RESOLVER] arbitration=triggered decision_scope=two_path_degraded least_bad_selection=true
+[SOURCE] notification=sent action=traffic_reduction_requested policy_required=true
+[VALIDATION] outcome=PASS category=two_path_degraded_arbitration fallback_transfer_allowed=false fallback_block_reason=NO_SAFE_ALTERNATE least_bad_selection=true source_reduction_requested=true
