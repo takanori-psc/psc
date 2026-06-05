@@ -17,8 +17,8 @@ condition is an emergency cut case.
 ## Scope
 
 These scenarios are lightweight validation assets. They do not modify existing
-recovery return simulations and are not yet connected to the validator or
-Evidence Matrix.
+recovery return simulations. They are connected to the validator and tracked in
+the PSC Evidence Matrix as experimental validation scenarios.
 
 ## Structure
 
