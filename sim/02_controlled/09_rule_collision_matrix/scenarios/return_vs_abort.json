@@ -1,0 +1,28 @@
+{
+  "name": "return_vs_abort",
+  "description": "Return Ramp hold collides with an abort condition; abort must win by priority.",
+  "steps": [
+    {
+      "step_id": 0,
+      "state": {
+        "current_path": "A",
+        "return_ramp": "active",
+        "switch_margin": 0.10,
+        "epsilon": 0.05,
+        "ramp_abort_stability": 0.60
+      },
+      "telemetry": {
+        "best_path": "B",
+        "score_gap": 0.12,
+        "conflict": "NONE",
+        "ramp_complete": false,
+        "abort_signal": true,
+        "emergency": false,
+        "telemetry_conflict": true,
+        "confidence": "reduced",
+        "recovered_path_stability": 0.55
+      },
+      "expected_action": "RETURN_RAMP_ABORT"
+    }
+  ]
+}
