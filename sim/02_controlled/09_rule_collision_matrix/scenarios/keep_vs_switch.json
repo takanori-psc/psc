@@ -1,0 +1,25 @@
+{
+  "name": "keep_vs_switch",
+  "description": "RULE-01_KEEP_score and RULE-02_SWITCH_score trigger together; score switch must win by priority.",
+  "steps": [
+    {
+      "step_id": 0,
+      "state": {
+        "current_path": "A",
+        "return_ramp": "inactive",
+        "switch_margin": 0.10,
+        "epsilon": 0.05
+      },
+      "telemetry": {
+        "best_path": "B",
+        "score_gap": 0.12,
+        "keep_score_recommended": true,
+        "conflict": "NONE",
+        "ramp_complete": false,
+        "abort_signal": false,
+        "emergency": false
+      },
+      "expected_action": "SWITCH_TO_B"
+    }
+  ]
+}

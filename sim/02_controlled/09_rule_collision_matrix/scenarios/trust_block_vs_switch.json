@@ -1,0 +1,33 @@
+{
+  "name": "trust_block_vs_switch",
+  "description": "RULE-04_BLOCK_trust collides with score and trust switch candidates; trust block must win by priority.",
+  "steps": [
+    {
+      "step_id": 0,
+      "state": {
+        "current_path": "A",
+        "return_ramp": "inactive",
+        "switch_margin": 0.10,
+        "epsilon": 0.05,
+        "trust_switch_threshold": 0.80,
+        "trust_block_threshold": 0.50
+      },
+      "telemetry": {
+        "best_path": "B",
+        "score_gap": 0.14,
+        "conflict": "NONE",
+        "path_trust": {
+          "A": 0.60,
+          "B": 0.92
+        },
+        "trust_blocked_paths": [
+          "B"
+        ],
+        "ramp_complete": false,
+        "abort_signal": false,
+        "emergency": false
+      },
+      "expected_action": "BLOCK_SWITCH"
+    }
+  ]
+}

@@ -2,7 +2,7 @@
 
 - Scenario name: switch_vs_escalate
 - Description: RULE-02_SWITCH_score and RULE-05_ESCALATE_conflict trigger together; escalation must win by priority.
-- Registered rules: RULE-02_SWITCH_score, RULE-05_ESCALATE_conflict, RULE-22_RETURN_RAMP_HOLD, RULE-23_RETURN_RAMP_ABORT, RULE-24_RETURN_RAMP_COMPLETE
+- Registered rules: RULE-01_KEEP_score, RULE-02_SWITCH_score, RULE-03_SWITCH_trust, RULE-04_BLOCK_trust, RULE-05_ESCALATE_conflict, RULE-22_RETURN_RAMP_HOLD, RULE-23_RETURN_RAMP_ABORT, RULE-24_RETURN_RAMP_COMPLETE
 
 ## Step 0
 

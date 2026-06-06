@@ -49,10 +49,10 @@ class RuleDefinition:
 # as placeholders so the simulator can grow toward full RULE-01 through RULE-24
 # registration without scattering priority literals through rule predicates.
 RULE_PRIORITY_TABLE: dict[str, int | None] = {
-    "RULE-01": None,  # TODO: define rule and priority.
+    "RULE-01_KEEP_score": 20,
     "RULE-02_SWITCH_score": 40,
-    "RULE-03": None,  # TODO: define rule and priority.
-    "RULE-04": None,  # TODO: define rule and priority.
+    "RULE-03_SWITCH_trust": 65,
+    "RULE-04_BLOCK_trust": 80,
     "RULE-05_ESCALATE_conflict": 70,
     "RULE-06": None,  # TODO: define rule and priority.
     "RULE-07": None,  # TODO: define rule and priority.
@@ -91,6 +91,29 @@ def _telemetry(step: dict[str, Any]) -> dict[str, Any]:
     return step.get("telemetry", {})
 
 
+def _path_trust(telemetry: dict[str, Any], path_name: Any) -> float | None:
+    path_trust = telemetry.get("path_trust", {})
+    if not isinstance(path_trust, dict) or path_name not in path_trust:
+        return None
+    return float(path_trust[path_name])
+
+
+def rule_01_keep_score(step: dict[str, Any]) -> RuleResult | None:
+    state = _state(step)
+    telemetry = _telemetry(step)
+    current_path = state.get("current_path")
+
+    if current_path and telemetry.get("keep_score_recommended") is True:
+        return RuleResult(
+            "RULE-01_KEEP_score",
+            "KEEP_CURRENT",
+            rule_priority("RULE-01_KEEP_score"),
+            f"keep_score_recommended=true current_path={current_path}",
+            -1,
+        )
+    return None
+
+
 def rule_02_switch_score(step: dict[str, Any]) -> RuleResult | None:
     state = _state(step)
     telemetry = _telemetry(step)
@@ -105,6 +128,68 @@ def rule_02_switch_score(step: dict[str, Any]) -> RuleResult | None:
             f"SWITCH_TO_{best_path}",
             rule_priority("RULE-02_SWITCH_score"),
             f"score_gap={score_gap:.2f} >= switch_margin={switch_margin:.2f}",
+            -1,
+        )
+    return None
+
+
+def rule_03_switch_trust(step: dict[str, Any]) -> RuleResult | None:
+    state = _state(step)
+    telemetry = _telemetry(step)
+    current_path = state.get("current_path")
+    best_path = telemetry.get("best_path")
+    trust_switch_threshold = float(state.get("trust_switch_threshold", 0.80))
+
+    if not current_path or not best_path or best_path == current_path:
+        return None
+
+    current_trust = _path_trust(telemetry, current_path)
+    best_trust = _path_trust(telemetry, best_path)
+    if current_trust is None or best_trust is None:
+        return None
+
+    if best_trust >= trust_switch_threshold and best_trust > current_trust:
+        return RuleResult(
+            "RULE-03_SWITCH_trust",
+            f"SWITCH_TO_{best_path}",
+            rule_priority("RULE-03_SWITCH_trust"),
+            f"trust[{best_path}]={best_trust:.2f} >= "
+            f"trust_switch_threshold={trust_switch_threshold:.2f} "
+            f"and trust[{best_path}] > trust[{current_path}]={current_trust:.2f}",
+            -1,
+        )
+    return None
+
+
+def rule_04_block_trust(step: dict[str, Any]) -> RuleResult | None:
+    state = _state(step)
+    telemetry = _telemetry(step)
+    current_path = state.get("current_path")
+    best_path = telemetry.get("best_path")
+    trust_block_threshold = float(state.get("trust_block_threshold", 0.50))
+    blocked_paths = telemetry.get("trust_blocked_paths", [])
+
+    if not current_path or not best_path or best_path == current_path:
+        return None
+
+    best_trust = _path_trust(telemetry, best_path)
+    explicit_block = isinstance(blocked_paths, list) and best_path in blocked_paths
+    threshold_block = best_trust is not None and best_trust <= trust_block_threshold
+
+    if explicit_block or threshold_block:
+        reasons = []
+        if explicit_block:
+            reasons.append(f"{best_path} in trust_blocked_paths")
+        if threshold_block:
+            reasons.append(
+                f"trust[{best_path}]={best_trust:.2f} <= "
+                f"trust_block_threshold={trust_block_threshold:.2f}"
+            )
+        return RuleResult(
+            "RULE-04_BLOCK_trust",
+            "BLOCK_SWITCH",
+            rule_priority("RULE-04_BLOCK_trust"),
+            "; ".join(reasons),
             -1,
         )
     return None
@@ -205,7 +290,10 @@ def rule_24_return_ramp_complete(step: dict[str, Any]) -> RuleResult | None:
 # Only implemented rules are active here. Placeholder priority entries above
 # reserve RULE-01 through RULE-24 without evaluating inactive rules.
 RULE_REGISTRY: tuple[RuleDefinition, ...] = (
+    RuleDefinition("RULE-01_KEEP_score", rule_01_keep_score),
     RuleDefinition("RULE-02_SWITCH_score", rule_02_switch_score),
+    RuleDefinition("RULE-03_SWITCH_trust", rule_03_switch_trust),
+    RuleDefinition("RULE-04_BLOCK_trust", rule_04_block_trust),
     RuleDefinition("RULE-05_ESCALATE_conflict", rule_05_escalate_conflict),
     RuleDefinition("RULE-22_RETURN_RAMP_HOLD", rule_22_return_ramp_hold),
     RuleDefinition("RULE-23_RETURN_RAMP_ABORT", rule_23_return_ramp_abort),
