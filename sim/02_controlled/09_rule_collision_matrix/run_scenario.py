@@ -240,12 +240,21 @@ def safe_filename(value: str) -> str:
     return "".join(safe_chars).strip("_") or "unnamed"
 
 
+def markdown_text(value: Any) -> str:
+    return " ".join(str(value).split())
+
+
+def registered_rule_text() -> str:
+    return ", ".join(rule_id for rule_id, _ in RULES)
+
+
 def write_validation_log(
     scenario: dict[str, Any],
     step_results: list[StepResult],
     overall_outcome: str,
 ) -> Path:
     scenario_name = str(scenario.get("name", "unnamed"))
+    description = markdown_text(scenario.get("description", ""))
     log_dir = Path(__file__).resolve().parent / "logs"
     log_dir.mkdir(parents=True, exist_ok=True)
     log_path = log_dir / f"{safe_filename(scenario_name)}_validation_log.md"
@@ -254,8 +263,8 @@ def write_validation_log(
         f"# Validation Log: {scenario_name}",
         "",
         f"- Scenario name: {scenario_name}",
-        f"- Description: {scenario.get('description', '')}",
-        f"- Registered rules: {', '.join(rule_id for rule_id, _ in RULES)}",
+        f"- Description: {description}",
+        f"- Registered rules: {registered_rule_text()}",
         "",
     ]
 

@@ -1,0 +1,24 @@
+{
+  "name": "switch_vs_escalate",
+  "description": "RULE-02_SWITCH_score and RULE-05_ESCALATE_conflict trigger together; escalation must win by priority.",
+  "steps": [
+    {
+      "step_id": 0,
+      "state": {
+        "current_path": "A",
+        "return_ramp": "inactive",
+        "switch_margin": 0.03,
+        "epsilon": 0.05
+      },
+      "telemetry": {
+        "best_path": "B",
+        "score_gap": 0.04,
+        "conflict": "TRUST_CONFLICT",
+        "ramp_complete": false,
+        "abort_signal": false,
+        "emergency": false
+      },
+      "expected_action": "ESCALATE_TO_RESOLVER"
+    }
+  ]
+}
