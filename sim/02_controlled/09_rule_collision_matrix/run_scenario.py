@@ -35,6 +35,54 @@ class StepResult:
     outcome: str
 
 
+@dataclass(frozen=True)
+class RuleDefinition:
+    rule_id: str
+    evaluate: RuleFunc
+
+
+# ============================================================
+# Rule Priority Table
+# ============================================================
+#
+# This table is the single source of priority values. Inactive rules are kept
+# as placeholders so the simulator can grow toward full RULE-01 through RULE-24
+# registration without scattering priority literals through rule predicates.
+RULE_PRIORITY_TABLE: dict[str, int | None] = {
+    "RULE-01": None,  # TODO: define rule and priority.
+    "RULE-02_SWITCH_score": 40,
+    "RULE-03": None,  # TODO: define rule and priority.
+    "RULE-04": None,  # TODO: define rule and priority.
+    "RULE-05_ESCALATE_conflict": 70,
+    "RULE-06": None,  # TODO: define rule and priority.
+    "RULE-07": None,  # TODO: define rule and priority.
+    "RULE-08": None,  # TODO: define rule and priority.
+    "RULE-09": None,  # TODO: define rule and priority.
+    "RULE-10": None,  # TODO: define rule and priority.
+    "RULE-11": None,  # TODO: define rule and priority.
+    "RULE-12": None,  # TODO: define rule and priority.
+    "RULE-13": None,  # TODO: define rule and priority.
+    "RULE-14": None,  # TODO: define rule and priority.
+    "RULE-15": None,  # TODO: define rule and priority.
+    "RULE-16": None,  # TODO: define rule and priority.
+    "RULE-17": None,  # TODO: define rule and priority.
+    "RULE-18": None,  # TODO: define rule and priority.
+    "RULE-19": None,  # TODO: define rule and priority.
+    "RULE-20": None,  # TODO: define rule and priority.
+    "RULE-21": None,  # TODO: define rule and priority.
+    "RULE-22_RETURN_RAMP_HOLD": 50,
+    "RULE-23_RETURN_RAMP_ABORT": 90,
+    "RULE-24_RETURN_RAMP_COMPLETE": 60,
+}
+
+
+def rule_priority(rule_id: str) -> int:
+    priority = RULE_PRIORITY_TABLE.get(rule_id)
+    if priority is None:
+        raise ValueError(f"rule priority is not registered for active rule: {rule_id}")
+    return priority
+
+
 def _state(step: dict[str, Any]) -> dict[str, Any]:
     return step.get("state", {})
 
@@ -55,7 +103,7 @@ def rule_02_switch_score(step: dict[str, Any]) -> RuleResult | None:
         return RuleResult(
             "RULE-02_SWITCH_score",
             f"SWITCH_TO_{best_path}",
-            40,
+            rule_priority("RULE-02_SWITCH_score"),
             f"score_gap={score_gap:.2f} >= switch_margin={switch_margin:.2f}",
             -1,
         )
@@ -73,7 +121,7 @@ def rule_05_escalate_conflict(step: dict[str, Any]) -> RuleResult | None:
         return RuleResult(
             "RULE-05_ESCALATE_conflict",
             "ESCALATE_TO_RESOLVER",
-            70,
+            rule_priority("RULE-05_ESCALATE_conflict"),
             f"{conflict} with score_gap={score_gap:.2f} < epsilon={epsilon:.2f}",
             -1,
         )
@@ -91,7 +139,7 @@ def rule_22_return_ramp_hold(step: dict[str, Any]) -> RuleResult | None:
         return RuleResult(
             "RULE-22_RETURN_RAMP_HOLD",
             "RETURN_RAMP_HOLD",
-            50,
+            rule_priority("RULE-22_RETURN_RAMP_HOLD"),
             "return ramp remains active while completion is not confirmed",
             -1,
         )
@@ -123,7 +171,7 @@ def rule_23_return_ramp_abort(step: dict[str, Any]) -> RuleResult | None:
         return RuleResult(
             "RULE-23_RETURN_RAMP_ABORT",
             "RETURN_RAMP_ABORT",
-            90,
+            rule_priority("RULE-23_RETURN_RAMP_ABORT"),
             "; ".join(abort_reasons),
             -1,
         )
@@ -143,29 +191,35 @@ def rule_24_return_ramp_complete(step: dict[str, Any]) -> RuleResult | None:
         return RuleResult(
             "RULE-24_RETURN_RAMP_COMPLETE",
             "RETURN_RAMP_COMPLETE",
-            60,
+            rule_priority("RULE-24_RETURN_RAMP_COMPLETE"),
             "ramp_complete=true and no abort condition is active",
             -1,
         )
     return None
 
 
-RULES: tuple[tuple[str, RuleFunc], ...] = (
-    ("RULE-02_SWITCH_score", rule_02_switch_score),
-    ("RULE-05_ESCALATE_conflict", rule_05_escalate_conflict),
-    ("RULE-22_RETURN_RAMP_HOLD", rule_22_return_ramp_hold),
-    ("RULE-23_RETURN_RAMP_ABORT", rule_23_return_ramp_abort),
-    ("RULE-24_RETURN_RAMP_COMPLETE", rule_24_return_ramp_complete),
+# ============================================================
+# RULE_REGISTRY
+# ============================================================
+#
+# Only implemented rules are active here. Placeholder priority entries above
+# reserve RULE-01 through RULE-24 without evaluating inactive rules.
+RULE_REGISTRY: tuple[RuleDefinition, ...] = (
+    RuleDefinition("RULE-02_SWITCH_score", rule_02_switch_score),
+    RuleDefinition("RULE-05_ESCALATE_conflict", rule_05_escalate_conflict),
+    RuleDefinition("RULE-22_RETURN_RAMP_HOLD", rule_22_return_ramp_hold),
+    RuleDefinition("RULE-23_RETURN_RAMP_ABORT", rule_23_return_ramp_abort),
+    RuleDefinition("RULE-24_RETURN_RAMP_COMPLETE", rule_24_return_ramp_complete),
 )
 
 
 def evaluate_rules(step: dict[str, Any]) -> list[RuleResult]:
     triggered: list[RuleResult] = []
-    for index, (rule_id, rule_func) in enumerate(RULES):
-        result = rule_func(step)
+    for index, rule in enumerate(RULE_REGISTRY):
+        result = rule.evaluate(step)
         if result is not None:
-            if result.rule_id != rule_id:
-                raise ValueError(f"rule registry mismatch: {rule_id} returned {result.rule_id}")
+            if result.rule_id != rule.rule_id:
+                raise ValueError(f"rule registry mismatch: {rule.rule_id} returned {result.rule_id}")
             triggered.append(
                 RuleResult(
                     result.rule_id,
@@ -245,7 +299,7 @@ def markdown_text(value: Any) -> str:
 
 
 def registered_rule_text() -> str:
-    return ", ".join(rule_id for rule_id, _ in RULES)
+    return ", ".join(rule.rule_id for rule in RULE_REGISTRY)
 
 
 def write_validation_log(
@@ -288,7 +342,7 @@ def write_validation_log(
 def run_scenario(scenario: dict[str, Any]) -> bool:
     print(f"SCENARIO {scenario.get('name', 'unnamed')}")
     print(f"DESCRIPTION {scenario.get('description', '')}")
-    print(f"REGISTERED_RULES {', '.join(rule_id for rule_id, _ in RULES)}")
+    print(f"REGISTERED_RULES {registered_rule_text()}")
     print()
 
     all_passed = True
