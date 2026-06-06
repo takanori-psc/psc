@@ -15,6 +15,20 @@ from typing import Any, Callable
 
 RuleFunc = Callable[[dict[str, Any]], "RuleResult | None"]
 
+BASE_DIR = Path(__file__).resolve().parent
+SCENARIO_DIR = BASE_DIR / "scenarios"
+SCENARIO_ALIASES: dict[str, str] = {
+    "abort": "return_vs_abort",
+    "return": "return_vs_abort",
+    "return_abort": "return_vs_abort",
+    "escalate": "switch_vs_escalate",
+    "switch_escalate": "switch_vs_escalate",
+    "keep": "keep_vs_switch",
+    "keep_switch": "keep_vs_switch",
+    "trust_block": "trust_block_vs_switch",
+    "block": "trust_block_vs_switch",
+}
+
 
 @dataclass(frozen=True)
 class RuleResult:
@@ -337,6 +351,54 @@ def load_scenario(path: Path) -> dict[str, Any]:
     return scenario
 
 
+def list_scenario_files() -> list[Path]:
+    return sorted(SCENARIO_DIR.glob("*.json"))
+
+
+def scenario_name_from_path(path: Path) -> str:
+    try:
+        return str(load_scenario(path).get("name", path.stem))
+    except (OSError, json.JSONDecodeError, ValueError):
+        return path.stem
+
+
+def scenario_aliases_for(name: str) -> list[str]:
+    aliases = [alias for alias, target in SCENARIO_ALIASES.items() if target == name]
+    return sorted(aliases)
+
+
+def print_scenario_list() -> None:
+    print("SCENARIOS")
+    for index, path in enumerate(list_scenario_files(), start=1):
+        name = scenario_name_from_path(path)
+        aliases = scenario_aliases_for(name)
+        alias_text = f" aliases={', '.join(aliases)}" if aliases else ""
+        print(f"{index}. {name} path={path}{alias_text}")
+
+
+def resolve_scenario_path(selector: str) -> Path:
+    candidate = Path(selector)
+    if candidate.exists():
+        return candidate
+
+    scenario_files = list_scenario_files()
+    if selector.isdigit():
+        scenario_index = int(selector)
+        if 1 <= scenario_index <= len(scenario_files):
+            return scenario_files[scenario_index - 1]
+        raise ValueError(f"scenario number out of range: {selector}")
+
+    normalized = selector[:-5] if selector.endswith(".json") else selector
+    normalized = SCENARIO_ALIASES.get(normalized, normalized)
+
+    for path in scenario_files:
+        scenario_name = scenario_name_from_path(path)
+        if normalized in (path.stem, scenario_name):
+            return path
+
+    raise ValueError(f"unknown scenario: {selector}")
+
+
 def print_rule_list(label: str, rules: list[RuleResult]) -> None:
     if not rules:
         print(f"{label}: none")
@@ -397,7 +459,7 @@ def write_validation_log(
 ) -> Path:
     scenario_name = str(scenario.get("name", "unnamed"))
     description = markdown_text(scenario.get("description", ""))
-    log_dir = Path(__file__).resolve().parent / "logs"
+    log_dir = BASE_DIR / "logs"
     log_dir.mkdir(parents=True, exist_ok=True)
     log_path = log_dir / f"{safe_filename(scenario_name)}_validation_log.md"
 
@@ -470,10 +532,20 @@ def run_scenario(scenario: dict[str, Any]) -> bool:
 
 def main(argv: list[str]) -> int:
     if len(argv) != 2:
-        print(f"usage: {argv[0]} <scenario.json>", file=sys.stderr)
+        print(f"usage: {argv[0]} <scenario.json|scenario-name|alias|number|--list>", file=sys.stderr)
         return 2
 
-    scenario = load_scenario(Path(argv[1]))
+    if argv[1] == "--list":
+        print_scenario_list()
+        return 0
+
+    try:
+        scenario_path = resolve_scenario_path(argv[1])
+    except ValueError as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
+
+    scenario = load_scenario(scenario_path)
     return 0 if run_scenario(scenario) else 1
 
 
