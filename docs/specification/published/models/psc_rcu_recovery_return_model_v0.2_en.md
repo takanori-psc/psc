@@ -280,9 +280,15 @@ but recovery return logic remains in the decision layer.
 - RULE-18_RETURN_ELIGIBLE
 - RULE-19_RETURN_SWITCH
 - RULE-20_RETURN_KEEP
-- RULE-21_RETURN_ESCALATE
+- RULE-21_RETURN_ESCALATE (Legacy Concept)
 
 Rule names are provisional and may be refined during implementation.
+
+`RULE-21_RETURN_ESCALATE` is retained here only as a legacy conceptual label
+from the v0.2 recovery-return design. It is not an operational RULE identifier.
+Operational ownership of the `RULE-21` number is unified under
+`RULE-21_RETURN_RAMP_ADVANCE` in the current Evidence Matrix / validation
+namespace.
 
 ---
 

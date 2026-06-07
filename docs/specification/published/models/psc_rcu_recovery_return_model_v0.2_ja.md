@@ -274,9 +274,14 @@ recovery return の判断ロジック自体は decision layer に属する。
 - RULE-18_RETURN_ELIGIBLE
 - RULE-19_RETURN_SWITCH
 - RULE-20_RETURN_KEEP
-- RULE-21_RETURN_ESCALATE
+- RULE-21_RETURN_ESCALATE（Legacy Concept）
 
 ルール名は仮であり、実装時に調整可能とする。
+
+`RULE-21_RETURN_ESCALATE` は、v0.2 recovery-return design に由来する
+legacy conceptual label としてのみ保持する。これは運用上の RULE identifier
+ではない。`RULE-21` 番号の運用上の所有権は、現在の Evidence Matrix /
+validation namespace における `RULE-21_RETURN_RAMP_ADVANCE` に一本化する。
 
 ---
 
