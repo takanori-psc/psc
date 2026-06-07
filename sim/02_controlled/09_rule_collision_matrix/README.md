@@ -9,6 +9,14 @@ The runner evaluates every registered rule for each scenario step, records all
 triggered rules, and resolves the final action by priority. This makes priority
 behavior visible instead of hiding it inside one large decision branch.
 
+This collision matrix is a partial arbitration model, not a complete PSC-wide
+rule arbitration engine. Current active collision coverage focuses on core
+keep/switch/trust/block/escalation rules and recovery ramp hold/abort/complete
+rules. Many PSC recovery, resolver, and degraded-mode rules in the `RULE-06`
+through `RULE-21` range are active elsewhere in PSC evidence and logs, but their
+collision arbitration predicates and priorities are not yet integrated here.
+Integrating those recovery/resolver/degraded rules remains future work.
+
 ## Flow
 
 1. Load a JSON scenario.
@@ -26,7 +34,10 @@ Ties are resolved by rule registry order so output is deterministic.
 
 ## Registered Rules
 
+- `RULE-01_KEEP_score`
 - `RULE-02_SWITCH_score`
+- `RULE-03_SWITCH_trust`
+- `RULE-04_BLOCK_trust`
 - `RULE-05_ESCALATE_conflict`
 - `RULE-22_RETURN_RAMP_HOLD`
 - `RULE-23_RETURN_RAMP_ABORT`
