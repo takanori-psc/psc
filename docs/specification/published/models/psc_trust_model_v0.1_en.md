@@ -561,9 +561,39 @@ helps PSC reduce instability
 caused by excessive dependence
 on single indicators.
 
+## 4.1 Trust Score and Trust Block
+
+This model follows the layered decision structure defined in the
+PSC RCU Decision Model v0.1.
+
+`trust_score` and `trust_block` are separate concepts.
+
+- `trust_score`
+  is a preference or penalty factor used by normal scoring supplements,
+  Resolver selection, and Recovery selection.
+
+- `trust_block`
+  is a hard exclusion condition applied during Eligibility. A path may be
+  blocked when it falls below the trust threshold or when a severe violation
+  is detected.
+
+Trust is not limited to static authentication or verification state.
+It may change dynamically in response to Trust Events.
+
+Examples of Trust Events include:
+
+- authentication failure
+- policy violation
+- signature mismatch
+- abnormal communication
+- attack indicators
+
+Regulatory violation risk is treated as a policy violation and is included in
+trust and policy evaluation.
+
 ---
 
-## 4.1 Evaluation Sources
+## 4.2 Evaluation Sources
 
 PSC uses multiple evaluation sources
 to determine trust conditions.
@@ -613,7 +643,7 @@ to maintain overall system stability.
 
 ---
 
-## 4.2 Cross-validation
+## 4.3 Cross-validation
 
 PSC does not treat
 a single evaluation source

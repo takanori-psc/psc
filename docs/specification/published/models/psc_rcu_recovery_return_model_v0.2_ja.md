@@ -215,7 +215,30 @@ Return eligibility は selection を強制しない。
 現在の selected path が安定かつ信頼可能である限り、
 PSC は安易に切り戻さない。
 
-### 12.2 Controlled Return
+### 12.2 Return Score の分離
+
+Recovery return は、PSC RCU Decision Model v0.1 の Layer 4 に従う。
+復帰判断では、通常時の `FinalScore` ではなく `ReturnScore` を使用する。
+
+```text
+ReturnScore(path) =
+  Wret_stability * StabilityScore(path) +
+  Wret_trust * TrustScore(path) +
+  Wret_performance * PerformanceScore(path)
+
+where Wret_stability > Wret_trust > Wret_performance
+```
+
+`ReturnScore` は、validation 済み recovery candidate を復帰させてよいかを
+判断するための score である。
+通常候補選択用の `FinalScore` とは分離する。
+v0.1 / v0.2 の中核的な `FinalScore` は、congestion の低さと performance を
+基本構成とする。
+
+trust threshold、policy compliance、verification state、`trust_block` は
+eligibility 条件であり、return scoring の前に評価する。
+
+### 12.3 Controlled Return
 
 RETURN_ELIGIBLE の経路は、以下を満たす場合のみ選択可能とする。
 
@@ -224,7 +247,7 @@ RETURN_ELIGIBLE の経路は、以下を満たす場合のみ選択可能とす�
 - stability risk が許容範囲内
 - policy 制約が再参加を許可する
 
-### 12.3 曖昧ケース
+### 12.4 曖昧ケース
 
 回復経路が eligible であっても判断が曖昧な場合、
 Resolver へエスカレーションできる。

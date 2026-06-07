@@ -539,7 +539,38 @@ PSCは単一指標依存による
 
 ---
 
-## 4.1 Evaluation Sources
+## 4.1 Trust Score と Trust Block
+
+本モデルは、PSC RCU Decision Model v0.1 で定義される
+4層 decision structure に従う。
+
+`trust_score` と `trust_block` は分離する。
+
+- `trust_score`
+  通常 score の補助、Resolver selection、Recovery selection で使う
+  選好または減点要素である。
+
+- `trust_block`
+  Eligibility で適用される hard exclusion 条件である。
+  trust threshold 未満、または重大違反検出時に path を除外する。
+
+Trust は静的な認証状態や検証状態だけで決まらない。
+動的な Trust Event によって変化し得る。
+
+Trust Event の例:
+
+- authentication failure
+- policy violation
+- signature mismatch
+- abnormal communication
+- attack indicators
+
+規制違反リスクは policy violation として扱い、
+trust / policy 判定に含める。
+
+---
+
+## 4.2 Evaluation Sources
 
 PSCでは、
 複数の評価情報源を利用して
@@ -587,7 +618,7 @@ Isolation controlなどが
 
 ---
 
-## 4.2 Cross-validation
+## 4.3 Cross-validation
 
 PSCでは、
 単一評価情報のみを

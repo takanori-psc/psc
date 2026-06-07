@@ -85,7 +85,7 @@ can be directly confirmed in execution logs.
 |------|---------|
 | RULE-01_KEEP_score | Keep the current path when the score gap or improvement is small |
 | RULE-02_SWITCH_score | Switch to the best path when score_gap reaches switch_threshold |
-| RULE-04_BLOCK_trust | Block switching to a trust-blocked or below-threshold path; this safety block has priority over score- and trust-driven switch candidates |
+| RULE-04_BLOCK_trust | Block switching when either explicit trust_block or below-threshold trust is detected. These are separate causes, but both produce the same safety outcome: block the switch before score- or trust-driven switch candidates can win |
 | RULE-05_ESCALATE_conflict | Delegate the decision to the Resolver when trust / stability / score conflicts occur |
 | RULE-07_DEGRADE_trigger | Transition to DEGRADED when the currently selected path is rejected or invalid |
 | RULE-08_DEGRADE_keep | In DEGRADED mode, keep the current fallback path if it remains maintainable |

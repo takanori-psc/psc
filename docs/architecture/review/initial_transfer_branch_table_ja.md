@@ -114,7 +114,7 @@ historical v0.3 LIGHT advance logs は現在の LIGHT policy ではない。
 | NORMAL_TRANSFER / initial forwarding state | 現在経路を維持する。score improvement が hysteresis / switch threshold に届かない | RULE-01_KEEP_score | NORMAL_TRANSFER | Verified keep rule |
 | NORMAL_TRANSFER / initial forwarding state | ローカルスコアが明確に優位で、trust block や escalation が不要 | RULE-02_SWITCH_score | NORMAL_TRANSFER | Verified local switch rule |
 | NORMAL_TRANSFER / initial forwarding state | trust により switch 候補経路が選好される | RULE-03_SWITCH_trust | NORMAL_TRANSFER | collision matrix 上では active。ただし final-action 専用 coverage がないため Verified 昇格は保留 |
-| NORMAL_TRANSFER / initial forwarding state | score / trust switch 候補経路が unsafe または trust-blocked path を指す | RULE-04_BLOCK_trust | NORMAL_TRANSFER / BLOCK_SWITCH | Verified safety block。`RULE-02_SWITCH_score` と `RULE-03_SWITCH_trust` より優先され、`BLOCK_SWITCH` を生成する |
+| NORMAL_TRANSFER / initial forwarding state | score / trust switch 候補経路が unsafe、explicit trust-blocked、または trust threshold 未満の path を指す | RULE-04_BLOCK_trust | NORMAL_TRANSFER / BLOCK_SWITCH | Verified safety block。explicit trust_block と trust threshold 未満は別原因だが、どちらも `BLOCK_SWITCH` を生成し、`RULE-02_SWITCH_score` と `RULE-03_SWITCH_trust` より優先される |
 | NORMAL_TRANSFER / initial forwarding state | trust / stability / score の conflict または ambiguity があり local action で決めない | RULE-05_ESCALATE_conflict | RESOLVER_REVIEW | Verified escalation rule |
 | NORMAL_TRANSFER / initial forwarding state | 選択済み / 現在経路が invalid、または利用可能な信頼済み経路がない | RULE-07_DEGRADE_trigger | DEGRADED | Verified degrade entry rule |
 

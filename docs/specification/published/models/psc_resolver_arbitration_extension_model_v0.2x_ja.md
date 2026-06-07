@@ -59,6 +59,34 @@ stability_gap = |stability_score(best) - stability_score(selected)|
 - trust / stability / recovery条件を含めて仲裁する
 - keep / switch の最終決定を返す
 
+## Resolver Score 優先
+
+本拡張は、PSC RCU Decision Model v0.1 で定義される
+4層 decision structure に従う。
+
+Resolver Active 時は、通常時の `final_score` ではなく
+`resolver_score` を優先する。
+
+```text
+resolver_score =
+  Wr_trust * trust_score +
+  Wr_stability * stability_score +
+  Wr_performance * performance_score
+
+where Wr_trust > Wr_stability > Wr_performance
+```
+
+trust threshold 未満の path、`trust_block` された path、
+hard policy / verification failure を持つ path は、
+`resolver_score` 比較の前に除外する。
+
+Resolver Active 条件には以下が含まれる。
+
+- trust conflict
+- stability degradation
+- ambiguous score result
+- `RULE-05` / `RULE-06` / `RULE-14` など Resolver 関連 rule の発動
+
 ---
 
 ## 仲裁フロー

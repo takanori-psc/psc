@@ -85,7 +85,7 @@
 |------|---------|
 | RULE-01_KEEP_score | score 差または改善幅が小さい場合、現行 path を維持する |
 | RULE-02_SWITCH_score | score_gap が switch_threshold に達した場合、best path へ切り替える |
-| RULE-04_BLOCK_trust | trust block または trust threshold 未満の path への切替を禁止する。この safety block は score / trust による switch candidate より優先される |
+| RULE-04_BLOCK_trust | explicit trust_block または trust threshold 未満を検出した場合に切替を禁止する。これらは別原因だが、結果はいずれも同じ safety outcome として、score / trust による switch candidate より先に switch を block する |
 | RULE-05_ESCALATE_conflict | trust / stability / score の競合がある場合、Resolver に判断を委譲する |
 | RULE-07_DEGRADE_trigger | 現在選択中の path が reject / invalid になった場合、DEGRADED へ遷移する |
 | RULE-08_DEGRADE_keep | DEGRADED 中でも、現在の fallback path が維持可能なら切替しない |

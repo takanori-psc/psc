@@ -179,7 +179,26 @@ RCU は現在時刻との差分（Age）で評価する。
 
 ### 7.3 Stability Score
 
-変動性を表す。
+観測履歴から導出される安定性を表す。
+
+`stability_score` は単一サンプルから得られる瞬間値ではない。
+以下のような観測履歴から算出する。
+
+- variance
+- trend
+- duration
+
+```text
+instability = f(variance, trend, duration)
+stability_score = 1 - instability
+```
+
+stability 評価に使う観測値には timestamp を持たせる。
+実装上は Observation 側の ring buffer または time window により、
+必要な観測履歴を保持する前提とする。
+
+具体的な window 秒数やサンプル数は固定しない。
+configurable parameter として扱う。
 
 ---
 

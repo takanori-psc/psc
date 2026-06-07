@@ -222,7 +222,29 @@ Return eligibility does not force selection.
 If the currently selected path remains stable and trusted,
 PSC does not switch back aggressively.
 
-### 12.2 Controlled Return
+### 12.2 Return Score Separation
+
+Recovery return follows Layer 4 of the PSC RCU Decision Model v0.1.
+The return decision uses `return_score`, not the normal `final_score`.
+
+```text
+return_score =
+  Wret_stability * stability_score +
+  Wret_trust * trust_score +
+  Wret_performance * performance_score
+
+where Wret_stability > Wret_trust > Wret_performance
+```
+
+`return_score` is used to decide whether a validated recovery candidate may
+return. It is separate from the normal candidate selection `final_score`, whose
+core v0.1/v0.2 role is normal selection based on congestion benefit and
+performance.
+
+Trust threshold, policy compliance, verification state, and `trust_block`
+remain eligibility conditions and must be evaluated before return scoring.
+
+### 12.3 Controlled Return
 
 A RETURN_ELIGIBLE path may be selected only if:
 
@@ -231,7 +253,7 @@ A RETURN_ELIGIBLE path may be selected only if:
 - stability risk is acceptable
 - policy constraints permit re-entry
 
-### 12.3 Ambiguous Case
+### 12.4 Ambiguous Case
 
 If the recovered path is eligible but the return decision remains ambiguous,
 the case may be escalated to Resolver.

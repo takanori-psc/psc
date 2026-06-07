@@ -59,6 +59,34 @@ stability_gap = |stability_score(best) - stability_score(selected)|
 - Arbitrate using trust / stability / recovery conditions
 - Return the final keep / switch decision
 
+## Resolver Score Priority
+
+This extension follows the layered decision structure defined in the
+PSC RCU Decision Model v0.1.
+
+When Resolver is active, the Resolver must prioritize `resolver_score` rather
+than the normal `final_score`.
+
+```text
+resolver_score =
+  Wr_trust * trust_score +
+  Wr_stability * stability_score +
+  Wr_performance * performance_score
+
+where Wr_trust > Wr_stability > Wr_performance
+```
+
+Paths below the trust threshold, paths blocked by `trust_block`, and paths with
+hard policy or verification failures must be excluded before `resolver_score`
+comparison.
+
+Resolver active conditions include:
+
+- trust conflict
+- stability degradation
+- ambiguous score result
+- Resolver-related rule activation such as `RULE-05`, `RULE-06`, or `RULE-14`
+
 ---
 
 ## Arbitration Flow

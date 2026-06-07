@@ -6,6 +6,103 @@ Operational `RULE-*` IDs are defined by the current Evidence Matrix / validation
 The `STEP-*` IDs in this published model describe internal RCU processing stages only and
 must not be treated as operational rule identifiers.
 
+This document clarifies the PSC score model and resolver priority logic without changing
+existing `RULE-*` ownership, verified evidence, or simulation logs.
+
+---
+
+## 0. Layered Decision Structure
+
+PSC path decisions are organized into four layers. The layers are evaluated in order,
+and later layers must not re-admit a path that failed a hard exclusion in an earlier layer.
+
+| Layer | Name | Primary criteria | Purpose |
+|-------|------|------------------|---------|
+| Layer 1 | Eligibility | trust threshold, policy compliance, verification state, `trust_block` | Exclude paths that must not participate in selection |
+| Layer 2 | Normal Selection | `final_score` from congestion benefit and performance | Select normal candidates during non-ambiguous operation |
+| Layer 3 | Resolver Selection | `resolver_score` from trust, stability, and performance | Select or keep a path when Resolver is active |
+| Layer 4 | Recovery Selection | `return_score` from stability, trust, and performance | Decide controlled return after recovery validation |
+
+### 0.1 Eligibility
+
+Eligibility is evaluated before scoring.
+
+- Paths below the trust threshold are excluded.
+- Paths with policy violations, failed verification state, invalid health, or `trust_block`
+  are excluded from normal selection.
+- Regulatory violation risk is treated as a policy violation for trust and policy evaluation.
+- `trust_score` and `trust_block` are separate concepts:
+  - `trust_score` is a preference or penalty factor.
+  - `trust_block` is a hard exclusion condition below threshold or after severe violation.
+
+### 0.2 Normal Selection Score
+
+`final_score` is the normal candidate selection score.
+
+```text
+final_score =
+  Wc * (1 - congestion_score) +
+  Wp * performance_score
+```
+
+`stability_score` is not a primary component of the normal `final_score` in this clarified
+v0.1/v0.2 decision model. Stability remains important for hysteresis, eligibility,
+Resolver activation, Resolver arbitration, and Recovery return.
+
+`cost_score` and `power_score` are optional future extensions. They are not part of the
+core v0.1/v0.2 `final_score` decision.
+
+### 0.3 Stability Score
+
+`stability_score` is derived from observation history, not a single instantaneous sample.
+
+```text
+instability = f(variance, trend, duration)
+stability_score = 1 - instability
+```
+
+Observation records used for stability evaluation must carry timestamps. Implementations are
+expected to evaluate stability through an Observation-side ring buffer or time window. The
+window length is a configurable parameter and is not fixed by this model.
+
+### 0.4 Resolver Score
+
+When Resolver is active, Resolver selection prioritizes `resolver_score`, not `final_score`.
+
+Resolver active conditions include, but are not limited to:
+
+- trust conflict
+- stability degradation
+- ambiguous score result
+- Resolver-related rule activation such as `RULE-05`, `RULE-06`, or `RULE-14`
+
+```text
+resolver_score =
+  Wr_trust * trust_score +
+  Wr_stability * stability_score +
+  Wr_performance * performance_score
+
+where Wr_trust > Wr_stability > Wr_performance
+```
+
+Paths below the trust threshold are excluded before `resolver_score` comparison.
+
+### 0.5 Return Score
+
+Recovery return uses `return_score`, which is separate from normal `final_score`.
+
+```text
+return_score =
+  Wret_stability * stability_score +
+  Wret_trust * trust_score +
+  Wret_performance * performance_score
+
+where Wret_stability > Wret_trust > Wret_performance
+```
+
+`return_score` is a recovery return decision score. It must not be treated as the normal
+candidate selection score.
+
 ---
 
 ## 1. Path Validity Steps
@@ -17,6 +114,9 @@ Paths that do not satisfy the minimum trust or health requirements must not be c
 - Condition:
 
   - `trust < trust_threshold`
+  - `trust_block == true`
+  - `policy_violation == true`
+  - `verification_state == failed`
   - `health == 0`
 - Action:
 

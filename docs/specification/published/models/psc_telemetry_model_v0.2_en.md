@@ -179,7 +179,26 @@ Represents the state of a node.
 
 ### 7.3 Stability Score
 
-Represents variability.
+Represents stability derived from observation history.
+
+`stability_score` is not an instantaneous value from a single sample.
+It is computed from historical observations such as:
+
+- variance
+- trend
+- duration
+
+```text
+instability = f(variance, trend, duration)
+stability_score = 1 - instability
+```
+
+Each observation used for stability evaluation must carry a timestamp.
+Implementations are expected to maintain the required observation history on the
+Observation side through a ring buffer or time window.
+
+The concrete window length is a configurable parameter. This model does not fix
+the number of seconds or samples.
 
 ---
 

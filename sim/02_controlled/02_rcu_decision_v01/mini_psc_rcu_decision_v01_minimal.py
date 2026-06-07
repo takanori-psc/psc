@@ -1,4 +1,11 @@
 # mini_psc_rcu_decision_v01_minimal.py
+#
+# Historical/minimal validation model.
+# This file preserves the original minimal scoring behavior for reproducibility.
+# In the current clarified score model, stability is not a primary component of
+# normal final_score; it is handled by hysteresis, eligibility, Resolver, and
+# Recovery logic. Do not infer the current score definition from this minimal
+# validation script.
 
 import math
 
@@ -83,6 +90,8 @@ def stability_score(p):
 
 
 def final_score(p):
+    # Historical behavior: this minimal script includes stability in final_score.
+    # Keep this unchanged so existing validation output remains reproducible.
     cong = 1 - congestion_score(p)
     perf = performance_score(p)
     stab = stability_score(p)

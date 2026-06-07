@@ -116,26 +116,26 @@ PSC evaluates multiple route dimensions:
 - policy compatibility;
 - telemetry confidence.
 
-The baseline RCU decision model uses:
+The clarified baseline RCU decision model uses `FinalScore` for normal
+candidate selection. Its core components are congestion benefit and
+performance:
 
 ```text
 CongestionBenefit(path) = 1 - CongestionScore(path)
 
 FinalScore(path) =
   Wc * CongestionBenefit(path) +
-  Wp * PerformanceScore(path) +
-  Ws * StabilityScore(path)
+  Wp * PerformanceScore(path)
 ```
 
-Initial weights are:
+`Wc` and `Wp` are implementation parameters. They are not fixed constants
+of the architecture.
 
-```text
-Wc = 0.4
-Wp = 0.3
-Ws = 0.3
-```
-
-The exact coefficients are implementation parameters. The key architectural principle is that performance is not the only determinant.
+`StabilityScore` is not a primary component of the normal `FinalScore`.
+Instead, PSC treats stability as a control signal for hysteresis,
+eligibility, Resolver arbitration, and Recovery return decisions. The key
+architectural principle is that performance is not the only determinant, even
+when normal candidate ranking is based on congestion benefit and performance.
 
 ### 5.3 Best Path vs. Selected Path
 
@@ -487,4 +487,3 @@ This draft is derived from the PSC specification documents in the repository, in
 - PSC Transfer Flow v0.1
 - PSC Address Format v0.1
 - PSC Fabric Packet Structure v0.1
-
