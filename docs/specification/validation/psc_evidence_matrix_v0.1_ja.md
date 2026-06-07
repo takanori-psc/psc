@@ -19,6 +19,7 @@
 |------|------|----------|----------|----------|------|
 | RULE-01_KEEP_score | 小さな score 変動による不要切替 | hysteresis による安定経路維持 | stable / degraded / recovery_hold | `LOG-DEG-01` | Verified |
 | RULE-02_SWITCH_score | 明確な score 優位があるにもかかわらず切替されない危険 | score_gap が switch_threshold に達した場合に best path へ切替 | switch_score | `LOG-SW-01` | Verified |
+| RULE-04_BLOCK_trust | trust block された path への危険な切替 | score または trust-switch rule が切替を選好しても unsafe switch candidate を block する | trust_block_vs_switch | `LOG-TRUST-BLOCK-01` | Verified |
 | RULE-05_ESCALATE_conflict | trust / stability / score 競合による曖昧判断 | Resolver へ仲裁要求 | oscillation / resolver_switch | `LOG-RES-01` | Verified |
 | RULE-07_DEGRADE_trigger | 選択中 path の trust 低下または invalid 化 | NORMAL から DEGRADED への安全側遷移 | degraded | `LOG-DEG-01` | Verified |
 | RULE-08_DEGRADE_keep | DEGRADED 中の不要な fallback 切替 | degraded mode でも安定 path を維持 | degraded_keep | `LOG-DEG-02` | Verified |
@@ -58,6 +59,7 @@
 |----------|---------|----------|
 | stable | 通常時の KEEP / SWITCH 抑制確認 | `LOG-DEG-01` |
 | switch_score | threshold 未満の RULE-01 keep と threshold 到達時の RULE-02 switch 確認 | `LOG-SW-01` |
+| trust_block_vs_switch | RULE-04 trust block が RULE-02 score switch および RULE-03 trust switch より優先され、BLOCK_SWITCH になることを確認 | `LOG-TRUST-BLOCK-01` |
 | oscillation | ECMP 的な score 追従と比較した oscillation 抑制確認 | `LOG-OSC-01` |
 | resolver_switch | trust / stability 競合時の Resolver 主導切替確認 | `LOG-RES-01` |
 | degraded | trust 低下時の DEGRADED 遷移と fallback 確認 | `LOG-DEG-01` |
@@ -83,6 +85,7 @@
 |------|---------|
 | RULE-01_KEEP_score | score 差または改善幅が小さい場合、現行 path を維持する |
 | RULE-02_SWITCH_score | score_gap が switch_threshold に達した場合、best path へ切り替える |
+| RULE-04_BLOCK_trust | trust block または trust threshold 未満の path への切替を禁止する。この safety block は score / trust による switch candidate より優先される |
 | RULE-05_ESCALATE_conflict | trust / stability / score の競合がある場合、Resolver に判断を委譲する |
 | RULE-07_DEGRADE_trigger | 現在選択中の path が reject / invalid になった場合、DEGRADED へ遷移する |
 | RULE-08_DEGRADE_keep | DEGRADED 中でも、現在の fallback path が維持可能なら切替しない |
@@ -111,6 +114,7 @@
 |------|----------|---------------|---------------|--------------|
 | RULE-01_KEEP_score | stable / degraded_recovery / resolver_switch | STEP 1 / STEP 6 / STEP 2 | 小幅改善や cooldown 中の不要切替を hysteresis で抑制 | `LOG-SW-01`; `LOG-REC-01`; `LOG-RES-01` |
 | RULE-02_SWITCH_score | switch_score | STEP 2 | score_gap が threshold 到達後に A -> B へ切替 | `LOG-SW-01` |
+| RULE-04_BLOCK_trust | trust_block_vs_switch | STEP 0 | B を trust-blocked として block し、`RULE-02_SWITCH_score` と `RULE-03_SWITCH_trust` より優先され、final action `BLOCK_SWITCH` になる | `LOG-TRUST-BLOCK-01` |
 | RULE-05_ESCALATE_conflict | resolver_switch / oscillation | STEP 1 / STEP 4 | trust conflict / oscillation 条件で Resolver へ escalation | `LOG-RES-01`; `LOG-OSC-01` |
 | RULE-07_DEGRADE_trigger | degraded / degraded_keep | STEP 3 / STEP 1 | selected path の reject / unsafe により DEGRADED へ遷移 | `LOG-DEG-01`; `LOG-DEG-02` |
 | RULE-08_DEGRADE_keep | degraded_keep | STEP 2 | health-valid な degraded fallback を維持 | `LOG-DEG-02` |
@@ -127,6 +131,16 @@
 | RULE-20_RETURN_KEEP | recovery_return_keep | STEP 4 | return_margin 未満のため current path を維持 | `LOG-RR-02` |
 | RULE-22_RETURN_RAMP_HOLD | light_false_negative / light_stale_telemetry / light_masked_instability | STEP 0 / STEP 0 / STEP 0 | LIGHT recovery ramp を false-negative、stale、masked instability の evidence 条件で hold | `RAW-LIGHT-FN-01`; `RAW-LIGHT-ST-01`; `RAW-LIGHT-MI-01`; `LOG-LIGHT-HOLD-01` |
 | RULE-23_RETURN_RAMP_ABORT | soft_abort_hold_and_reobserve / hard_abort_ramp_down / emergency_cut_no_fallback / two_path_degraded_abort | STEP 0 / STEP 0 / STEP 0 / STEP 0 | active Return Ramp attempt を abort し、abort class に応じて stabilization、ramp-down、emergency cut、または two-path degraded arbitration を適用 | `RAW-ABORT-SOFT-01`; `RAW-ABORT-HARD-01`; `RAW-ABORT-EMERG-01`; `RAW-ABORT-2PATH-01`; `LOG-ABORT-01` |
+
+---
+
+### 6.1 Trust Switch Coverage Note
+
+`RULE-03_SWITCH_trust` は collision matrix 上では active rule であるが、
+本 Evidence Matrix version では Verified に昇格しない。
+`trust_block_vs_switch` では suppressed switch candidate として出現するが、
+`RULE-03_SWITCH_trust` が final switch action になる専用 validation scenario は
+現時点では存在しない。
 
 ---
 
@@ -187,6 +201,7 @@
 - `LOG-RAMP-02`: `sim/02_controlled/06_recovery_return_v02/logs/raw/recovery_ramp_v03_full_light_run.txt`
 - `LOG-RAMP-03`: `sim/02_controlled/06_recovery_return_v02/logs/rcu_decision_v03_recovery_ramp_validation_log.md`
 - `LOG-SW-01`: `sim/02_controlled/02_rcu_decision_v01/logs/rcu_decision_v01_switch_score_validation_log.md`
+- `LOG-TRUST-BLOCK-01`: `sim/02_controlled/09_rule_collision_matrix/logs/trust_block_vs_switch_validation_log.md`
 - `RAW-LIGHT-FN-01`: `sim/02_controlled/07_light_observation_stub/logs/raw/light_false_negative_run.txt`
 - `RAW-LIGHT-ST-01`: `sim/02_controlled/07_light_observation_stub/logs/raw/light_stale_telemetry_run.txt`
 - `RAW-LIGHT-MI-01`: `sim/02_controlled/07_light_observation_stub/logs/raw/light_masked_instability_run.txt`

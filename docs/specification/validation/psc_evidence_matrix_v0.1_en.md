@@ -19,6 +19,7 @@ can be directly confirmed in execution logs.
 |------|---------|---------------|----------|--------------|--------|
 | RULE-01_KEEP_score | Unnecessary switching caused by small score changes | Maintain the stable selected path through hysteresis | stable / degraded / recovery_hold | `LOG-DEG-01` | Verified |
 | RULE-02_SWITCH_score | Required switch is not executed despite a clear score advantage | Switch to the best path when score_gap reaches switch_threshold | switch_score | `LOG-SW-01` | Verified |
+| RULE-04_BLOCK_trust | Unsafe switching to a trust-blocked path | Block unsafe switch candidates even when score or trust-switch rules prefer them | trust_block_vs_switch | `LOG-TRUST-BLOCK-01` | Verified |
 | RULE-05_ESCALATE_conflict | Ambiguous decisions caused by trust / stability / score conflicts | Request Resolver arbitration | oscillation / resolver_switch | `LOG-RES-01` | Verified |
 | RULE-07_DEGRADE_trigger | Trust degradation or invalidation of the selected path | Safe transition from NORMAL to DEGRADED | degraded | `LOG-DEG-01` | Verified |
 | RULE-08_DEGRADE_keep | Unnecessary fallback switching during DEGRADED mode | Keep a stable path even in degraded mode | degraded_keep | `LOG-DEG-02` | Verified |
@@ -58,6 +59,7 @@ can be directly confirmed in execution logs.
 |----------|---------|----------|
 | stable | Confirm KEEP behavior and switch suppression during normal operation | `LOG-DEG-01` |
 | switch_score | Confirm RULE-01 keep below threshold and RULE-02 switch at threshold | `LOG-SW-01` |
+| trust_block_vs_switch | Confirm RULE-04 trust block takes priority over RULE-02 score switch and RULE-03 trust switch, producing BLOCK_SWITCH | `LOG-TRUST-BLOCK-01` |
 | oscillation | Confirm oscillation suppression compared with ECMP-like score following | `LOG-OSC-01` |
 | resolver_switch | Confirm Resolver-driven switching under trust / stability conflict | `LOG-RES-01` |
 | degraded | Confirm DEGRADED transition and fallback after trust degradation | `LOG-DEG-01` |
@@ -83,6 +85,7 @@ can be directly confirmed in execution logs.
 |------|---------|
 | RULE-01_KEEP_score | Keep the current path when the score gap or improvement is small |
 | RULE-02_SWITCH_score | Switch to the best path when score_gap reaches switch_threshold |
+| RULE-04_BLOCK_trust | Block switching to a trust-blocked or below-threshold path; this safety block has priority over score- and trust-driven switch candidates |
 | RULE-05_ESCALATE_conflict | Delegate the decision to the Resolver when trust / stability / score conflicts occur |
 | RULE-07_DEGRADE_trigger | Transition to DEGRADED when the currently selected path is rejected or invalid |
 | RULE-08_DEGRADE_keep | In DEGRADED mode, keep the current fallback path if it remains maintainable |
@@ -111,6 +114,7 @@ can be directly confirmed in execution logs.
 |------|----------|---------------|---------------|--------------|
 | RULE-01_KEEP_score | stable / degraded_recovery / resolver_switch | STEP 1 / STEP 6 / STEP 2 | Hysteresis suppresses minor-improvement and cooldown-period switching | `LOG-SW-01`; `LOG-REC-01`; `LOG-RES-01` |
 | RULE-02_SWITCH_score | switch_score | STEP 2 | Switches A -> B after score_gap reaches threshold | `LOG-SW-01` |
+| RULE-04_BLOCK_trust | trust_block_vs_switch | STEP 0 | Blocks B as trust-blocked and wins over `RULE-02_SWITCH_score` and `RULE-03_SWITCH_trust`, producing final action `BLOCK_SWITCH` | `LOG-TRUST-BLOCK-01` |
 | RULE-05_ESCALATE_conflict | resolver_switch / oscillation | STEP 1 / STEP 4 | Escalates trust conflict / oscillation conditions to Resolver | `LOG-RES-01`; `LOG-OSC-01` |
 | RULE-07_DEGRADE_trigger | degraded / degraded_keep | STEP 3 / STEP 1 | Rejected / unsafe selected path enters DEGRADED | `LOG-DEG-01`; `LOG-DEG-02` |
 | RULE-08_DEGRADE_keep | degraded_keep | STEP 2 | Keeps health-valid degraded fallback | `LOG-DEG-02` |
@@ -127,6 +131,16 @@ can be directly confirmed in execution logs.
 | RULE-20_RETURN_KEEP | recovery_return_keep | STEP 4 | Keeps current path because return_margin is not met | `LOG-RR-02` |
 | RULE-22_RETURN_RAMP_HOLD | light_false_negative / light_stale_telemetry / light_masked_instability | STEP 0 / STEP 0 / STEP 0 | Holds LIGHT recovery ramp when evidence is false-negative, stale, or masks instability | `RAW-LIGHT-FN-01`; `RAW-LIGHT-ST-01`; `RAW-LIGHT-MI-01`; `LOG-LIGHT-HOLD-01` |
 | RULE-23_RETURN_RAMP_ABORT | soft_abort_hold_and_reobserve / hard_abort_ramp_down / emergency_cut_no_fallback / two_path_degraded_abort | STEP 0 / STEP 0 / STEP 0 / STEP 0 | Aborts the active Return Ramp attempt and applies stabilization, ramp-down, emergency cut, or two-path degraded arbitration according to abort class | `RAW-ABORT-SOFT-01`; `RAW-ABORT-HARD-01`; `RAW-ABORT-EMERG-01`; `RAW-ABORT-2PATH-01`; `LOG-ABORT-01` |
+
+---
+
+### 6.1 Trust Switch Coverage Note
+
+`RULE-03_SWITCH_trust` is active in the collision matrix, but is not promoted
+to Verified in this Evidence Matrix version. It appears in
+`trust_block_vs_switch` as a suppressed switch candidate, but no dedicated
+validation scenario currently shows `RULE-03_SWITCH_trust` as the final switch
+action.
 
 ---
 
@@ -187,6 +201,7 @@ Notes:
 - `LOG-RAMP-02`: `sim/02_controlled/06_recovery_return_v02/logs/raw/recovery_ramp_v03_full_light_run.txt`
 - `LOG-RAMP-03`: `sim/02_controlled/06_recovery_return_v02/logs/rcu_decision_v03_recovery_ramp_validation_log.md`
 - `LOG-SW-01`: `sim/02_controlled/02_rcu_decision_v01/logs/rcu_decision_v01_switch_score_validation_log.md`
+- `LOG-TRUST-BLOCK-01`: `sim/02_controlled/09_rule_collision_matrix/logs/trust_block_vs_switch_validation_log.md`
 - `RAW-LIGHT-FN-01`: `sim/02_controlled/07_light_observation_stub/logs/raw/light_false_negative_run.txt`
 - `RAW-LIGHT-ST-01`: `sim/02_controlled/07_light_observation_stub/logs/raw/light_stale_telemetry_run.txt`
 - `RAW-LIGHT-MI-01`: `sim/02_controlled/07_light_observation_stub/logs/raw/light_masked_instability_run.txt`
