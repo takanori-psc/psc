@@ -180,6 +180,12 @@ Notes:
 
 - v0.3 RULEs remain Experimental for now.
 - Formal integration candidate means the behavior is worth integrating into the specification; it does not mean promotion to Verified.
+- `RULE-19_RETURN_SWITCH` remains the Verified v0.2 direct return rule.
+- `RULE-25_RETURN_RAMP_START` is the Experimental v0.3 ramp entry rule. It replaces the direct return execution point with progressive ramp start, but is not semantically identical to `RULE-19_RETURN_SWITCH`.
+- `RULE-25_RETURN_RAMP_START` remains outside the `RULE-01` through `RULE-24` Verified namespace until formal integration is completed.
+- `RULE-21_RETURN_RAMP_ADVANCE (FULL)` remains the experimental/formal integration candidate for ramp advancement.
+- `RULE-21_RETURN_RAMP_ADVANCE (LIGHT)` remains Hold. Current authoritative LIGHT policy is that LIGHT observation must emit or resolve to `RULE-22_RETURN_RAMP_HOLD` unless it is promoted to FULL observation or explicit LIGHT promotion gates are defined and satisfied.
+- Historical v0.3 LIGHT advance logs, including `ramp_light_tolerates_moderate_dip`, are retained as experimental history and must not be treated as current expected LIGHT policy.
 - Promotion to Verified requires transition conditions, thresholds, and FULL / LIGHT observation handling to be integrated into the specification text.
 
 ---

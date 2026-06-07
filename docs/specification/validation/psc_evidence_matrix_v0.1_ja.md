@@ -180,6 +180,12 @@
 
 - v0.3 系 RULE は、現時点では Experimental のまま維持する。
 - 正式統合候補は「仕様へ取り込む価値がある」という分類であり、Verified への昇格ではない。
+- `RULE-19_RETURN_SWITCH` は、Verified 済みの v0.2 direct return rule として維持する。
+- `RULE-25_RETURN_RAMP_START` は、Experimental な v0.3 ramp entry rule である。direct return execution point を progressive ramp start に置き換えるが、`RULE-19_RETURN_SWITCH` と意味的に同一ではない。
+- `RULE-25_RETURN_RAMP_START` は、formal integration が完了するまで `RULE-01` through `RULE-24` の Verified namespace 外に置く。
+- `RULE-21_RETURN_RAMP_ADVANCE (FULL)` は、ramp advancement の experimental / formal integration candidate として維持する。
+- `RULE-21_RETURN_RAMP_ADVANCE (LIGHT)` は Hold のまま維持する。現在の authoritative LIGHT policy では、LIGHT observation は FULL observation へ昇格するか、明示的な LIGHT promotion gates が定義され満たされるまで、`RULE-22_RETURN_RAMP_HOLD` を emit または resolve しなければならない。
+- `ramp_light_tolerates_moderate_dip` を含む historical v0.3 LIGHT advance logs は experimental history として保持するが、現在の expected LIGHT policy として扱ってはならない。
 - Verified 昇格には、遷移条件、threshold、FULL / LIGHT observation の扱いを仕様本文へ統合する必要がある。
 
 ---

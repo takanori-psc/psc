@@ -6,6 +6,15 @@ This validation compares FULL and LIGHT observation modes during progressive rec
 
 The objective is to verify whether observation policy differences affect recovery reintegration behavior under identical recovery conditions.
 
+Historical status note:
+This log records an experimental v0.3 behavior snapshot. In particular,
+`ramp_light_tolerates_moderate_dip` shows LIGHT observation triggering
+`RULE-21_RETURN_RAMP_ADVANCE`. That behavior has been superseded as current
+expected policy by the Fast Mode LIGHT Boundary and Evidence Matrix position:
+LIGHT observation must emit or resolve to `RULE-22_RETURN_RAMP_HOLD` unless it
+is promoted to FULL observation or explicit LIGHT promotion gates are defined
+and satisfied.
+
 ---
 
 ## Observation Mode Definitions
@@ -39,6 +48,10 @@ Result:
 ---
 
 ## Scenario: ramp_light_tolerates_moderate_dip
+
+Historical experimental scenario:
+This scenario is retained as evidence of the earlier v0.3 LIGHT advance
+experiment. It is not the current expected LIGHT policy.
 
 Observed behavior:
 - observation_mode=LIGHT
