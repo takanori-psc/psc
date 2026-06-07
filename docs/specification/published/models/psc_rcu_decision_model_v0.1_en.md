@@ -1,12 +1,16 @@
 # PSC RCU Decision Model v0.1
 
-## Absolute Rules
+## Internal Processing Steps
+
+Operational `RULE-*` IDs are defined by the current Evidence Matrix / validation namespace.
+The `STEP-*` IDs in this published model describe internal RCU processing stages only and
+must not be treated as operational rule identifiers.
 
 ---
 
-## 1. Path Validity Rules
+## 1. Path Validity Steps
 
-### RULE-01: Trust / Health Filtering
+### STEP-01_TRUST_HEALTH_FILTER: Trust / Health Filtering
 
 Paths that do not satisfy the minimum trust or health requirements must not be considered for normal selection.
 
@@ -20,7 +24,7 @@ Paths that do not satisfy the minimum trust or health requirements must not be c
 
 ---
 
-### RULE-02: No Valid Path → Degraded Mode
+### STEP-02_NO_VALID_PATH_DEGRADED_MODE: No Valid Path → Degraded Mode
 
 If no valid paths exist, the system must enter DEGRADED mode.
 
@@ -36,7 +40,7 @@ If no valid paths exist, the system must enter DEGRADED mode.
 
 ---
 
-### RULE-03: Selected Path Invalid → Immediate Replacement
+### STEP-03_SELECTED_PATH_INVALID_REPLACEMENT: Selected Path Invalid → Immediate Replacement
 
 If the currently selected path becomes invalid, it must not be retained.
 
@@ -49,9 +53,9 @@ If the currently selected path becomes invalid, it must not be retained.
 
 ---
 
-## 2. Normal Selection Rules
+## 2. Normal Selection Steps
 
-### RULE-04: Initial Selection
+### STEP-04_INITIAL_SELECTION: Initial Selection
 
 When no path is selected:
 
@@ -64,7 +68,7 @@ When no path is selected:
 
 ---
 
-### RULE-05: No Switch on Small Improvement
+### STEP-05_SMALL_IMPROVEMENT_KEEP: No Switch on Small Improvement
 
 A path must not be switched if the improvement is below threshold.
 
@@ -77,7 +81,7 @@ A path must not be switched if the improvement is below threshold.
 
 ---
 
-### RULE-06: Persistent Degradation Required for Switch
+### STEP-06_PERSISTENT_DEGRADATION_SWITCH: Persistent Degradation Required for Switch
 
 Switching must only occur when degradation is sustained.
 
@@ -93,7 +97,7 @@ Switching must only occur when degradation is sustained.
 
 ---
 
-### RULE-07: Degradation Counter Behavior
+### STEP-07_DEGRADATION_COUNTER: Degradation Counter Behavior
 
 Degradation must be tracked over time.
 
@@ -103,9 +107,9 @@ Degradation must be tracked over time.
 
 ---
 
-## 3. Resolver Rules
+## 3. Resolver Steps
 
-### RULE-08: Resolver Activation Conditions
+### STEP-08_RESOLVER_ACTIVATION: Resolver Activation Conditions
 
 Resolver must only be invoked under ambiguity conditions.
 
@@ -118,7 +122,7 @@ Resolver must only be invoked under ambiguity conditions.
 
 ---
 
-### RULE-09: Same Selection → No Switch
+### STEP-09_RESOLVER_SAME_SELECTION_KEEP: Same Selection → No Switch
 
 If Resolver returns the currently selected path:
 
@@ -129,7 +133,7 @@ If Resolver returns the currently selected path:
 
 ---
 
-### RULE-10: Resolver-Driven Switch
+### STEP-10_RESOLVER_DRIVEN_SWITCH: Resolver-Driven Switch
 
 Switching is only allowed when Resolver selects a different path.
 
@@ -139,7 +143,7 @@ Switching is only allowed when Resolver selects a different path.
 
 ---
 
-### RULE-11: Resolver Cooldown
+### STEP-11_RESOLVER_COOLDOWN: Resolver Cooldown
 
 After Resolver execution:
 
@@ -156,9 +160,9 @@ After Resolver execution:
 
 ---
 
-## 4. Degraded / Recovery Rules
+## 4. Degraded / Recovery Steps
 
-### RULE-12: Recovery Condition
+### STEP-12_RECOVERY_CONDITION: Recovery Condition
 
 Recovery from DEGRADED mode requires stable and trusted paths.
 
@@ -172,7 +176,7 @@ Recovery from DEGRADED mode requires stable and trusted paths.
 
 ---
 
-### RULE-13: Recovery Cooldown
+### STEP-13_RECOVERY_COOLDOWN: Recovery Cooldown
 
 After recovery:
 
@@ -189,7 +193,7 @@ After recovery:
 
 ---
 
-### RULE-14: Fallback Behavior
+### STEP-14_FALLBACK_BEHAVIOR: Fallback Behavior
 
 In DEGRADED mode:
 
@@ -204,9 +208,9 @@ In DEGRADED mode:
 
 ---
 
-## 5. Scoring Rules
+## 5. Scoring Steps
 
-### RULE-15: Separation of RCU and Resolver Logic
+### STEP-15_RCU_RESOLVER_LOGIC_SEPARATION: Separation of RCU and Resolver Logic
 
 RCU and Resolver must not use identical evaluation logic.
 
@@ -219,7 +223,7 @@ RCU and Resolver must not use identical evaluation logic.
 
 ---
 
-### RULE-16: Stability Escalation Model (v0.1)
+### STEP-16_STABILITY_ESCALATION_MODEL: Stability Escalation Model (v0.1)
 
 Stability must not be absorbed into RCU scoring.
 
@@ -230,8 +234,10 @@ Stability must not be absorbed into RCU scoring.
 
 ## Notes
 
-- These rules define **non-negotiable behavior constraints**
+- These steps define the published model's internal processing stages
 - Parameter values (e.g., thresholds, margins) are defined separately
-- The system must always behave consistently with these rules
+- The system must always behave consistently with these steps
+- Operational `RULE-*` IDs, including `RULE-01_KEEP_score`, are defined by the
+  Evidence Matrix / validation namespace and are authoritative for validation.
 
 ---

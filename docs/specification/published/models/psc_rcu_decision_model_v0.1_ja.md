@@ -21,6 +21,9 @@
 
 RCU は Telemetry に基づいて経路候補を評価し、現在の Selected Path を維持するか、新しい Best Path へ切り替えるかを判断する。
 
+運用上の `RULE-*` ID は、現在の Evidence Matrix / validation namespace で定義される。
+本モデル内の STEP / 処理段階は、公開モデルの内部処理ステージを示すものであり、運用ルール ID ではない。
+
 ---
 
 ## 3. 基本構造
@@ -47,7 +50,7 @@ RCU は、スコア計算の前に使用不可経路を除外する。
 - hard stale telemetry
 - route unavailable
 
-### 4.2 ルール
+### 4.2 処理ステップ
 
 ```text
 If trust_violation(path) = true, reject path.
@@ -182,7 +185,7 @@ RCU 単独で判断できない場合、Resolver へ判断を委譲する。
 - unstable telemetry confidence
 - repeated switch attempts without convergence
 
-### 9.2 ルール
+### 9.2 処理ステップ
 
 ```text
 If no trusted route exists, escalate.
