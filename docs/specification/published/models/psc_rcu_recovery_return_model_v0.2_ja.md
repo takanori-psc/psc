@@ -270,13 +270,19 @@ recovery return の判断ロジック自体は decision layer に属する。
 
 - RULE-15_RECOVERY_CANDIDATE
 - RULE-16_RECOVERY_VALIDATION_START
-- RULE-17_RECOVERY_VALIDATION_PASS
+- RULE-17_RECOVERY_VALIDATION_PASS（Legacy Concept）
 - RULE-18_RETURN_ELIGIBLE
 - RULE-19_RETURN_SWITCH
 - RULE-20_RETURN_KEEP
 - RULE-21_RETURN_ESCALATE（Legacy Concept）
 
 ルール名は仮であり、実装時に調整可能とする。
+
+`RULE-17_RECOVERY_VALIDATION_PASS` は、v0.2 recovery-return design に由来する
+legacy conceptual label としてのみ保持する。現在の operational behavior は
+`RULE-16_RECOVERY_VALIDATION_START` から `RULE-18_RETURN_ELIGIBLE` へ直接遷移し、
+`reason="VALIDATION_PASSED"` によって validation pass を表す。eligibility 後の
+継続的な validation は、progressive ramp rules `RULE-21` through `RULE-24` が扱う。
 
 `RULE-21_RETURN_ESCALATE` は、v0.2 recovery-return design に由来する
 legacy conceptual label としてのみ保持する。これは運用上の RULE identifier

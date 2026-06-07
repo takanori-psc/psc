@@ -276,13 +276,19 @@ but recovery return logic remains in the decision layer.
 
 - RULE-15_RECOVERY_CANDIDATE
 - RULE-16_RECOVERY_VALIDATION_START
-- RULE-17_RECOVERY_VALIDATION_PASS
+- RULE-17_RECOVERY_VALIDATION_PASS (Legacy Concept)
 - RULE-18_RETURN_ELIGIBLE
 - RULE-19_RETURN_SWITCH
 - RULE-20_RETURN_KEEP
 - RULE-21_RETURN_ESCALATE (Legacy Concept)
 
 Rule names are provisional and may be refined during implementation.
+
+`RULE-17_RECOVERY_VALIDATION_PASS` is retained here only as a legacy conceptual
+label from the v0.2 recovery-return design. Current operational behavior moves
+directly from `RULE-16_RECOVERY_VALIDATION_START` to `RULE-18_RETURN_ELIGIBLE`
+with `reason="VALIDATION_PASSED"`. Continued validation after eligibility is
+handled by the progressive ramp rules `RULE-21` through `RULE-24`.
 
 `RULE-21_RETURN_ESCALATE` is retained here only as a legacy conceptual label
 from the v0.2 recovery-return design. It is not an operational RULE identifier.
