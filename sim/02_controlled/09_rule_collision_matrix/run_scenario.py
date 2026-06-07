@@ -59,31 +59,33 @@ class RuleDefinition:
 # Rule Priority Table
 # ============================================================
 #
-# This table is the single source of priority values. Inactive rules are kept
-# as placeholders so the simulator can grow toward full RULE-01 through RULE-24
-# registration without scattering priority literals through rule predicates.
+# This table is the single source of priority values for rules integrated into
+# the collision matrix. A value of None does not mean the PSC rule is undefined;
+# it means this simulator has no collision predicate/priority for that rule yet.
+# External-active entries name the Evidence Matrix owner so bare RULE numbers do
+# not obscure the current operational namespace.
 RULE_PRIORITY_TABLE: dict[str, int | None] = {
     "RULE-01_KEEP_score": 20,
     "RULE-02_SWITCH_score": 40,
     "RULE-03_SWITCH_trust": 65,
     "RULE-04_BLOCK_trust": 80,
     "RULE-05_ESCALATE_conflict": 70,
-    "RULE-06": None,  # TODO: define rule and priority.
-    "RULE-07": None,  # TODO: define rule and priority.
-    "RULE-08": None,  # TODO: define rule and priority.
-    "RULE-09": None,  # TODO: define rule and priority.
-    "RULE-10": None,  # TODO: define rule and priority.
-    "RULE-11": None,  # TODO: define rule and priority.
-    "RULE-12": None,  # TODO: define rule and priority.
-    "RULE-13": None,  # TODO: define rule and priority.
-    "RULE-14": None,  # TODO: define rule and priority.
-    "RULE-15": None,  # TODO: define rule and priority.
-    "RULE-16": None,  # TODO: define rule and priority.
-    "RULE-17": None,  # TODO: define rule and priority.
-    "RULE-18": None,  # TODO: define rule and priority.
-    "RULE-19": None,  # TODO: define rule and priority.
-    "RULE-20": None,  # TODO: define rule and priority.
-    "RULE-21": None,  # TODO: define rule and priority.
+    "RULE-06": None,  # reserved_future.
+    "RULE-07_DEGRADE_trigger": None,  # external_active_not_integrated.
+    "RULE-08_DEGRADE_keep": None,  # external_active_not_integrated.
+    "RULE-09_DEGRADE_switch": None,  # external_active_not_integrated.
+    "RULE-10_RECOVERY_trigger": None,  # external_active_not_integrated.
+    "RULE-11_RECOVERY_cooldown": None,  # external_active_not_integrated.
+    "RULE-12_COOLDOWN_active": None,  # external_active_not_integrated.
+    "RULE-13_RESOLVER_keep": None,  # external_active_not_integrated.
+    "RULE-14_RESOLVER_switch": None,  # external_active_not_integrated.
+    "RULE-15_RECOVERY_CANDIDATE": None,  # external_active_not_integrated.
+    "RULE-16_RECOVERY_VALIDATION_START": None,  # external_active_not_integrated.
+    "RULE-17_RECOVERY_VALIDATION_PASS": None,  # legacy_reserved.
+    "RULE-18_RETURN_ELIGIBLE": None,  # external_active_not_integrated.
+    "RULE-19_RETURN_SWITCH": None,  # external_active_not_integrated.
+    "RULE-20_RETURN_KEEP": None,  # external_active_not_integrated.
+    "RULE-21_RETURN_RAMP_ADVANCE": None,  # external_active_not_integrated.
     "RULE-22_RETURN_RAMP_HOLD": 50,
     "RULE-23_RETURN_RAMP_ABORT": 90,
     "RULE-24_RETURN_RAMP_COMPLETE": 60,
