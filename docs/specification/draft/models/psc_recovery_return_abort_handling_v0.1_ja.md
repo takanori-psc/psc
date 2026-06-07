@@ -75,9 +75,10 @@ Abort 後、PSC は条件が明確に unsafe でない限り、
 
 PSC は Resolver re-evaluation を通過し、適切な場合のみ、
 versioned Return Ramp start rule から再開しなければならない。
-本ドラフトではこの再開点を `RULE-19_RETURN_RAMP_START` と呼ぶ。
-`RULE-25_RETURN_RAMP_START` を使用する実装では、
-それを active versioned ramp-start rule として扱う。
+`RULE-19_RETURN_SWITCH` は Verified 済みの v0.2 direct return rule として
+維持され、Return Ramp start の運用上の所有権を意味しない。
+現在の v0.3 experimental ramp-start implementation は
+`RULE-25_RETURN_RAMP_START` を使用する。
 
 ---
 
@@ -258,7 +259,8 @@ RULE-23_RETURN_RAMP_ABORT
    - move to known stable allocation
    - request source-side flow reduction
    - emergency cut / emergency transition
-   - restart a new Return Ramp through RULE-19_RETURN_RAMP_START
+   - restart a new Return Ramp through the versioned Return Ramp start rule
+     (currently RULE-25_RETURN_RAMP_START in the v0.3 experimental implementation)
 ```
 
 PSC は `RULE-23_RETURN_RAMP_ABORT` から

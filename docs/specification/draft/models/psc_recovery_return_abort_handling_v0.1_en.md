@@ -77,10 +77,10 @@ After `RULE-23_RETURN_RAMP_ABORT`, PSC must not resume
 `RULE-21_RETURN_RAMP_ADVANCE` directly.
 
 PSC must pass Resolver re-evaluation and, if appropriate, restart through the
-versioned Return Ramp start rule. In this draft, that restart point is referred
-to as `RULE-19_RETURN_RAMP_START`; implementations that use
-`RULE-25_RETURN_RAMP_START` should treat it as the active versioned ramp-start
-rule.
+versioned Return Ramp start rule. `RULE-19_RETURN_SWITCH` remains the Verified
+v0.2 direct return rule and must not be interpreted as operational ownership of
+Return Ramp start. The current v0.3 experimental ramp-start implementation uses
+`RULE-25_RETURN_RAMP_START`.
 
 ---
 
@@ -261,7 +261,8 @@ RULE-23_RETURN_RAMP_ABORT
    - move to known stable allocation
    - request source-side flow reduction
    - emergency cut / emergency transition
-   - restart a new Return Ramp through RULE-19_RETURN_RAMP_START
+   - restart a new Return Ramp through the versioned Return Ramp start rule
+     (currently RULE-25_RETURN_RAMP_START in the v0.3 experimental implementation)
 ```
 
 PSC must not transition directly from `RULE-23_RETURN_RAMP_ABORT` back to
