@@ -63,6 +63,21 @@ docs/specification
 ```
 主な仕様グループ:
 
+### Published
+
+- PSC の正式な仕様判断で優先される authoritative specifications
+- architecture、routing、control、recovery、trust、telemetry、fabric behavior の安定モデル
+
+### Validation
+
+- RULE、scenario、log のトレーサビリティ
+- Evidence Matrix および validation references
+
+### Reference
+
+- 非規範の model 間説明
+- parameter reference、ownership reference、implementation guidance
+
 ### Addressing
 
 - PSC Address Format

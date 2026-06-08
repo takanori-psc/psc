@@ -11,6 +11,9 @@
 ## Main Directories
 
 - docs/ : specifications and published documents
+- docs/specification/published/ : authoritative PSC specifications
+- docs/specification/validation/ : RULE, evidence, and validation traceability
+- docs/specification/reference/ : non-normative references and implementation guidance
 - sim/ : simulations and validation logs
 - diagrams/ : architecture diagrams
 - 99_archive/ : archived materials

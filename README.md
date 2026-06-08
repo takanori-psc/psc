@@ -85,6 +85,7 @@ For a first read, use this order:
 | [Architecture Overview](docs/architecture/psc_architecture_overview_en.md) | Architecture-level view of PSC Fabric, Resolver, and control flow |
 | [Published Models](docs/specification/published/models/) | Reference models for routing, control, recovery, trust, telemetry, and fabric behavior |
 | [Evidence Matrix](docs/specification/validation/psc_evidence_matrix_v0.1_en.md) | RULE-to-scenario-to-log validation traceability |
+| [Reference Documents](docs/specification/reference/) | Non-normative parameter references, ownership references, cross-model explanations, and implementation guidance |
 
 ---
 

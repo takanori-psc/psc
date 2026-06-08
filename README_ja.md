@@ -88,6 +88,7 @@ PSC は単なる高速通信だけを目的としたものではありません�
 | [Architecture Overview](docs/architecture/psc_architecture_overview_ja.md) | PSC Fabric、Resolver、control flow のアーキテクチャ視点 |
 | [Published Models](docs/specification/published/models/) | routing、control、recovery、trust、telemetry、fabric behavior の参照モデル |
 | [Evidence Matrix](docs/specification/validation/psc_evidence_matrix_v0.1_ja.md) | RULE、シナリオ、ログの検証トレーサビリティ |
+| [Reference Documents](docs/specification/reference/) | 非規範の parameter reference、ownership reference、model 間説明、implementation guidance |
 
 ---
 

@@ -63,6 +63,21 @@ docs/specification
 
 Main specification groups:
 
+### Published
+
+- Authoritative PSC specifications
+- Stable models for architecture, routing, control, recovery, trust, telemetry, and fabric behavior
+
+### Validation
+
+- RULE-to-scenario-to-log traceability
+- Evidence matrices and validation references
+
+### Reference
+
+- Non-normative cross-model explanations
+- Parameter references, ownership references, and implementation guidance
+
 ### Addressing
 
 - PSC Address Format
