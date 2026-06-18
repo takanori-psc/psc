@@ -8,6 +8,8 @@ alternate path exists. Resolver arbitrates a least-bad allocation.
 
 from __future__ import annotations
 
+from dataclasses import dataclass
+
 
 SCENARIO_METADATA = {
     "name": "two_path_degraded_abort",
@@ -23,6 +25,21 @@ INITIAL_ALLOCATION = {
     "stable_path_b": 75,
     "candidate_paths": 2,
 }
+
+
+@dataclass(frozen=True)
+class ValidationResult:
+    """Structured result for validation harnesses.
+
+    The emitted log remains fixed text so this scenario can still be used as a
+    stable evidence trace. This object only makes the outcome assertable by
+    callers and future batch validators.
+    """
+
+    rule: str
+    passed: bool
+    category: str
+    reason: str
 
 
 def evidence_requires_degraded_abort(sample: dict[str, object]) -> bool:
@@ -44,7 +61,7 @@ def fallback_has_no_safe_alternate(sample: dict[str, object]) -> bool:
     )
 
 
-def decide_abort_handling(step: int, sample: dict[str, object]) -> str:
+def decide_abort_handling(step: int, sample: dict[str, object]) -> ValidationResult:
     print(f"STEP {step}")
     print(
         "[SCENARIO] "
@@ -111,13 +128,23 @@ def decide_abort_handling(step: int, sample: dict[str, object]) -> str:
             "least_bad_selection=true "
             "source_reduction_requested=true"
         )
-        return "RULE-23_RETURN_RAMP_ABORT"
+        return ValidationResult(
+            rule="RULE-23_RETURN_RAMP_ABORT",
+            passed=True,
+            category=SCENARIO_METADATA["expected_category"],
+            reason=SCENARIO_METADATA["reason"],
+        )
 
     print(
         "[VALIDATION] outcome=FAIL "
         "reason=TWO_PATH_DEGRADED_CONDITION_NOT_REACHED"
     )
-    return "NO_ABORT"
+    return ValidationResult(
+        rule="NO_ABORT",
+        passed=False,
+        category="",
+        reason="TWO_PATH_DEGRADED_CONDITION_NOT_REACHED",
+    )
 
 
 def run() -> None:
@@ -134,7 +161,9 @@ def run() -> None:
         "allocation_before": INITIAL_ALLOCATION,
     }
 
-    decide_abort_handling(0, telemetry_sample)
+    result = decide_abort_handling(0, telemetry_sample)
+    assert result.passed, f"Scenario FAILED: {result.reason}"
+    assert result.rule == SCENARIO_METADATA["expected_rules"][0]
 
 
 if __name__ == "__main__":
