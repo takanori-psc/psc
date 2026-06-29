@@ -24,6 +24,10 @@ class ScenarioCheck:
     expected_rules: tuple[str, ...]
     expected_category: str | None = None
     variant: str = "subprocess"
+    forbidden_rules: tuple[str, ...] = ()
+    forbidden_scope_pattern: str | None = None
+    required_patterns: tuple[str, ...] = ()
+    weight_unchanged_check: bool = False
 
 
 SCENARIOS = (
@@ -93,6 +97,30 @@ SCENARIOS = (
         ),
         expected_rules=("RULE-22_RETURN_RAMP_HOLD",),
         expected_category="hold",
+    ),
+    ScenarioCheck(
+        name="ramp_hold_insufficient_observation",
+        command=(
+            "sim/02_controlled/06_recovery_return_v02/"
+            "mini_psc_rcu_decision_v03_recovery_ramp_observation.py",
+        ),
+        expected_rules=("RULE-22_RETURN_RAMP_HOLD",),
+        expected_category="hold",
+        variant="ramp_hold_insufficient_observation",
+        forbidden_rules=(
+            "RULE-21_RETURN_RAMP_ADVANCE",
+            "RULE-23_RETURN_RAMP_ABORT",
+            "RULE-24_RETURN_RAMP_COMPLETE",
+        ),
+        forbidden_scope_pattern="observation_category=INSUFFICIENT_OBSERVATION",
+        required_patterns=(
+            "scenario=ramp_hold_insufficient_observation",
+            "recovery_state=RAMPING",
+            "observation_category=INSUFFICIENT_OBSERVATION",
+            "recovered_weight_before=0.30",
+            "recovered_weight_after=0.30",
+        ),
+        weight_unchanged_check=True,
     ),
     ScenarioCheck(
         name="soft_abort_hold_and_reobserve",
@@ -224,10 +252,56 @@ def run_recovery_return_v02_ab(check: ScenarioCheck) -> tuple[int, str, str]:
     return 0, stdout.getvalue(), stderr.getvalue()
 
 
+def run_recovery_ramp_scenario(check: ScenarioCheck) -> tuple[int, str, str]:
+    """Run one v0.3 recovery-ramp scenario so forbidden-rule checks stay scoped."""
+    module_path = REPO_ROOT / check.command[0]
+    spec = importlib.util.spec_from_file_location("psc_recovery_ramp_check", module_path)
+    if spec is None or spec.loader is None:
+        return 1, "", f"failed to load module: {module_path}"
+
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+
+    stdout = io.StringIO()
+    stderr = io.StringIO()
+    with contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stderr):
+        module.run_scenario(check.variant, 11, "FULL")
+
+    return 0, stdout.getvalue(), stderr.getvalue()
+
+
+def step_block_containing(output: str, pattern: str) -> str:
+    marker = output.find(pattern)
+    if marker == -1:
+        return ""
+
+    start = output.rfind("\n=== STEP ", 0, marker)
+    if start == -1:
+        start = 0
+    else:
+        start += 1
+
+    end = output.find("\n=== STEP ", marker)
+    if end == -1:
+        end = len(output)
+
+    return output[start:end]
+
+
+def weights_unchanged(output: str) -> bool:
+    matches = re.findall(
+        r"\brecovered_weight_before=([0-9.]+)\b.*\brecovered_weight_after=([0-9.]+)\b",
+        output,
+    )
+    return bool(matches) and all(before == after for before, after in matches)
+
+
 def run_check(check: ScenarioCheck) -> tuple[bool, str]:
     cmd = (sys.executable, *check.command)
     if check.variant == "recovery_return_v02_ab":
         returncode, stdout, stderr = run_recovery_return_v02_ab(check)
+    elif check.variant == "ramp_hold_insufficient_observation":
+        returncode, stdout, stderr = run_recovery_ramp_scenario(check)
     else:
         result = subprocess.run(
             cmd,
@@ -243,6 +317,16 @@ def run_check(check: ScenarioCheck) -> tuple[bool, str]:
 
     output = stdout + stderr
     missing = [rule for rule in check.expected_rules if rule not in output]
+    forbidden_output = output
+    if check.forbidden_scope_pattern is not None:
+        forbidden_output = step_block_containing(output, check.forbidden_scope_pattern)
+    forbidden_present = [
+        rule for rule in check.forbidden_rules if rule in forbidden_output
+    ]
+    missing_patterns = [
+        pattern for pattern in check.required_patterns if pattern not in output
+    ]
+    weight_ok = not check.weight_unchanged_check or weights_unchanged(output)
     category_ok = category_satisfied(check.expected_category, output)
     categories = observed_categories(output)
 
@@ -258,18 +342,45 @@ def run_check(check: ScenarioCheck) -> tuple[bool, str]:
         lines.append(f"  FAIL: process exited with code {returncode}")
     if missing:
         lines.append(f"  FAIL: missing rules: {', '.join(missing)}")
+    if forbidden_present:
+        lines.append(f"  FAIL: forbidden rules present: {', '.join(forbidden_present)}")
+    if missing_patterns:
+        lines.append(f"  FAIL: missing patterns: {', '.join(missing_patterns)}")
+    if not weight_ok:
+        lines.append("  FAIL: recovered weight changed or was not logged")
     if not category_ok:
         lines.append(f"  FAIL: expected category not satisfied: {check.expected_category}")
-    if returncode == 0 and not missing and category_ok:
+    if (
+        returncode == 0
+        and not missing
+        and not forbidden_present
+        and not missing_patterns
+        and weight_ok
+        and category_ok
+    ):
         lines.append(f"  PASS: found {len(check.expected_rules)} expected rules")
 
-    if returncode != 0 or missing or not category_ok:
+    if (
+        returncode != 0
+        or missing
+        or forbidden_present
+        or missing_patterns
+        or not weight_ok
+        or not category_ok
+    ):
         tail = "\n".join(output.splitlines()[-25:])
         if tail:
             lines.append("  Output tail:")
             lines.extend(f"    {line}" for line in tail.splitlines())
 
-    return returncode == 0 and not missing and category_ok, "\n".join(lines)
+    return (
+        returncode == 0
+        and not missing
+        and not forbidden_present
+        and not missing_patterns
+        and weight_ok
+        and category_ok
+    ), "\n".join(lines)
 
 
 def main() -> int:

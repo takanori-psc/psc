@@ -156,6 +156,9 @@ def create_paths(step, scenario="baseline"):
             path_b["trend"] = 0.45
             path_b["persistence"] = 0.45
 
+        if scenario == "ramp_hold_insufficient_observation" and step >= 10:
+            path_b["observation_category"] = "INSUFFICIENT_OBSERVATION"
+
         return [path_a, path_b, path_c]
 
     return [path_a, path_b]
@@ -537,6 +540,28 @@ def decide(paths):
         recovered_trust = recovered["trust"]
         evacuation_weight = max(0.0, 1.0 - recovery_ramp_weight)
         min_stability, min_trust = ramp_abort_thresholds(observation_mode)
+        recovered_observation_category = recovered.get("observation_category")
+
+        if recovered_observation_category == "INSUFFICIENT_OBSERVATION":
+            recovered_weight_before = recovery_ramp_weight
+            recovered_weight_after = recovery_ramp_weight
+            log_rule(
+                "RECOVERY",
+                "RULE-22_RETURN_RAMP_HOLD",
+                scenario="ramp_hold_insufficient_observation",
+                recovery_state=recovery_state,
+                recovered=recovered["name"],
+                recovered_weight_before=f"{recovered_weight_before:.2f}",
+                recovered_weight_after=f"{recovered_weight_after:.2f}",
+                evacuation=recovery_evacuated_path_name,
+                evacuation_weight=f"{evacuation_weight:.2f}",
+                observation_mode=observation_mode,
+                observation_category=recovered_observation_category,
+                stability=f"{recovered_stability:.3f}",
+                trust=f"{recovered_trust:.3f}",
+                reason="INSUFFICIENT_OBSERVATION",
+            )
+            return
 
         if recovered_trust < min_trust or recovered_stability < min_stability:
             log_rule(
@@ -807,6 +832,7 @@ def run():
     run_scenario("ramp_abort_full_stability_dip", 10, "FULL")
     run_scenario("ramp_light_tolerates_moderate_dip", 12, "LIGHT")
     run_scenario("ramp_abort_light_hard_failure", 10, "LIGHT")
+    run_scenario("ramp_hold_insufficient_observation", 11, "FULL")
 
 if __name__ == "__main__":
     run()

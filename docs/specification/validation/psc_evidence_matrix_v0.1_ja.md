@@ -35,7 +35,7 @@
 | RULE-19_RETURN_SWITCH | v0.2 staged recovery の復帰実行 | validation 済み path へ制御された復帰 | recovery_return_v02 | `LOG-RR-01` | Verified |
 | RULE-20_RETURN_KEEP | 復帰候補が条件未達のまま切替される危険 | current path 維持 | recovery_return_keep | `LOG-RR-02` | Verified |
 | RULE-21_RETURN_RAMP_ADVANCE | ramp 中の進行条件不明瞭 | 安定時のみ recovered weight を増加 | recovery_ramp_v03 | `LOG-RAMP-01` | Experimental |
-| RULE-22_RETURN_RAMP_HOLD | ramp 中の一時停止条件不明瞭 | 条件未達時に ramp を維持 | recovery_ramp_v03 / light_false_negative / light_stale_telemetry / light_masked_instability | `LOG-RAMP-02`; `LOG-LIGHT-HOLD-01` | Experimental |
+| RULE-22_RETURN_RAMP_HOLD | ramp 中の一時停止条件不明瞭 | 条件未達時に ramp を維持 | recovery_ramp_v03 / ramp_hold_insufficient_observation / light_false_negative / light_stale_telemetry / light_masked_instability | `LOG-RAMP-02`; `RAW-RAMP-HOLD-INSUFF-01`; `LOG-LIGHT-HOLD-01` | Experimental |
 | RULE-23_RETURN_RAMP_ABORT | 不安定 path への早期復帰 | ramp 中の異常検知時に復帰を中断 | recovery_ramp_v03 / soft_abort_hold_and_reobserve / hard_abort_ramp_down / emergency_cut_no_fallback / two_path_degraded_abort | `LOG-RAMP-03`; `LOG-ABORT-01` | Experimental |
 | RULE-24_RETURN_RAMP_COMPLETE | recovery 完了判定の不明瞭化 | progressive reintegration 完了を確定 | recovery_ramp_v03 | `LOG-RAMP-03` | Experimental |
 | RULE-25_RETURN_RAMP_START | recovery 直後の急激な全量復帰 | progressive return ramp 開始 | recovery_ramp_v03 | `LOG-RAMP-02` | Experimental |
@@ -69,6 +69,7 @@
 | recovery_return_v02 | Recovery Candidate -> Validation -> Return Eligible -> Return Switch 確認 | `LOG-RR-01` |
 | recovery_return_keep | improvement が return_margin 未満の場合の Return Eligible -> Return Keep 確認 | `LOG-RR-02` |
 | recovery_ramp_v03 | progressive ramp / abort / complete / observation policy 確認 | `LOG-RAMP-03` |
+| ramp_hold_insufficient_observation | mid-ramp の `INSUFFICIENT_OBSERVATION` で recovered weight が維持され、同一 HOLD step の ramp advance / abort / complete が抑制されることを確認 | `RAW-RAMP-HOLD-INSUFF-01` |
 | light_false_negative | 実際の instability が LIGHT observation で検出されない場合に ramp を hold することを確認 | `LOG-LIGHT-HOLD-01`; `RAW-LIGHT-FN-01` |
 | light_stale_telemetry | telemetry が古い場合に LIGHT observation が ramp を hold することを確認 | `LOG-LIGHT-HOLD-01`; `RAW-LIGHT-ST-01` |
 | light_masked_instability | sparse evidence により instability が隠れる場合に LIGHT observation が ramp を hold することを確認 | `LOG-LIGHT-HOLD-01`; `RAW-LIGHT-MI-01` |
@@ -130,6 +131,7 @@
 | RULE-19_RETURN_SWITCH | recovery_return_v02 | STEP 7 | eligible path へ controlled return switch | `LOG-RR-01` |
 | RULE-20_RETURN_KEEP | recovery_return_keep | STEP 4 | return_margin 未満のため current path を維持 | `LOG-RR-02` |
 | RULE-22_RETURN_RAMP_HOLD | light_false_negative / light_stale_telemetry / light_masked_instability | STEP 0 / STEP 0 / STEP 0 | LIGHT recovery ramp を false-negative、stale、masked instability の evidence 条件で hold | `RAW-LIGHT-FN-01`; `RAW-LIGHT-ST-01`; `RAW-LIGHT-MI-01`; `LOG-LIGHT-HOLD-01` |
+| RULE-22_RETURN_RAMP_HOLD | ramp_hold_insufficient_observation | STEP 10 | `recovery_state=RAMPING` かつ `observation_category=INSUFFICIENT_OBSERVATION` の mid-ramp HOLD で `recovered_weight_before=0.30` と `recovered_weight_after=0.30` を維持し、同一 HOLD step では `RULE-21_RETURN_RAMP_ADVANCE` / `RULE-23_RETURN_RAMP_ABORT` / `RULE-24_RETURN_RAMP_COMPLETE` を emit しない | `RAW-RAMP-HOLD-INSUFF-01`; validator `scripts/validate_evidence_rules.py` (`ScenarioCheck.name=ramp_hold_insufficient_observation`) |
 | RULE-23_RETURN_RAMP_ABORT | soft_abort_hold_and_reobserve / hard_abort_ramp_down / emergency_cut_no_fallback / two_path_degraded_abort | STEP 0 / STEP 0 / STEP 0 / STEP 0 | active Return Ramp attempt を abort し、abort class に応じて stabilization、ramp-down、emergency cut、または two-path degraded arbitration を適用 | `RAW-ABORT-SOFT-01`; `RAW-ABORT-HARD-01`; `RAW-ABORT-EMERG-01`; `RAW-ABORT-2PATH-01`; `LOG-ABORT-01` |
 
 ---
@@ -151,6 +153,14 @@
 | light_false_negative | `sim/02_controlled/07_light_observation_stub/light_false_negative.py` | RULE-22_RETURN_RAMP_HOLD | hold | OBSERVATION_FALSE_NEGATIVE | `RAW-LIGHT-FN-01` | `LOG-LIGHT-HOLD-01` | `GLOSSARY-LIGHT-JA-01` |
 | light_stale_telemetry | `sim/02_controlled/07_light_observation_stub/light_stale_telemetry.py` | RULE-22_RETURN_RAMP_HOLD | hold | STALE_TELEMETRY | `RAW-LIGHT-ST-01` | `LOG-LIGHT-HOLD-01` | `GLOSSARY-LIGHT-JA-01` |
 | light_masked_instability | `sim/02_controlled/07_light_observation_stub/light_masked_instability.py` | RULE-22_RETURN_RAMP_HOLD | hold | MASKED_INSTABILITY | `RAW-LIGHT-MI-01` | `LOG-LIGHT-HOLD-01` | `GLOSSARY-LIGHT-JA-01` |
+
+---
+
+## 7.1 Return Ramp Hold Evidence Details
+
+| シナリオ | Scenario File | RULE | Expected Category | Condition | Raw Log | Validator | 状態 | Note |
+|----------|---------------|------|-------------------|-----------|---------|-----------|------|------|
+| ramp_hold_insufficient_observation | `sim/02_controlled/06_recovery_return_v02/mini_psc_rcu_decision_v03_recovery_ramp_observation.py` | RULE-22_RETURN_RAMP_HOLD | hold | mid-ramp `INSUFFICIENT_OBSERVATION` keeps recovered weight unchanged and blocks same-step ramp advance | `RAW-RAMP-HOLD-INSUFF-01` | `scripts/validate_evidence_rules.py` (`ScenarioCheck.name=ramp_hold_insufficient_observation`) | Experimental | Verified promotion candidate; mid-ramp insufficient observation hold is now covered by runnable scenario and validator |
 
 ---
 
@@ -208,6 +218,7 @@
 - `LOG-RAMP-03`: `sim/02_controlled/06_recovery_return_v02/logs/rcu_decision_v03_recovery_ramp_validation_log.md`
 - `LOG-SW-01`: `sim/02_controlled/02_rcu_decision_v01/logs/rcu_decision_v01_switch_score_validation_log.md`
 - `LOG-TRUST-BLOCK-01`: `sim/02_controlled/09_rule_collision_matrix/logs/trust_block_vs_switch_validation_log.md`
+- `RAW-RAMP-HOLD-INSUFF-01`: `sim/02_controlled/06_recovery_return_v02/logs/raw/ramp_hold_insufficient_observation_run.txt`
 - `RAW-LIGHT-FN-01`: `sim/02_controlled/07_light_observation_stub/logs/raw/light_false_negative_run.txt`
 - `RAW-LIGHT-ST-01`: `sim/02_controlled/07_light_observation_stub/logs/raw/light_stale_telemetry_run.txt`
 - `RAW-LIGHT-MI-01`: `sim/02_controlled/07_light_observation_stub/logs/raw/light_masked_instability_run.txt`
