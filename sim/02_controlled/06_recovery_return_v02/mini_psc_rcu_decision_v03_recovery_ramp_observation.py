@@ -158,6 +158,10 @@ def create_paths(step, scenario="baseline"):
 
         if scenario == "ramp_hold_insufficient_observation" and step >= 10:
             path_b["observation_category"] = "INSUFFICIENT_OBSERVATION"
+            path_b["observation_samples"] = 0
+            path_b["required_observation_samples"] = 1
+            path_b["observation_window_steps"] = 0
+            path_b["required_observation_window_steps"] = 1
 
         return [path_a, path_b, path_c]
 
@@ -548,15 +552,25 @@ def decide(paths):
             log_rule(
                 "RECOVERY",
                 "RULE-22_RETURN_RAMP_HOLD",
+                category="hold",
                 scenario="ramp_hold_insufficient_observation",
                 recovery_state=recovery_state,
+                state_transition="RAMPING->RAMPING",
                 recovered=recovered["name"],
                 recovered_weight_before=f"{recovered_weight_before:.2f}",
                 recovered_weight_after=f"{recovered_weight_after:.2f}",
+                ramp_level_before=f"{recovered_weight_before:.2f}",
+                ramp_level_after=f"{recovered_weight_after:.2f}",
                 evacuation=recovery_evacuated_path_name,
                 evacuation_weight=f"{evacuation_weight:.2f}",
                 observation_mode=observation_mode,
                 observation_category=recovered_observation_category,
+                observation_samples=recovered.get("observation_samples", 0),
+                required_observation_samples=recovered.get("required_observation_samples", 1),
+                observation_window_steps=recovered.get("observation_window_steps", 0),
+                required_observation_window_steps=recovered.get(
+                    "required_observation_window_steps", 1
+                ),
                 stability=f"{recovered_stability:.3f}",
                 trust=f"{recovered_trust:.3f}",
                 reason="INSUFFICIENT_OBSERVATION",
@@ -634,11 +648,17 @@ def decide(paths):
         log_rule(
             "RECOVERY",
             "RULE-21_RETURN_RAMP_ADVANCE",
+            category="switch",
             recovered=recovered["name"],
+            recovered_weight_before=f"{recovery_ramp_weight - ramp_increment:.2f}",
             recovered_weight=f"{recovery_ramp_weight:.2f}",
+            recovered_weight_after=f"{recovery_ramp_weight:.2f}",
+            ramp_level_before=f"{recovery_ramp_weight - ramp_increment:.2f}",
+            ramp_level_after=f"{recovery_ramp_weight:.2f}",
             evacuation=recovery_evacuated_path_name,
             evacuation_weight=f"{evacuation_weight:.2f}",
             observation_mode=observation_mode,
+            observation_category="SUFFICIENT_OBSERVATION",
             stability=f"{recovered_stability:.3f}",
             trust=f"{recovered_trust:.3f}",
             reason="RECOVERED_PATH_STABLE",

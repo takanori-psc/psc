@@ -45,13 +45,16 @@ This analysis refers to the following sources.
 
 ## 3. Current Overall Status
 
-In the Evidence Matrix, all target RULEs are currently treated as Experimental.
-However, coverage maturity differs by RULE.
+In the Evidence Matrix, `RULE-22_RETURN_RAMP_HOLD` is now treated as Verified
+for the covered FULL-observation hold evidence with
+`reason=INSUFFICIENT_OBSERVATION`. LIGHT Observation coverage remains outside
+the current Verified scope. The remaining target RULEs are still Experimental,
+and coverage maturity differs by RULE.
 
 | RULE | Current Status | Coverage Summary | Main Gaps |
 |------|----------------|------------------|-----------|
 | `RULE-21_RETURN_RAMP_ADVANCE` | Experimental / LIGHT remains Hold | FULL observation ramp advance logs exist | Dedicated validator check, LIGHT false-positive / false-negative boundaries, and integration of conditions into the specification are missing |
-| `RULE-22_RETURN_RAMP_HOLD` | Experimental | Runnable LIGHT hold scenarios, raw logs, verified log, and validator checks exist | Formal runnable coverage for `INSUFFICIENT_OBSERVATION` and explicit hold / advance / abort boundaries are missing |
+| `RULE-22_RETURN_RAMP_HOLD` | Verified | FULL `ramp_hold_insufficient_observation` scenario, raw log, verified log, and validator assertions define the current Verified scope; LIGHT hold scenarios remain available outside that scope | Formal specification integration remains separate from evidence status |
 | `RULE-23_RETURN_RAMP_ABORT` | Experimental | Abort-class scenarios, raw logs, verified log, and validator checks exist | Abort thresholds, unified post-abort state assertions, and structured results across all abort scenarios are missing |
 | `RULE-24_RETURN_RAMP_COMPLETE` | Experimental | Raw / verified logs for ramp complete exist | Dedicated scenario separation, validator check, completion threshold, and post-completion state assertions are missing |
 
@@ -123,8 +126,8 @@ gates are defined.
 | `sim/02_controlled/07_light_observation_stub/light_false_negative.py` | Hold under LIGHT observation false negative |
 | `sim/02_controlled/07_light_observation_stub/light_stale_telemetry.py` | Hold under stale telemetry |
 | `sim/02_controlled/07_light_observation_stub/light_masked_instability.py` | Hold under masked instability |
-| `sim/02_controlled/07_light_observation_stub/light_telemetry_gap_stub.py` | Design stub for required telemetry gap |
-| `sim/02_controlled/06_recovery_return_v02/mini_psc_rcu_decision_v03_recovery_ramp_observation.py` | Hold trace during recovery ramp |
+| `sim/02_controlled/07_light_observation_stub/light_telemetry_gap_stub.py` | Design stub for LIGHT-specific required telemetry gap |
+| `sim/02_controlled/06_recovery_return_v02/mini_psc_rcu_decision_v03_recovery_ramp_observation.py` | Runnable FULL observation `ramp_hold_insufficient_observation` trace during recovery ramp |
 
 ### 5.2 Available Raw Logs
 
@@ -134,13 +137,15 @@ gates are defined.
 | `sim/02_controlled/07_light_observation_stub/logs/raw/light_stale_telemetry_run.txt` | `reason=STALE_TELEMETRY` |
 | `sim/02_controlled/07_light_observation_stub/logs/raw/light_masked_instability_run.txt` | `reason=MASKED_INSTABILITY` |
 | `sim/02_controlled/06_recovery_return_v02/logs/raw/recovery_ramp_v03_full_light_run.txt` | Hold trace during FULL / LIGHT ramp |
+| `sim/02_controlled/06_recovery_return_v02/logs/raw/ramp_hold_insufficient_observation_run.txt` | `reason=INSUFFICIENT_OBSERVATION`, `category=hold`, `observation_mode=FULL`, and unchanged `0.30 -> 0.30` ramp level |
 
 ### 5.3 Available Verified Logs / Matrix Mapping
 
 | Evidence | Coverage |
 |----------|----------|
 | `sim/02_controlled/07_light_observation_stub/logs/verified/light_observation_hold_validation_log.md` | Records LIGHT false-negative / stale / masked-instability hold |
-| Evidence Matrix | `light_false_negative`, `light_stale_telemetry`, and `light_masked_instability` are mapped to `LOG-LIGHT-HOLD-01` |
+| `sim/02_controlled/06_recovery_return_v02/logs/rcu_decision_v03_ramp_hold_insufficient_observation_validation_log.md` | Records FULL `INSUFFICIENT_OBSERVATION` hold after a prior ramp advance |
+| Evidence Matrix | `ramp_hold_insufficient_observation` is mapped to Verified evidence; LIGHT scenarios are documented as evidence available outside the current Verified scope |
 
 ### 5.4 Validator Coverage
 
@@ -153,25 +158,30 @@ runnable LIGHT scenarios.
 | `light_stale_telemetry` | `RULE-22_RETURN_RAMP_HOLD` | `hold` |
 | `light_masked_instability` | `RULE-22_RETURN_RAMP_HOLD` | `hold` |
 
-The validator detects the RULE and category. It does not yet assert unchanged
-weight, non-emission of `RULE-21_RETURN_RAMP_ADVANCE`, or reason-specific
-safety conditions at an individual assertion level.
+The validator detects the RULE and category for the LIGHT scenarios, but those
+LIGHT checks are outside the current Verified scope. For
+`ramp_hold_insufficient_observation`, the validator also asserts reason,
+observation mode, state transition, unchanged ramp level, previous-step
+advance, and forbidden same-step advance / abort / complete / emergency
+outcomes.
 
 ### 5.5 Missing Evidence
 
 | Missing item | Description |
 |--------------|-------------|
-| `INSUFFICIENT_OBSERVATION` runnable coverage | Promote `light_telemetry_gap_stub.py` to a formal runnable scenario with raw log and verified log |
-| Negative check | Validator assertion that `RULE-21_RETURN_RAMP_ADVANCE` is not emitted during hold |
-| Weight check | Assertion that recovered weight does not increase before / after hold |
-| Reason-specific check | Individual assertions for `OBSERVATION_FALSE_NEGATIVE`, `STALE_TELEMETRY`, `MASKED_INSTABILITY`, and `INSUFFICIENT_OBSERVATION` |
+| LIGHT telemetry gap runnable coverage | `light_telemetry_gap_stub.py` remains a LIGHT-specific design stub and is not promoted by the FULL observation ramp-hold evidence |
+| Specification integration | Formal text still needs to integrate hold / advance / abort transitions across v0.3 ramp behavior |
 
 ### 5.6 Promotion Blocker
 
-`RULE-22_RETURN_RAMP_HOLD` is the closest candidate for Verified promotion.
-However, it should remain Experimental for now because the
-`INSUFFICIENT_OBSERVATION` coverage required by the promotion criteria and the
-mechanical weight-unchanged check are still missing.
+`RULE-22_RETURN_RAMP_HOLD` now has the evidence set required for Verified
+status in the Evidence Matrix for the covered FULL-observation hold scope:
+runnable scenario, raw log, verified log, and validator assertions for
+`INSUFFICIENT_OBSERVATION`.
+
+This does not include LIGHT Observation scenarios in the current Verified scope,
+does not promote LIGHT-based ramp advance, and does not complete the broader
+v0.3 ramp specification integration.
 
 ---
 
@@ -298,7 +308,7 @@ criteria. It is too early to promote it to Verified.
 | RULE | Current validator coverage | Gap |
 |------|----------------------------|-----|
 | `RULE-21_RETURN_RAMP_ADVANCE` | Present in category mapping, but no dedicated scenario check | FULL advance condition, weight delta, and negative checks are missing |
-| `RULE-22_RETURN_RAMP_HOLD` | Directly checks three LIGHT hold scenarios | Reason-specific assertions, unchanged weight, and advance non-emission checks are missing |
+| `RULE-22_RETURN_RAMP_HOLD` | Directly checks the FULL `ramp_hold_insufficient_observation` scenario for the current Verified scope; also keeps LIGHT hold checks outside that scope | LIGHT reason-specific assertions and unchanged-weight checks remain future coverage work |
 | `RULE-23_RETURN_RAMP_ABORT` | Directly checks four abort handling scenarios | Structured assertions for abort class / fallback reason / post-abort action are missing |
 | `RULE-24_RETURN_RAMP_COMPLETE` | Present in category mapping, but no dedicated scenario check | Completion threshold, final allocation, and post-completion state checks are missing |
 
@@ -332,7 +342,7 @@ Rationale:
 | RULE | Promotion blocker |
 |------|-------------------|
 | `RULE-21_RETURN_RAMP_ADVANCE` | LIGHT false-positive / false-negative boundaries are undefined, and FULL advance lacks a dedicated validator |
-| `RULE-22_RETURN_RAMP_HOLD` | Runnable / raw / verified coverage for `INSUFFICIENT_OBSERVATION` is missing, and unchanged-weight assertion is missing |
+| `RULE-22_RETURN_RAMP_HOLD` | Evidence blocker cleared for covered FULL / `INSUFFICIENT_OBSERVATION` hold behavior; LIGHT Observation coverage and broader v0.3 specification integration remain separate |
 | `RULE-23_RETURN_RAMP_ABORT` | Post-abort action assertions by abort class are missing, and structured result coverage is not unified |
 | `RULE-24_RETURN_RAMP_COMPLETE` | Validator coverage for completion threshold, final allocation, and post-completion state is missing |
 
@@ -340,9 +350,12 @@ Rationale:
 
 ## 11. Conclusion
 
-At this point, `RULE-22_RETURN_RAMP_HOLD` and `RULE-23_RETURN_RAMP_ABORT` are
-closest to Verified promotion. Both already have scenario, raw log, verified
-log, Evidence Matrix mapping, and validator check foundations.
+At this point, `RULE-22_RETURN_RAMP_HOLD` has the scenario, raw log, verified
+log, Evidence Matrix mapping, and validator assertions needed for Verified
+status in the Evidence Matrix for FULL / `INSUFFICIENT_OBSERVATION` hold
+evidence. LIGHT Observation scenarios remain outside the current Verified
+scope. `RULE-23_RETURN_RAMP_ABORT` remains the closest remaining Experimental
+promotion candidate.
 
 `RULE-21_RETURN_RAMP_ADVANCE` may become a promotion candidate if limited to
 FULL observation, but LIGHT observation based advance remains Hold.

@@ -29,18 +29,20 @@ this step.
 
 ## 2. Current Status
 
-The target RULEs are currently treated as Experimental in
-`psc_evidence_matrix_v0.1_en.md`.
+The target RULEs are tracked in `psc_evidence_matrix_v0.1_en.md`.
+`RULE-22_RETURN_RAMP_HOLD` is Verified for the covered FULL-observation hold
+evidence with `reason=INSUFFICIENT_OBSERVATION`; the remaining target RULEs are
+still Experimental.
 
 | RULE | Current Status | Current Position |
 |------|----------------|------------------|
 | `RULE-21_RETURN_RAMP_ADVANCE` | Experimental | Candidate RULE that progressively increases the recovered path traffic weight when ramp conditions are satisfied |
-| `RULE-22_RETURN_RAMP_HOLD` | Experimental | Candidate RULE that keeps the current weight when ramp progress conditions are insufficient |
+| `RULE-22_RETURN_RAMP_HOLD` | Verified | RULE that keeps the current weight when ramp progress conditions are insufficient; current Verified scope is limited to FULL / `INSUFFICIENT_OBSERVATION` evidence |
 | `RULE-23_RETURN_RAMP_ABORT` | Experimental | Candidate RULE that aborts recovery when instability is detected during the ramp |
 | `RULE-24_RETURN_RAMP_COMPLETE` | Experimental | Candidate RULE that finalizes progressive reintegration into the recovered path |
 
-These RULEs already have partial behavioral evidence from experimental
-scenarios and raw / verified logs. However, promotion to Verified requires
+The remaining Experimental RULEs have partial behavioral evidence from
+experimental scenarios and raw / verified logs. Promotion to Verified requires
 consistent scenario, log, expected result, validator check, and Evidence Matrix
 mapping coverage.
 
@@ -111,16 +113,21 @@ return or unnecessary switching.
 
 | Required evidence | Criteria |
 |-------------------|----------|
-| Scenario file | A scenario exists in which ramp hold occurs due to false negative, stale telemetry, masked instability, or insufficient observation |
+| Scenario file | A scenario exists in which ramp hold occurs due to insufficient observation under FULL observation |
 | Raw log | The log records `RULE-22_RETURN_RAMP_HOLD`, the hold reason, observation condition, and weight before and after hold |
 | Expected result | The expected category is hold, and the recovered path weight does not increase |
 | Validator check | The validator asserts the hold reason and unchanged weight, and confirms there is no misclassification as advance / abort |
-| Evidence Matrix mapping | The mapping between LIGHT observation scenarios, raw logs, verified logs, and Evidence Steps can be added |
+| Evidence Matrix mapping | The mapping between the FULL observation scenario, raw log, verified log, and Evidence Step can be added |
 
 ### 5.3 Promotion Review Points
 
-Promotion of `RULE-22_RETURN_RAMP_HOLD` to Verified requires at least the
-following hold reasons to be explicitly distinguished.
+The current Verified scope for `RULE-22_RETURN_RAMP_HOLD` covers only the
+`INSUFFICIENT_OBSERVATION` reason under FULL observation. LIGHT Observation
+reasons remain available as evidence but are outside the current Verified
+scope.
+
+Future expansion of RULE-22 coverage should explicitly distinguish the
+following hold reasons before treating them as part of the Verified scope.
 
 | Hold reason | Required confirmation |
 |-------------|-----------------------|

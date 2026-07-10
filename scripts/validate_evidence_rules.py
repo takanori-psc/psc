@@ -23,11 +23,16 @@ class ScenarioCheck:
     command: tuple[str, ...]
     expected_rules: tuple[str, ...]
     expected_category: str | None = None
+    expected_reason: str | None = None
+    expected_observation_mode: str | None = None
+    expected_state_transition: str | None = None
     variant: str = "subprocess"
     forbidden_rules: tuple[str, ...] = ()
     forbidden_scope_pattern: str | None = None
+    forbidden_patterns: tuple[str, ...] = ()
     required_patterns: tuple[str, ...] = ()
     weight_unchanged_check: bool = False
+    previous_step_required_patterns: tuple[str, ...] = ()
 
 
 SCENARIOS = (
@@ -106,6 +111,9 @@ SCENARIOS = (
         ),
         expected_rules=("RULE-22_RETURN_RAMP_HOLD",),
         expected_category="hold",
+        expected_reason="INSUFFICIENT_OBSERVATION",
+        expected_observation_mode="FULL",
+        expected_state_transition="RAMPING->RAMPING",
         variant="ramp_hold_insufficient_observation",
         forbidden_rules=(
             "RULE-21_RETURN_RAMP_ADVANCE",
@@ -113,12 +121,40 @@ SCENARIOS = (
             "RULE-24_RETURN_RAMP_COMPLETE",
         ),
         forbidden_scope_pattern="observation_category=INSUFFICIENT_OBSERVATION",
+        forbidden_patterns=(
+            "state_transition=RAMPING->ABORTED",
+            "state_transition=RAMPING->COMPLETE",
+            "state_transition=RAMPING->EMERGENCY",
+            "mode=EMERGENCY",
+            "EMERGENCY_CUT",
+        ),
         required_patterns=(
             "scenario=ramp_hold_insufficient_observation",
             "recovery_state=RAMPING",
+            "category=hold",
+            "state_transition=RAMPING->RAMPING",
+            "observation_mode=FULL",
             "observation_category=INSUFFICIENT_OBSERVATION",
+            "observation_samples=0",
+            "required_observation_samples=1",
+            "observation_window_steps=0",
+            "required_observation_window_steps=1",
+            "reason=INSUFFICIENT_OBSERVATION",
             "recovered_weight_before=0.30",
             "recovered_weight_after=0.30",
+            "ramp_level_before=0.30",
+            "ramp_level_after=0.30",
+        ),
+        previous_step_required_patterns=(
+            "RULE-21_RETURN_RAMP_ADVANCE",
+            "category=switch",
+            "observation_mode=FULL",
+            "observation_category=SUFFICIENT_OBSERVATION",
+            "recovered_weight_before=0.10",
+            "recovered_weight_after=0.30",
+            "ramp_level_before=0.10",
+            "ramp_level_after=0.30",
+            "reason=RECOVERED_PATH_STABLE",
         ),
         weight_unchanged_check=True,
     ),
@@ -288,6 +324,23 @@ def step_block_containing(output: str, pattern: str) -> str:
     return output[start:end]
 
 
+def previous_step_block(output: str, pattern: str) -> str:
+    marker = output.find(pattern)
+    if marker == -1:
+        return ""
+
+    current_start = output.rfind("\n=== STEP ", 0, marker)
+    if current_start == -1:
+        return ""
+
+    previous_start = output.rfind("\n=== STEP ", 0, current_start)
+    if previous_start == -1:
+        return ""
+    previous_start += 1
+
+    return output[previous_start:current_start]
+
+
 def weights_unchanged(output: str) -> bool:
     matches = re.findall(
         r"\brecovered_weight_before=([0-9.]+)\b.*\brecovered_weight_after=([0-9.]+)\b",
@@ -323,10 +376,34 @@ def run_check(check: ScenarioCheck) -> tuple[bool, str]:
     forbidden_present = [
         rule for rule in check.forbidden_rules if rule in forbidden_output
     ]
+    forbidden_patterns_present = [
+        pattern for pattern in check.forbidden_patterns if pattern in forbidden_output
+    ]
     missing_patterns = [
         pattern for pattern in check.required_patterns if pattern not in output
     ]
-    weight_ok = not check.weight_unchanged_check or weights_unchanged(output)
+    previous_output = output
+    if check.forbidden_scope_pattern is not None:
+        previous_output = previous_step_block(output, check.forbidden_scope_pattern)
+    missing_previous_patterns = [
+        pattern
+        for pattern in check.previous_step_required_patterns
+        if pattern not in previous_output
+    ]
+    expected_reason_ok = (
+        check.expected_reason is None
+        or f"reason={check.expected_reason}" in forbidden_output
+    )
+    observation_mode_ok = (
+        check.expected_observation_mode is None
+        or f"observation_mode={check.expected_observation_mode}" in forbidden_output
+    )
+    state_transition_ok = (
+        check.expected_state_transition is None
+        or f"state_transition={check.expected_state_transition}" in forbidden_output
+    )
+    weight_scope = forbidden_output if check.forbidden_scope_pattern else output
+    weight_ok = not check.weight_unchanged_check or weights_unchanged(weight_scope)
     category_ok = category_satisfied(check.expected_category, output)
     categories = observed_categories(output)
 
@@ -344,18 +421,42 @@ def run_check(check: ScenarioCheck) -> tuple[bool, str]:
         lines.append(f"  FAIL: missing rules: {', '.join(missing)}")
     if forbidden_present:
         lines.append(f"  FAIL: forbidden rules present: {', '.join(forbidden_present)}")
+    if forbidden_patterns_present:
+        lines.append(
+            f"  FAIL: forbidden patterns present: {', '.join(forbidden_patterns_present)}"
+        )
     if missing_patterns:
         lines.append(f"  FAIL: missing patterns: {', '.join(missing_patterns)}")
+    if missing_previous_patterns:
+        lines.append(
+            "  FAIL: previous step missing patterns: "
+            + ", ".join(missing_previous_patterns)
+        )
     if not weight_ok:
         lines.append("  FAIL: recovered weight changed or was not logged")
+    if not expected_reason_ok:
+        lines.append(f"  FAIL: expected reason not found: {check.expected_reason}")
+    if not observation_mode_ok:
+        lines.append(
+            f"  FAIL: expected observation mode not found: {check.expected_observation_mode}"
+        )
+    if not state_transition_ok:
+        lines.append(
+            f"  FAIL: expected state transition not found: {check.expected_state_transition}"
+        )
     if not category_ok:
         lines.append(f"  FAIL: expected category not satisfied: {check.expected_category}")
     if (
         returncode == 0
         and not missing
         and not forbidden_present
+        and not forbidden_patterns_present
         and not missing_patterns
+        and not missing_previous_patterns
         and weight_ok
+        and expected_reason_ok
+        and observation_mode_ok
+        and state_transition_ok
         and category_ok
     ):
         lines.append(f"  PASS: found {len(check.expected_rules)} expected rules")
@@ -364,8 +465,13 @@ def run_check(check: ScenarioCheck) -> tuple[bool, str]:
         returncode != 0
         or missing
         or forbidden_present
+        or forbidden_patterns_present
         or missing_patterns
+        or missing_previous_patterns
         or not weight_ok
+        or not expected_reason_ok
+        or not observation_mode_ok
+        or not state_transition_ok
         or not category_ok
     ):
         tail = "\n".join(output.splitlines()[-25:])
@@ -377,8 +483,13 @@ def run_check(check: ScenarioCheck) -> tuple[bool, str]:
         returncode == 0
         and not missing
         and not forbidden_present
+        and not forbidden_patterns_present
         and not missing_patterns
+        and not missing_previous_patterns
         and weight_ok
+        and expected_reason_ok
+        and observation_mode_ok
+        and state_transition_ok
         and category_ok
     ), "\n".join(lines)
 

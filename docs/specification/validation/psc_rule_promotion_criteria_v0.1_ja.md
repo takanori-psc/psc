@@ -28,17 +28,19 @@ Evidence Matrix の編集も本ステップでは行わない。
 
 ## 2. 現在の状態
 
-対象 RULE は、`psc_evidence_matrix_v0.1_ja.md` において
-Experimental として扱われている。
+対象 RULE は、`psc_evidence_matrix_v0.1_ja.md` で追跡される。
+`RULE-22_RETURN_RAMP_HOLD` は FULL observation における
+`reason=INSUFFICIENT_OBSERVATION` の covered hold evidence について Verified であり、
+その他の対象 RULE は引き続き Experimental である。
 
 | RULE | 現在の状態 | 現在の位置づけ |
 |------|------------|----------------|
 | `RULE-21_RETURN_RAMP_ADVANCE` | Experimental | ramp 条件成立時に recovered path の traffic weight を段階的に増やす候補 RULE |
-| `RULE-22_RETURN_RAMP_HOLD` | Experimental | ramp 中に進行条件が不足する場合、現 weight を維持する候補 RULE |
+| `RULE-22_RETURN_RAMP_HOLD` | Verified | ramp 中に進行条件が不足する場合、現 weight を維持する RULE。現在の Verified scope は FULL / `INSUFFICIENT_OBSERVATION` evidence に限定される |
 | `RULE-23_RETURN_RAMP_ABORT` | Experimental | ramp 中に recovered path の不安定化を検知した場合、復帰を中断する候補 RULE |
 | `RULE-24_RETURN_RAMP_COMPLETE` | Experimental | recovered path への段階的 reintegration 完了を確定する候補 RULE |
 
-これらの RULE は、実験シナリオおよび raw / verified log により挙動の一部が
+残る Experimental RULE は、実験シナリオおよび raw / verified log により挙動の一部が
 確認されている。ただし、Verified へ昇格するには、シナリオ、ログ、期待結果、
 validator check、Evidence Matrix mapping が一貫して揃っている必要がある。
 
@@ -107,16 +109,20 @@ Verified evidence として扱わない。特に以下が未整理の場合、LI
 
 | 必須 evidence | 基準 |
 |---------------|------|
-| Scenario file | false-negative、stale telemetry、masked instability、または観測不足により ramp hold が発生する scenario が存在すること |
+| Scenario file | FULL observation における観測不足により ramp hold が発生する scenario が存在すること |
 | Raw log | `RULE-22_RETURN_RAMP_HOLD`、hold reason、observation condition、hold 前後の weight を記録すること |
 | Expected result | expected category が hold であり、recovered path の weight が増加しないこと |
 | Validator check | hold reason と weight unchanged を assert し、advance / abort との誤分類がないことを確認すること |
-| Evidence Matrix mapping | LIGHT observation 系 scenario、raw log、verified log、Evidence Step の対応を追加できること |
+| Evidence Matrix mapping | FULL observation scenario、raw log、verified log、Evidence Step の対応を追加できること |
 
 ### 5.3 昇格時の確認点
 
-`RULE-22_RETURN_RAMP_HOLD` の Verified 昇格には、少なくとも以下の hold reason が
-明示的に区別されている必要がある。
+`RULE-22_RETURN_RAMP_HOLD` の現在の Verified scope は、FULL observation における
+`INSUFFICIENT_OBSERVATION` reason のみを対象とする。LIGHT Observation reason は
+evidence として利用可能だが、現在の Verified scope には含まれない。
+
+RULE-22 coverage を将来拡張する場合は、以下の hold reason を明示的に区別した上で、
+Verified scope へ含めるかを判断する。
 
 | Hold reason | 必要な確認 |
 |-------------|------------|

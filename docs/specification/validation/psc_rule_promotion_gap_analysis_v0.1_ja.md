@@ -45,13 +45,15 @@ Evidence Matrix、promotion criteria、simulation file、log file、validator fi
 
 ## 3. 現在の全体状況
 
-Evidence Matrix 上では、対象 RULE はすべて Experimental として扱われている。
-ただし、coverage の成熟度は RULE ごとに異なる。
+Evidence Matrix 上では、`RULE-22_RETURN_RAMP_HOLD` は FULL observation における
+`reason=INSUFFICIENT_OBSERVATION` の covered hold evidence について Verified として扱われる。
+LIGHT Observation coverage は現在の Verified scope 外である。その他の対象 RULE は
+引き続き Experimental であり、coverage の成熟度は RULE ごとに異なる。
 
 | RULE | 現在の状態 | Coverage Summary | 主な不足 |
 |------|------------|------------------|----------|
 | `RULE-21_RETURN_RAMP_ADVANCE` | Experimental / LIGHT は Hold | FULL observation の ramp advance ログは存在する | 専用 validator check、LIGHT false-positive / false-negative 境界、仕様本文への条件統合が不足 |
-| `RULE-22_RETURN_RAMP_HOLD` | Experimental | LIGHT hold の runnable scenario、raw log、verified log、validator check が存在する | `INSUFFICIENT_OBSERVATION` の正式 runnable coverage と hold / advance / abort 境界の明文化が不足 |
+| `RULE-22_RETURN_RAMP_HOLD` | Verified | FULL `ramp_hold_insufficient_observation` scenario、raw log、verified log、validator assertion が現在の Verified scope を構成する。LIGHT hold scenario はその scope 外の evidence として残る | 仕様本文への formal integration は evidence status とは別作業として残る |
 | `RULE-23_RETURN_RAMP_ABORT` | Experimental | abort class 別 scenario、raw log、verified log、validator check が存在する | abort threshold、post-abort state assertion の統一、全 abort scenario の structured result 化が不足 |
 | `RULE-24_RETURN_RAMP_COMPLETE` | Experimental | ramp complete の raw / verified log は存在する | 専用 scenario 分離、validator check、completion threshold と post-completion state assertion が不足 |
 
@@ -121,8 +123,8 @@ LIGHT から FULL へ昇格する条件、または LIGHT advance を許可す�
 | `sim/02_controlled/07_light_observation_stub/light_false_negative.py` | LIGHT observation false negative 時の hold |
 | `sim/02_controlled/07_light_observation_stub/light_stale_telemetry.py` | stale telemetry 時の hold |
 | `sim/02_controlled/07_light_observation_stub/light_masked_instability.py` | masked instability 時の hold |
-| `sim/02_controlled/07_light_observation_stub/light_telemetry_gap_stub.py` | required telemetry gap の design stub |
-| `sim/02_controlled/06_recovery_return_v02/mini_psc_rcu_decision_v03_recovery_ramp_observation.py` | recovery ramp 中の hold trace |
+| `sim/02_controlled/07_light_observation_stub/light_telemetry_gap_stub.py` | LIGHT 固有 required telemetry gap の design stub |
+| `sim/02_controlled/06_recovery_return_v02/mini_psc_rcu_decision_v03_recovery_ramp_observation.py` | recovery ramp 中の runnable FULL observation `ramp_hold_insufficient_observation` trace |
 
 ### 5.2 利用可能な raw log
 
@@ -132,13 +134,15 @@ LIGHT から FULL へ昇格する条件、または LIGHT advance を許可す�
 | `sim/02_controlled/07_light_observation_stub/logs/raw/light_stale_telemetry_run.txt` | `reason=STALE_TELEMETRY` |
 | `sim/02_controlled/07_light_observation_stub/logs/raw/light_masked_instability_run.txt` | `reason=MASKED_INSTABILITY` |
 | `sim/02_controlled/06_recovery_return_v02/logs/raw/recovery_ramp_v03_full_light_run.txt` | FULL / LIGHT ramp 中の hold trace |
+| `sim/02_controlled/06_recovery_return_v02/logs/raw/ramp_hold_insufficient_observation_run.txt` | `reason=INSUFFICIENT_OBSERVATION`、`category=hold`、`observation_mode=FULL`、および `0.30 -> 0.30` の ramp level 維持 |
 
 ### 5.3 利用可能な verified log / Matrix mapping
 
 | Evidence | Coverage |
 |----------|----------|
 | `sim/02_controlled/07_light_observation_stub/logs/verified/light_observation_hold_validation_log.md` | LIGHT false-negative / stale / masked instability の hold を記録 |
-| Evidence Matrix | `light_false_negative`、`light_stale_telemetry`、`light_masked_instability` が `LOG-LIGHT-HOLD-01` として mapping 済み |
+| `sim/02_controlled/06_recovery_return_v02/logs/rcu_decision_v03_ramp_hold_insufficient_observation_validation_log.md` | prior ramp advance 後の FULL `INSUFFICIENT_OBSERVATION` hold を記録 |
+| Evidence Matrix | `ramp_hold_insufficient_observation` が Verified evidence に mapping 済み。LIGHT scenario は現在の Verified scope 外の evidence として記録される |
 
 ### 5.4 validator coverage
 
@@ -151,24 +155,29 @@ LIGHT から FULL へ昇格する条件、または LIGHT advance を許可す�
 | `light_stale_telemetry` | `RULE-22_RETURN_RAMP_HOLD` | `hold` |
 | `light_masked_instability` | `RULE-22_RETURN_RAMP_HOLD` | `hold` |
 
-validator は RULE と category の検出を行うが、現時点では weight unchanged、
-`RULE-21_RETURN_RAMP_ADVANCE` の非発火、reason ごとの safety condition を
-個別 assert する粒度までは持たない。
+validator は LIGHT scenario について RULE と category を検出するが、これらの
+LIGHT check は現在の Verified scope 外である。`ramp_hold_insufficient_observation`
+については、reason、observation mode、state transition、ramp level 維持、
+直前 step の advance、同一 step の advance / abort / complete / emergency 不発火も
+assert する。
 
 ### 5.5 不足 evidence
 
 | 不足項目 | 内容 |
 |----------|------|
-| `INSUFFICIENT_OBSERVATION` runnable coverage | `light_telemetry_gap_stub.py` を正式 runnable scenario / raw log / verified log へ昇格する必要がある |
-| negative check | hold 時に `RULE-21_RETURN_RAMP_ADVANCE` が出ないことの validator assertion |
-| weight check | hold 前後で recovered weight が増加しないことの assertion |
-| reason-specific check | `OBSERVATION_FALSE_NEGATIVE`、`STALE_TELEMETRY`、`MASKED_INSTABILITY`、`INSUFFICIENT_OBSERVATION` の個別 assertion |
+| LIGHT telemetry gap runnable coverage | `light_telemetry_gap_stub.py` は LIGHT 固有 design stub のままであり、今回の FULL observation ramp-hold evidence では昇格しない |
+| specification integration | v0.3 ramp behavior 全体の hold / advance / abort 遷移は、仕様本文への formal integration が別途必要 |
 
 ### 5.6 Promotion blocker
 
-`RULE-22_RETURN_RAMP_HOLD` は最も Verified に近い候補である。
-ただし、promotion criteria で要求されている `INSUFFICIENT_OBSERVATION` と
-weight unchanged の機械検証が不足しているため、現時点では Experimental 維持が妥当である。
+`RULE-22_RETURN_RAMP_HOLD` は、Evidence Matrix 上の Verified status に必要な
+covered FULL-observation hold scope の evidence set、すなわち
+`INSUFFICIENT_OBSERVATION` の runnable scenario、raw log、verified log、
+validator assertion が揃った。
+
+これは LIGHT Observation scenario を現在の Verified scope に含めるものではなく、
+LIGHT-based ramp advance の昇格でもなく、v0.3 ramp 仕様全体の formal integration
+完了を意味するものでもない。
 
 ---
 
@@ -293,7 +302,7 @@ promotion criteria が要求する validator check と completion condition の�
 | RULE | Current validator coverage | Gap |
 |------|----------------------------|-----|
 | `RULE-21_RETURN_RAMP_ADVANCE` | category mapping には存在するが、専用 scenario check なし | FULL advance 条件、weight delta、negative check が不足 |
-| `RULE-22_RETURN_RAMP_HOLD` | three LIGHT hold scenarios を直接 check | reason-specific assertion、weight unchanged、advance 非発火 check が不足 |
+| `RULE-22_RETURN_RAMP_HOLD` | 現在の Verified scope では FULL `ramp_hold_insufficient_observation` scenario を直接 check する。LIGHT hold check は scope 外の coverage として維持 | LIGHT reason-specific assertion、weight unchanged check は将来 coverage work として残る |
 | `RULE-23_RETURN_RAMP_ABORT` | four abort handling scenarios を直接 check | abort class / fallback reason / post-abort action の構造化 assertion が不足 |
 | `RULE-24_RETURN_RAMP_COMPLETE` | category mapping には存在するが、専用 scenario check なし | completion threshold、final allocation、post-completion state check が不足 |
 
@@ -326,7 +335,7 @@ Verified 昇格用には、RULE-21 through RULE-24 専用の state assertion を
 | RULE | Promotion blocker |
 |------|-------------------|
 | `RULE-21_RETURN_RAMP_ADVANCE` | LIGHT false-positive / false-negative 境界未定義、FULL advance 専用 validator 不足 |
-| `RULE-22_RETURN_RAMP_HOLD` | `INSUFFICIENT_OBSERVATION` の runnable / raw / verified coverage 不足、weight unchanged assertion 不足 |
+| `RULE-22_RETURN_RAMP_HOLD` | FULL / `INSUFFICIENT_OBSERVATION` の covered hold behavior について evidence blocker は解消済み。LIGHT Observation coverage と v0.3 仕様全体への formal integration は別作業として残る |
 | `RULE-23_RETURN_RAMP_ABORT` | abort class ごとの post-abort action assertion 不足、structured result 統一不足 |
 | `RULE-24_RETURN_RAMP_COMPLETE` | completion threshold、final allocation、post-completion state の validator 不足 |
 
@@ -334,9 +343,11 @@ Verified 昇格用には、RULE-21 through RULE-24 専用の state assertion を
 
 ## 11. 結論
 
-現時点で最も Verified 昇格に近いのは `RULE-22_RETURN_RAMP_HOLD` と
-`RULE-23_RETURN_RAMP_ABORT` である。どちらも scenario / raw log / verified log /
-Evidence Matrix mapping / validator check の基礎が存在する。
+現時点で `RULE-22_RETURN_RAMP_HOLD` は、FULL / `INSUFFICIENT_OBSERVATION` hold
+evidence について、Evidence Matrix 上の Verified status に必要な scenario / raw log /
+verified log / Evidence Matrix mapping / validator assertion が揃った。
+LIGHT Observation scenario は現在の Verified scope 外に残る。残る Experimental RULE の中では、
+`RULE-23_RETURN_RAMP_ABORT` が次の昇格候補である。
 
 `RULE-21_RETURN_RAMP_ADVANCE` は FULL observation に限定すれば昇格候補になり得るが、
 LIGHT observation に基づく advance は Hold のまま維持する。

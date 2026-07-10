@@ -82,10 +82,10 @@
 
 === STEP 9 ===
 [FILTER]
-[RECOVERY] rule=RULE-21_RETURN_RAMP_ADVANCE recovered=B recovered_weight=0.30 evacuation=A evacuation_weight=0.70 observation_mode=FULL stability=0.920 trust=0.950 reason=RECOVERED_PATH_STABLE
+[RECOVERY] rule=RULE-21_RETURN_RAMP_ADVANCE category=switch recovered=B recovered_weight_before=0.10 recovered_weight=0.30 recovered_weight_after=0.30 ramp_level_before=0.10 ramp_level_after=0.30 evacuation=A evacuation_weight=0.70 observation_mode=FULL observation_category=SUFFICIENT_OBSERVATION stability=0.920 trust=0.950 reason=RECOVERED_PATH_STABLE
 [ECMP] selected=B
 
 === STEP 10 ===
 [FILTER]
-[RECOVERY] rule=RULE-22_RETURN_RAMP_HOLD scenario=ramp_hold_insufficient_observation recovery_state=RAMPING recovered=B recovered_weight_before=0.30 recovered_weight_after=0.30 evacuation=A evacuation_weight=0.70 observation_mode=FULL observation_category=INSUFFICIENT_OBSERVATION stability=0.920 trust=0.950 reason=INSUFFICIENT_OBSERVATION
+[RECOVERY] rule=RULE-22_RETURN_RAMP_HOLD category=hold scenario=ramp_hold_insufficient_observation recovery_state=RAMPING state_transition=RAMPING->RAMPING recovered=B recovered_weight_before=0.30 recovered_weight_after=0.30 ramp_level_before=0.30 ramp_level_after=0.30 evacuation=A evacuation_weight=0.70 observation_mode=FULL observation_category=INSUFFICIENT_OBSERVATION observation_samples=0 required_observation_samples=1 observation_window_steps=0 required_observation_window_steps=1 stability=0.920 trust=0.950 reason=INSUFFICIENT_OBSERVATION
 [ECMP] selected=B
