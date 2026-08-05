@@ -2,7 +2,7 @@
 
 ## Overview
 
-This experimental validation records Recovery Return Abort Handling scenarios.
+This validation records Recovery Return Abort Handling scenarios.
 
 The scenario is based on:
 
@@ -13,6 +13,37 @@ docs/specification/draft/models/psc_recovery_return_abort_handling_v0.1_ja.md
 
 It validates that `RULE-23_RETURN_RAMP_ABORT` aborts the current Return Ramp
 attempt without making immediate traffic cut the default behavior.
+
+## Validation Target
+
+- Rule: `RULE-23_RETURN_RAMP_ABORT`
+- Scenarios: `soft_abort_hold_and_reobserve`, `hard_abort_ramp_down`,
+  `emergency_cut_no_fallback`, `two_path_degraded_abort`
+- Scenario files:
+  `sim/02_controlled/08_recovery_abort_handling/soft_abort_hold_and_reobserve.py`,
+  `sim/02_controlled/08_recovery_abort_handling/hard_abort_ramp_down.py`,
+  `sim/02_controlled/08_recovery_abort_handling/emergency_cut_no_fallback.py`,
+  `sim/02_controlled/08_recovery_abort_handling/two_path_degraded_abort.py`
+- Validator: `scripts/validate_evidence_rules.py`
+- Validator checks: `ScenarioCheck.name` in
+  `soft_abort_hold_and_reobserve`, `hard_abort_ramp_down`,
+  `emergency_cut_no_fallback`, `two_path_degraded_abort`
+
+## Verified Scope
+
+This Verified status covers the four FULL-observation abort classes reproduced
+by the dedicated abort handling scenarios above: `SOFT_ABORT`, `HARD_ABORT`,
+`EMERGENCY_CUT`, and `DEGRADED_ABORT`.
+
+It does not cover:
+
+- The `RULE-23_RETURN_RAMP_ABORT` emissions embedded inside the v0.3 recovery
+  ramp engine (`reason=RECOVERED_PATH_UNSTABLE`,
+  `reason=RECOVERED_PATH_INVALID` in
+  `sim/02_controlled/06_recovery_return_v02/mini_psc_rcu_decision_v03_recovery_ramp_observation.py`),
+  which remain Experimental evidence.
+- `light_delayed_abort_stub.py`, which remains a LIGHT-specific design stub
+  outside runnable evidence.
 
 ---
 
@@ -312,3 +343,38 @@ EMERGENCY_CUT_NO_FALLBACK
 TWO_PATH_DEGRADED_ABORT
 -> Resolver Arbitration + Least-Bad Allocation
 ```
+
+---
+
+## Validator Assertions
+
+`scripts/validate_evidence_rules.py` checks the following for each abort
+class, in addition to the `RULE-23_RETURN_RAMP_ABORT` rule name and expected
+category:
+
+| Abort class | `abort_class` assertion | `reason` assertion | Post-abort state assertions | Cross-class exclusion |
+|-------------|--------------------------|---------------------|------------------------------|------------------------|
+| `SOFT_ABORT` | `abort_class=SOFT_ABORT` | `reason=TELEMETRY_CONFLICT_CONFIDENCE_REDUCTION` | `immediate_cut=false`, `entered=true`, `allocation_action=hold_temporarily`, `escalation=requested`, `target_mode=FULL`, `re_evaluation=triggered`, `allocation_unchanged=true` | `abort_class=HARD_ABORT`/`EMERGENCY_CUT`/`DEGRADED_ABORT` and `immediate_cut=true` must not appear |
+| `HARD_ABORT` | `abort_class=HARD_ABORT` | `reason=CLEAR_INSTABILITY_LINK_QUALITY_COLLAPSE` | `immediate_cut=false`, `allocation_action=ramp_down_suspect_path`, `recovered_path_a_weight=10`, `stable_path_b_weight=90`, `re_evaluation=triggered`, `[SOURCE] notification=sent`, `recovered_path_reduced=true` | `abort_class=SOFT_ABORT`/`EMERGENCY_CUT`/`DEGRADED_ABORT` and `immediate_cut=true` must not appear |
+| `EMERGENCY_CUT` | `abort_class=EMERGENCY_CUT` | `reason=LINK_DOWN_OPTICAL_FAILURE_NO_CAPACITY_MARGIN` | `immediate_cut=true`, `fallback_block_reason=NO_CAPACITY_MARGIN`, `emergency_cut=true`, `path_a_excluded=true`, `recovered_path_a_weight=0`, `dropped_or_blocked_weight=25`, `entered=false`, `[SOURCE] notification=sent` | `abort_class=SOFT_ABORT`/`HARD_ABORT`/`DEGRADED_ABORT` and `immediate_cut=false` must not appear |
+| `DEGRADED_ABORT` | `abort_class=DEGRADED_ABORT` | `reason=TWO_PATH_DEGRADED_NO_SAFE_ALTERNATE` | `immediate_cut=false`, `fallback_block_reason=NO_SAFE_ALTERNATE`, `no_safe_alternate=true`, `allocation_action=hold_for_arbitration`, `least_bad_selection=true`, `[SOURCE] notification=sent` | `abort_class=SOFT_ABORT`/`HARD_ABORT`/`EMERGENCY_CUT` and `immediate_cut=true` must not appear |
+
+All four scenarios also assert `outcome=PASS` in the scenario's own
+`[VALIDATION]` line, and all four now return a structured
+`ValidationResult(rule, passed, category, reason)` object from
+`decide_abort_handling`, matching the pattern already used by
+`two_path_degraded_abort.py`. `run()` asserts `result.passed` and
+`result.rule == SCENARIO_METADATA["expected_rules"][0]` for every scenario.
+
+---
+
+## Final Judgment
+
+Verified.
+
+For the FULL-observation `SOFT_ABORT`, `HARD_ABORT`, `EMERGENCY_CUT`, and
+`DEGRADED_ABORT` classes, the runnable scenarios, raw logs, this verified log,
+and the validator assertions confirm that `RULE-23_RETURN_RAMP_ABORT` aborts
+the active Return Ramp attempt without defaulting to immediate traffic cut,
+and that each abort class produces its own distinct, non-confused post-abort
+outcome. See "Verified Scope" above for what remains outside this status.

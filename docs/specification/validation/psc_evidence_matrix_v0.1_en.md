@@ -34,10 +34,12 @@ can be directly confirmed in execution logs.
 | RULE-18_RETURN_ELIGIBLE | Ambiguous return eligibility conditions | Confirm eligibility before return switching | recovery_return_v02 | `LOG-RR-01` | Verified |
 | RULE-19_RETURN_SWITCH | Execute v0.2 staged recovery return | Controlled return switch to a validated eligible path | recovery_return_v02 | `LOG-RR-01` | Verified |
 | RULE-20_RETURN_KEEP | Risk of switching to a return candidate before conditions are met | Keep the current path | recovery_return_keep | `LOG-RR-02` | Verified |
-| RULE-21_RETURN_RAMP_ADVANCE | Ambiguous ramp advancement conditions | Increase recovered-path traffic weight only under stable conditions | recovery_ramp_v03 | `LOG-RAMP-01` | Experimental |
+| RULE-21_RETURN_RAMP_ADVANCE | Ambiguous ramp advancement conditions | Increase recovered-path traffic weight only under stable conditions (FULL observation evidence) | ramp_complete / ramp_abort_full_stability_dip | `LOG-RAMP-FULL-ADV-01`; `RAW-RAMP-FULL-ADV-01`; `RAW-RAMP-ABORT-FULLDIP-01` | Verified |
+| RULE-21_RETURN_RAMP_ADVANCE (LIGHT) | Risk of misjudged advance when observation is abbreviated | LIGHT-observation-based advance remains Hold | recovery_ramp_v03 | `LOG-RAMP-01` | Hold |
 | RULE-22_RETURN_RAMP_HOLD | Ambiguous temporary hold conditions during ramp | Maintain the current weight when advancement conditions are insufficient | ramp_hold_insufficient_observation | `LOG-RAMP-HOLD-INSUFF-01`; `RAW-RAMP-HOLD-INSUFF-01` | Verified |
-| RULE-23_RETURN_RAMP_ABORT | Early return to an unstable path | Abort recovery return when instability is detected during ramp | recovery_ramp_v03 / soft_abort_hold_and_reobserve / hard_abort_ramp_down / emergency_cut_no_fallback / two_path_degraded_abort | `LOG-RAMP-03`; `LOG-ABORT-01` | Experimental |
-| RULE-24_RETURN_RAMP_COMPLETE | Ambiguous recovery completion condition | Confirm completion of progressive reintegration | recovery_ramp_v03 | `LOG-RAMP-03` | Experimental |
+| RULE-23_RETURN_RAMP_ABORT | Early return to an unstable path | Abort recovery return when instability is detected during ramp (FULL abort class evidence) | soft_abort_hold_and_reobserve / hard_abort_ramp_down / emergency_cut_no_fallback / two_path_degraded_abort | `LOG-ABORT-01`; `RAW-ABORT-SOFT-01`; `RAW-ABORT-HARD-01`; `RAW-ABORT-EMERG-01`; `RAW-ABORT-2PATH-01` | Verified |
+| RULE-23_RETURN_RAMP_ABORT | Instability detected in the recovered path inside the ramp engine | Abort trace emitted when the recovered path is judged invalid / unstable during ramp | recovery_ramp_v03 | `LOG-RAMP-03` | Experimental |
+| RULE-24_RETURN_RAMP_COMPLETE | Ambiguous recovery completion condition | Confirm completion of progressive reintegration (FULL observation evidence) | ramp_complete | `LOG-RAMP-COMPLETE-01`; `RAW-RAMP-FULL-ADV-01` | Verified |
 | RULE-25_RETURN_RAMP_START | Abrupt full traffic return immediately after recovery | Start progressive return ramp | recovery_ramp_v03 | `LOG-RAMP-02` | Experimental |
 
 ---
@@ -51,6 +53,60 @@ LIGHT Observation scenarios are excluded from this Verified scope.
 
 This status does not imply verification of every RULE-22 reason, observation
 mode, or the complete v0.3 Recovery Ramp behavior.
+
+---
+
+### 2.2 RULE-23 Verified Scope Note
+
+`RULE-23_RETURN_RAMP_ABORT` is Verified for the four FULL-observation abort
+classes (`SOFT_ABORT` / `HARD_ABORT` / `EMERGENCY_CUT` / `DEGRADED_ABORT`)
+reproduced by `soft_abort_hold_and_reobserve`, `hard_abort_ramp_down`,
+`emergency_cut_no_fallback`, and `two_path_degraded_abort`.
+
+The abort traces emitted inside the v0.3 recovery ramp engine
+(`reason=RECOVERED_PATH_UNSTABLE` and `reason=RECOVERED_PATH_INVALID` in the
+`recovery_ramp_v03` scenario), and the `light_delayed_abort_stub.py` LIGHT
+delayed abort design stub, are excluded from this Verified scope.
+
+This status does not imply that abort threshold formal integration into the
+specification body is complete.
+
+---
+
+### 2.3 RULE-21 Verified Scope Note
+
+`RULE-21_RETURN_RAMP_ADVANCE` is Verified for FULL observation.
+
+The `ramp_complete` scenario is positive evidence confirming four advance
+transitions (`0.10 -> 0.30 -> 0.50 -> 0.70 -> 0.90`) followed by
+`RULE-24_RETURN_RAMP_COMPLETE`. The `ramp_abort_full_stability_dip` scenario
+is negative evidence confirming that `RULE-21_RETURN_RAMP_ADVANCE` never
+fires when instability is detected immediately before a due advance step.
+
+LIGHT observation based advance remains Hold. LIGHT-based advance must not be
+treated as Verified evidence until false-positive / false-negative behavior
+is sufficiently bounded.
+
+This status does not imply that formal integration of the ramp increment or
+advance threshold into the specification body is complete.
+
+---
+
+### 2.4 RULE-24 Verified Scope Note
+
+`RULE-24_RETURN_RAMP_COMPLETE` is Verified for FULL observation.
+
+The `ramp_complete` scenario (22 steps) confirms the advance sequence through
+completion (`0.10 -> 0.30 -> 0.50 -> 0.70 -> 0.90 -> 1.00`), plus the
+post-completion state: `RULE-11_RECOVERY_cooldown` (STEP 18-19) followed by
+`RULE-01_KEEP_score` with `mode=NORMAL` (STEP 20-21).
+`RULE-24_RETURN_RAMP_COMPLETE` and `RULE-25_RETURN_RAMP_START` each appear
+exactly once in the output, confirming no additional advance or repeated
+ramp start occurs after completion.
+
+This status does not imply that formal integration of the completion
+threshold into the specification body is complete, and does not cover
+completion behavior under LIGHT observation.
 
 ---
 
@@ -142,9 +198,11 @@ mode, or the complete v0.3 Recovery Ramp behavior.
 | RULE-18_RETURN_ELIGIBLE | recovery_return_v02 / recovery_return_keep | STEP 7 / STEP 4 | Confirms return eligibility after validation passes | `LOG-RR-01`; `LOG-RR-02` |
 | RULE-19_RETURN_SWITCH | recovery_return_v02 | STEP 7 | Performs controlled return switch to eligible path | `LOG-RR-01` |
 | RULE-20_RETURN_KEEP | recovery_return_keep | STEP 4 | Keeps current path because return_margin is not met | `LOG-RR-02` |
+| RULE-21_RETURN_RAMP_ADVANCE | ramp_complete / ramp_abort_full_stability_dip | STEP 9 / STEP 11 / STEP 13 / STEP 15 / (none) | In `ramp_complete`, four advance transitions (`0.10 -> 0.30 -> 0.50 -> 0.70 -> 0.90`) are emitted with `category=switch`, `observation_mode=FULL`, `observation_category=SUFFICIENT_OBSERVATION`, and `reason=RECOVERED_PATH_STABLE`, followed by `RULE-24_RETURN_RAMP_COMPLETE`. In `ramp_abort_full_stability_dip`, instability is detected immediately before a due advance step and `RULE-21_RETURN_RAMP_ADVANCE` never fires | `LOG-RAMP-FULL-ADV-01`; `RAW-RAMP-FULL-ADV-01`; `RAW-RAMP-ABORT-FULLDIP-01`; validator `scripts/validate_evidence_rules.py` (`ScenarioCheck.name=ramp_complete`, `ScenarioCheck.name=ramp_abort_full_stability_dip`) |
 | RULE-22_RETURN_RAMP_HOLD | light_false_negative / light_stale_telemetry / light_masked_instability | STEP 0 / STEP 0 / STEP 0 | Holds LIGHT recovery ramp when evidence is false-negative, stale, or masks instability; evidence available, outside the current Verified scope | `RAW-LIGHT-FN-01`; `RAW-LIGHT-ST-01`; `RAW-LIGHT-MI-01`; `LOG-LIGHT-HOLD-01` |
 | RULE-22_RETURN_RAMP_HOLD | ramp_hold_insufficient_observation | STEP 9 -> STEP 10 | After STEP 9 emits `RULE-21_RETURN_RAMP_ADVANCE` and raises the ramp from `0.10` to `0.30`, STEP 10 emits `RULE-22_RETURN_RAMP_HOLD` with `category=hold`, `reason=INSUFFICIENT_OBSERVATION`, `observation_mode=FULL`, and `state_transition=RAMPING->RAMPING`; it keeps `recovered_weight_before=0.30` and `recovered_weight_after=0.30`, and does not emit advance / abort / complete / emergency transition markers in the same HOLD step | `LOG-RAMP-HOLD-INSUFF-01`; `RAW-RAMP-HOLD-INSUFF-01`; validator `scripts/validate_evidence_rules.py` (`ScenarioCheck.name=ramp_hold_insufficient_observation`) |
-| RULE-23_RETURN_RAMP_ABORT | soft_abort_hold_and_reobserve / hard_abort_ramp_down / emergency_cut_no_fallback / two_path_degraded_abort | STEP 0 / STEP 0 / STEP 0 / STEP 0 | Aborts the active Return Ramp attempt and applies stabilization, ramp-down, emergency cut, or two-path degraded arbitration according to abort class | `RAW-ABORT-SOFT-01`; `RAW-ABORT-HARD-01`; `RAW-ABORT-EMERG-01`; `RAW-ABORT-2PATH-01`; `LOG-ABORT-01` |
+| RULE-23_RETURN_RAMP_ABORT | soft_abort_hold_and_reobserve / hard_abort_ramp_down / emergency_cut_no_fallback / two_path_degraded_abort | STEP 0 / STEP 0 / STEP 0 / STEP 0 | Aborts the active Return Ramp attempt and applies stabilization, ramp-down, emergency cut, or two-path degraded arbitration according to abort class. The validator asserts abort_class, reason, post-abort state, and cross-class exclusion | `RAW-ABORT-SOFT-01`; `RAW-ABORT-HARD-01`; `RAW-ABORT-EMERG-01`; `RAW-ABORT-2PATH-01`; `LOG-ABORT-01`; validator `scripts/validate_evidence_rules.py` (`ScenarioCheck.name` in `soft_abort_hold_and_reobserve`, `hard_abort_ramp_down`, `emergency_cut_no_fallback`, `two_path_degraded_abort`) |
+| RULE-24_RETURN_RAMP_COMPLETE | ramp_complete | STEP 17 | `recovered_weight` reaches `ramp_max_weight` (`1.00`) and `RULE-24_RETURN_RAMP_COMPLETE` is emitted with `observation_mode=FULL` and `reason=RAMP_TARGET_REACHED`. STEP 18-19 emit `RULE-11_RECOVERY_cooldown`, and STEP 20-21 emit `RULE-01_KEEP_score` with `mode=NORMAL`, showing the post-completion state is stable. `RULE-24_RETURN_RAMP_COMPLETE` and `RULE-25_RETURN_RAMP_START` each occur exactly once in the output, with no additional advance / completion afterward | `LOG-RAMP-COMPLETE-01`; `RAW-RAMP-FULL-ADV-01`; validator `scripts/validate_evidence_rules.py` (`ScenarioCheck.name=ramp_complete`) |
 
 ---
 
@@ -180,14 +238,44 @@ listed separately in Section 7 and remains outside the current Verified scope.
 
 ---
 
+## 7.2 Return Ramp Advance Evidence Details
+
+`RULE-21_RETURN_RAMP_ADVANCE` is Verified only for the FULL-observation
+coverage rows below. LIGHT-observation-based advance remains Hold.
+
+| Scenario | Scenario File | RULE | Expected Category | Observation Mode | Condition | Raw Log | Verified Log | Validator | Status | Note |
+|----------|---------------|------|-------------------|------------------|-----------|---------|--------------|-----------|--------|------|
+| ramp_complete | `sim/02_controlled/06_recovery_return_v02/mini_psc_rcu_decision_v03_recovery_ramp_observation.py` | RULE-21_RETURN_RAMP_ADVANCE | switch | FULL | Four advance transitions (`0.10 -> 0.30 -> 0.50 -> 0.70 -> 0.90`) are emitted with `reason=RECOVERED_PATH_STABLE`, followed by `RULE-24_RETURN_RAMP_COMPLETE`. `RULE-23_RETURN_RAMP_ABORT` and emergency transition markers do not appear | `RAW-RAMP-FULL-ADV-01` | `LOG-RAMP-FULL-ADV-01` | ramp_level transition pairs / category / observation mode / observation category / reason / completion / forbidden abort in `scripts/validate_evidence_rules.py` (`ScenarioCheck.name=ramp_complete`) | Verified | Runnable scenario, raw log, verified log, and validator assertion coverage are complete for this FULL-observation advance sequence (positive evidence) |
+| ramp_abort_full_stability_dip | `sim/02_controlled/06_recovery_return_v02/mini_psc_rcu_decision_v03_recovery_ramp_observation.py` | RULE-21_RETURN_RAMP_ADVANCE (negative) | abort | FULL | Instability is detected immediately before a due advance step and `RULE-23_RETURN_RAMP_ABORT` is emitted instead. `RULE-21_RETURN_RAMP_ADVANCE` never appears | `RAW-RAMP-ABORT-FULLDIP-01` | `LOG-RAMP-FULL-ADV-01` | forbidden RULE-21 / forbidden RULE-24 / abort reason / unchanged weight in `scripts/validate_evidence_rules.py` (`ScenarioCheck.name=ramp_abort_full_stability_dip`) | Verified | Negative evidence confirming advance does not occur under an instability condition |
+
+---
+
+## 7.3 Return Ramp Complete Evidence Details
+
+`RULE-24_RETURN_RAMP_COMPLETE` is Verified only for the FULL-observation
+coverage row below. The `ramp_complete` scenario runs with
+`scenario_steps=22`, including the post-completion tail (STEP 18-21) after
+completion at STEP 17.
+
+| Scenario | Scenario File | RULE | Expected Category | Observation Mode | Condition | Raw Log | Verified Log | Validator | Status | Note |
+|----------|---------------|------|-------------------|------------------|-----------|---------|--------------|-----------|--------|------|
+| ramp_complete | `sim/02_controlled/06_recovery_return_v02/mini_psc_rcu_decision_v03_recovery_ramp_observation.py` | RULE-24_RETURN_RAMP_COMPLETE | switch | FULL | Completion is emitted at STEP 17 with `recovered_weight=1.00`, `evacuation_weight=0.00`, and `reason=RAMP_TARGET_REACHED`. STEP 18-19 emit `RULE-11_RECOVERY_cooldown`, and STEP 20-21 emit `RULE-01_KEEP_score` with `mode=NORMAL`. `RULE-24_RETURN_RAMP_COMPLETE` and `RULE-25_RETURN_RAMP_START` each occur exactly once in the output | `RAW-RAMP-FULL-ADV-01` | `LOG-RAMP-COMPLETE-01` | completion state / post-completion cooldown / NORMAL hysteresis / single-occurrence completion and ramp start / forbidden abort in `scripts/validate_evidence_rules.py` (`ScenarioCheck.name=ramp_complete`) | Verified | Runnable scenario, raw log, verified log, and validator assertion coverage are complete for this FULL-observation completion and post-completion state |
+
+---
+
 ## 8. Recovery Abort Handling Evidence Details
 
-| Scenario | Scenario File | RULE | Expected Category | Abort Class | Fallback Block Reason | Raw Log | Verified Log | Status |
-|----------|---------------|------|-------------------|-------------|-----------------------|---------|--------------|--------|
-| soft_abort_hold_and_reobserve | `sim/02_controlled/08_recovery_abort_handling/soft_abort_hold_and_reobserve.py` | RULE-23_RETURN_RAMP_ABORT | abort_and_stabilize | SOFT_ABORT | N/A | `RAW-ABORT-SOFT-01` | `LOG-ABORT-01` | Experimental |
-| hard_abort_ramp_down | `sim/02_controlled/08_recovery_abort_handling/hard_abort_ramp_down.py` | RULE-23_RETURN_RAMP_ABORT | hard_abort_ramp_down | HARD_ABORT | N/A | `RAW-ABORT-HARD-01` | `LOG-ABORT-01` | Experimental |
-| emergency_cut_no_fallback | `sim/02_controlled/08_recovery_abort_handling/emergency_cut_no_fallback.py` | RULE-23_RETURN_RAMP_ABORT | emergency_cut_no_fallback | EMERGENCY_CUT | NO_CAPACITY_MARGIN | `RAW-ABORT-EMERG-01` | `LOG-ABORT-01` | Experimental |
-| two_path_degraded_abort | `sim/02_controlled/08_recovery_abort_handling/two_path_degraded_abort.py` | RULE-23_RETURN_RAMP_ABORT | two_path_degraded_arbitration | DEGRADED_ABORT | NO_SAFE_ALTERNATE | `RAW-ABORT-2PATH-01` | `LOG-ABORT-01` | Experimental |
+`RULE-23_RETURN_RAMP_ABORT` is Verified only for the four FULL-observation
+abort class coverage rows below. The v0.3 ramp engine's internal
+`RECOVERED_PATH_UNSTABLE` / `RECOVERED_PATH_INVALID` abort trace remains
+outside the Verified scope described in Section 2.2.
+
+| Scenario | Scenario File | RULE | Expected Category | Abort Class | Fallback Block Reason | Raw Log | Verified Log | Validator | Status |
+|----------|---------------|------|-------------------|-------------|-----------------------|---------|--------------|-----------|--------|
+| soft_abort_hold_and_reobserve | `sim/02_controlled/08_recovery_abort_handling/soft_abort_hold_and_reobserve.py` | RULE-23_RETURN_RAMP_ABORT | abort_and_stabilize | SOFT_ABORT | N/A | `RAW-ABORT-SOFT-01` | `LOG-ABORT-01` | abort_class / reason / post-abort state / cross-class exclusion in `scripts/validate_evidence_rules.py` (`ScenarioCheck.name=soft_abort_hold_and_reobserve`) | Verified |
+| hard_abort_ramp_down | `sim/02_controlled/08_recovery_abort_handling/hard_abort_ramp_down.py` | RULE-23_RETURN_RAMP_ABORT | hard_abort_ramp_down | HARD_ABORT | N/A | `RAW-ABORT-HARD-01` | `LOG-ABORT-01` | abort_class / reason / post-abort state / cross-class exclusion in `scripts/validate_evidence_rules.py` (`ScenarioCheck.name=hard_abort_ramp_down`) | Verified |
+| emergency_cut_no_fallback | `sim/02_controlled/08_recovery_abort_handling/emergency_cut_no_fallback.py` | RULE-23_RETURN_RAMP_ABORT | emergency_cut_no_fallback | EMERGENCY_CUT | NO_CAPACITY_MARGIN | `RAW-ABORT-EMERG-01` | `LOG-ABORT-01` | abort_class / reason / post-abort state / cross-class exclusion in `scripts/validate_evidence_rules.py` (`ScenarioCheck.name=emergency_cut_no_fallback`) | Verified |
+| two_path_degraded_abort | `sim/02_controlled/08_recovery_abort_handling/two_path_degraded_abort.py` | RULE-23_RETURN_RAMP_ABORT | two_path_degraded_arbitration | DEGRADED_ABORT | NO_SAFE_ALTERNATE | `RAW-ABORT-2PATH-01` | `LOG-ABORT-01` | abort_class / reason / post-abort state / cross-class exclusion in `scripts/validate_evidence_rules.py` (`ScenarioCheck.name=two_path_degraded_abort`) | Verified |
 
 ---
 
@@ -196,23 +284,24 @@ listed separately in Section 7 and remains outside the current Verified scope.
 | RULE | Classification | Summary | Next |
 |------|----------------|-----------|-----------|
 | RULE-25_RETURN_RAMP_START | Formal integration candidate | v0.3 ramp entry point | Specify delta from RULE-19 |
-| RULE-21_RETURN_RAMP_ADVANCE (FULL) | Formal integration candidate | Increase weight only when stable | Define advance conditions |
+| RULE-21_RETURN_RAMP_ADVANCE (FULL) | Formal integration candidate (Verified) | Increase weight only when stable | Integrate advance conditions into the specification text |
 | RULE-22_RETURN_RAMP_HOLD | Formal integration candidate | Hold weight during observation | Define hold / advance / abort transitions |
 | RULE-23_RETURN_RAMP_ABORT | Formal integration candidate | Abort return on instability | Define abort threshold |
-| RULE-24_RETURN_RAMP_COMPLETE | Formal integration candidate | Confirm reintegration completion | Define completion conditions |
+| RULE-24_RETURN_RAMP_COMPLETE | Formal integration candidate (Verified) | Confirm reintegration completion | Integrate completion conditions into the specification text |
 | RULE-21_RETURN_RAMP_ADVANCE (LIGHT) | Hold | Safety boundary is underspecified | Connect to Fast Mode spec |
 
 Notes:
 
-- v0.3 ramp behavior remains under formal specification integration. `RULE-22_RETURN_RAMP_HOLD` is Verified in this matrix for the covered hold evidence, including `INSUFFICIENT_OBSERVATION`.
-- Formal integration candidate means the behavior is worth integrating into the specification; it does not mean promotion to Verified.
+- v0.3 ramp behavior remains under formal specification integration. `RULE-22_RETURN_RAMP_HOLD` is Verified in this matrix for the covered hold evidence, including `INSUFFICIENT_OBSERVATION`. `RULE-23_RETURN_RAMP_ABORT` is Verified in this matrix for the `SOFT_ABORT` / `HARD_ABORT` / `EMERGENCY_CUT` / `DEGRADED_ABORT` FULL abort class evidence. `RULE-21_RETURN_RAMP_ADVANCE` is Verified in this matrix for FULL observation evidence (the `ramp_complete` advance sequence and the `ramp_abort_full_stability_dip` negative evidence). `RULE-24_RETURN_RAMP_COMPLETE` is Verified in this matrix for FULL observation completion and post-completion state evidence. Abort threshold, advance condition, and completion threshold specification integration remain separate work.
+- Formal integration candidate means the behavior is worth integrating into the specification; this classification is independent of promotion to Verified, though `RULE-21_RETURN_RAMP_ADVANCE (FULL)` and `RULE-24_RETURN_RAMP_COMPLETE` now satisfy both.
 - `RULE-19_RETURN_SWITCH` remains the Verified v0.2 direct return rule.
 - `RULE-25_RETURN_RAMP_START` is the Experimental v0.3 ramp entry rule. It replaces the direct return execution point with progressive ramp start, but is not semantically identical to `RULE-19_RETURN_SWITCH`.
 - `RULE-25_RETURN_RAMP_START` remains outside the `RULE-01` through `RULE-24` Verified namespace until formal integration is completed.
-- `RULE-21_RETURN_RAMP_ADVANCE (FULL)` remains the experimental/formal integration candidate for ramp advancement.
+- `RULE-21_RETURN_RAMP_ADVANCE (FULL)` has been promoted to Verified for FULL observation evidence. Formal integration of the ramp increment and advance threshold into the specification text remains separate work.
+- `RULE-24_RETURN_RAMP_COMPLETE` has been promoted to Verified for FULL observation completion and post-completion state evidence. Formal integration of the completion threshold into the specification text remains separate work. Completion behavior under LIGHT observation is not covered.
 - `RULE-21_RETURN_RAMP_ADVANCE (LIGHT)` remains Hold. Current authoritative LIGHT policy is that LIGHT observation must emit or resolve to `RULE-22_RETURN_RAMP_HOLD` unless it is promoted to FULL observation or explicit LIGHT promotion gates are defined and satisfied.
 - Historical v0.3 LIGHT advance logs, including `ramp_light_tolerates_moderate_dip`, are retained as experimental history and must not be treated as current expected LIGHT policy.
-- Promotion to Verified requires transition conditions, thresholds, and FULL / LIGHT observation handling to be integrated into the specification text.
+- Promotion to formal specification status requires transition conditions, thresholds, and FULL / LIGHT observation handling to be integrated into the specification text. This requirement is separate from evidence-based Verified status in this matrix.
 
 ---
 
@@ -233,9 +322,13 @@ Notes:
 - `LOG-RAMP-02`: `sim/02_controlled/06_recovery_return_v02/logs/raw/recovery_ramp_v03_full_light_run.txt`
 - `LOG-RAMP-03`: `sim/02_controlled/06_recovery_return_v02/logs/rcu_decision_v03_recovery_ramp_validation_log.md`
 - `LOG-RAMP-HOLD-INSUFF-01`: `sim/02_controlled/06_recovery_return_v02/logs/rcu_decision_v03_ramp_hold_insufficient_observation_validation_log.md`
+- `LOG-RAMP-FULL-ADV-01`: `sim/02_controlled/06_recovery_return_v02/logs/rcu_decision_v03_ramp_full_advance_validation_log.md`
+- `LOG-RAMP-COMPLETE-01`: `sim/02_controlled/06_recovery_return_v02/logs/rcu_decision_v03_ramp_complete_validation_log.md`
 - `LOG-SW-01`: `sim/02_controlled/02_rcu_decision_v01/logs/rcu_decision_v01_switch_score_validation_log.md`
 - `LOG-TRUST-BLOCK-01`: `sim/02_controlled/09_rule_collision_matrix/logs/trust_block_vs_switch_validation_log.md`
 - `RAW-RAMP-HOLD-INSUFF-01`: `sim/02_controlled/06_recovery_return_v02/logs/raw/ramp_hold_insufficient_observation_run.txt`
+- `RAW-RAMP-FULL-ADV-01`: `sim/02_controlled/06_recovery_return_v02/logs/raw/ramp_complete_run.txt`
+- `RAW-RAMP-ABORT-FULLDIP-01`: `sim/02_controlled/06_recovery_return_v02/logs/raw/ramp_abort_full_stability_dip_run.txt`
 - `RAW-LIGHT-FN-01`: `sim/02_controlled/07_light_observation_stub/logs/raw/light_false_negative_run.txt`
 - `RAW-LIGHT-ST-01`: `sim/02_controlled/07_light_observation_stub/logs/raw/light_stale_telemetry_run.txt`
 - `RAW-LIGHT-MI-01`: `sim/02_controlled/07_light_observation_stub/logs/raw/light_masked_instability_run.txt`

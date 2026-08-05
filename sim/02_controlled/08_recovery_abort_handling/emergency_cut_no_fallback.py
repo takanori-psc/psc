@@ -9,6 +9,8 @@ transferred to the remaining path.
 
 from __future__ import annotations
 
+from dataclasses import dataclass
+
 
 SCENARIO_METADATA = {
     "name": "emergency_cut_no_fallback",
@@ -17,6 +19,21 @@ SCENARIO_METADATA = {
     "expected_rules": ("RULE-23_RETURN_RAMP_ABORT",),
     "reason": "LINK_DOWN_OPTICAL_FAILURE_NO_CAPACITY_MARGIN",
 }
+
+
+@dataclass(frozen=True)
+class ValidationResult:
+    """Structured result for validation harnesses.
+
+    The emitted log remains fixed text so this scenario can still be used as a
+    stable evidence trace. This object only makes the outcome assertable by
+    callers and future batch validators.
+    """
+
+    rule: str
+    passed: bool
+    category: str
+    reason: str
 
 
 INITIAL_ALLOCATION = {
@@ -51,7 +68,7 @@ def fallback_transfer_is_blocked(sample: dict[str, object]) -> bool:
     )
 
 
-def decide_abort_handling(step: int, sample: dict[str, object]) -> str:
+def decide_abort_handling(step: int, sample: dict[str, object]) -> ValidationResult:
     print(f"STEP {step}")
     print(
         "[SCENARIO] "
@@ -123,13 +140,23 @@ def decide_abort_handling(step: int, sample: dict[str, object]) -> str:
             "fallback_block_reason=NO_CAPACITY_MARGIN "
             "source_emergency_control=true"
         )
-        return "RULE-23_RETURN_RAMP_ABORT"
+        return ValidationResult(
+            rule="RULE-23_RETURN_RAMP_ABORT",
+            passed=True,
+            category=SCENARIO_METADATA["expected_category"],
+            reason=SCENARIO_METADATA["reason"],
+        )
 
     print(
         "[VALIDATION] outcome=FAIL "
         "reason=EMERGENCY_CUT_CONDITION_NOT_REACHED"
     )
-    return "NO_ABORT"
+    return ValidationResult(
+        rule="NO_ABORT",
+        passed=False,
+        category="",
+        reason="EMERGENCY_CUT_CONDITION_NOT_REACHED",
+    )
 
 
 def run() -> None:
@@ -148,7 +175,9 @@ def run() -> None:
         "allocation_after": EMERGENCY_ALLOCATION,
     }
 
-    decide_abort_handling(0, telemetry_sample)
+    result = decide_abort_handling(0, telemetry_sample)
+    assert result.passed, f"Scenario FAILED: {result.reason}"
+    assert result.rule == SCENARIO_METADATA["expected_rules"][0]
 
 
 if __name__ == "__main__":
